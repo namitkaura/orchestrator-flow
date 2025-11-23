@@ -22,6 +22,32 @@ Rules:
 
 **File paths:** All file paths should be treated as relative to the workspace root and use POSIX-style forward slashes (`/`).
 
+### Workflow Summary
+
+All artifacts should be created under the path: `.docs/specs/{feature_name}/` where `feature_name` is a kebab-case short name for the feature based on the user's rough idea.
+
+1. Requirement Gathering (see section below for details)
+  - Create and iterate on a requirements document in EARS format
+  - Ask for explicit user approval before proceeding using universal Python command format
+  - If the user requests changes, make modifications and ask for approval again
+2. Create Feature Design Document (see section below for details)
+  - Create and iterate on a detailed design document based on the approved requirements
+  - Conduct research as needed using available tools
+  - Ask for explicit user approval before proceeding using universal Python command format
+  - If the user requests changes, make modifications and ask for approval again
+3. Create Task List (see section below for details)
+  - Create and iterate on an implementation plan with a checklist of coding tasks based on the approved design
+  - If manual tests are required, include a final task to create `manual-test-plan.md` in the spec folder
+  - Ask for explicit user approval before considering the workflow complete using universal Python command format
+  - If the user requests changes, make modifications and ask for approval again
+4. Workflow Completion
+  - In Standalone Mode: inform the user that the spec creation workflow is complete and ask if you can help with anything else using universal Python command format
+  - In Orchestrator Mode: return a structured summary containing `feature_name`, `requirements_ref`, `design_ref`, and `tasks_ref` instead of asking this question
+
+**IMPORTANT:** If the user requests changes that impact previous documents (requirements or design), return to the appropriate step and modify that document only then follow the same strict approval process again before proceeding to the next step.
+  - For example, if the user requests changes that would change the requirements, return to the requirements step, make the changes, and ask for approval again. Once approved, proceed to the design step, make any necessary changes there, and ask for approval again. Finally, proceed to the tasks step, make any necessary changes there, and ask for approval again. 
+
+
 ### Entry Modes
 
 This agent can be used in two modes:
@@ -156,6 +182,7 @@ Convert the feature design into a series of prompts for a AI code-generation age
 - A clear objective as the task description that involves writing, modifying, or testing code
 - Additional information as sub-bullets under the task
 - Specific references to requirements from the requirements document (referencing granular sub-requirements, not just user stories)
+- If there are manual test steps needed, create a detailed test plan (`manual-test-plan.md` in the same folder as the `tasks.md` file) as the final task that can be executed by the user after implementation is complete.  
 - The model MUST ensure that the implementation plan is a series of discrete, manageable coding steps
 - The model MUST ensure each task references specific requirements from the requirement document
 - The model MUST NOT include excessive implementation details that are already covered in the design document
