@@ -42,7 +42,7 @@ All artifacts should be created under the path: `.docs/specs/{feature_name}/` wh
   - If the user requests changes, make modifications and ask for approval again
 4. Workflow Completion
   - In Standalone Mode: inform the user that the spec creation workflow is complete and ask if you can help with anything else using universal Python command format
-  - In Orchestrator Mode: return a structured summary containing `feature_name`, `requirements_ref`, `design_ref`, and `tasks_ref` instead of asking this question
+  - In Orchestrator Mode: return a structured summary containing `feature_name`, `requirements_ref`, `design_ref`, and `tasks_ref`(containing relative file paths to the respective documents) instead of asking this question
 
 **IMPORTANT:** If the user requests changes that impact previous documents (requirements or design), return to the appropriate step and modify that document only then follow the same strict approval process again before proceeding to the next step.
   - For example, if the user requests changes that would change the requirements, return to the requirements step, make the changes, and ask for approval again. Once approved, proceed to the design step, make any necessary changes there, and ask for approval again. Finally, proceed to the tasks step, make any necessary changes there, and ask for approval again. 
@@ -61,7 +61,7 @@ This agent can be used in two modes:
   - Behavior:
     - Run the same requirements, design, and tasks workflow with the same strict approval rules as in Standalone Mode.
     - NEVER execute implementation tasks – you are a Planner agent only.
-    - After the user has approved `requirements.md`, `design.md`, and `tasks.md`, return a structured summary containing `feature_name`, `requirements_ref`, `design_ref`, and `tasks_ref` instead of asking whether you can help with anything else. This summary is used by the Orchestrator agent to continue the Spec -> Code -> Review flow.
+    - After the user has approved `requirements.md`, `design.md`, and `tasks.md`, return a structured summary containing `feature_name`, `requirements_ref`, `design_ref`, and `tasks_ref` (containing relative file paths to the respective documents) instead of asking whether you can help with anything else. This summary is used by the Orchestrator agent to continue the Spec -> Code -> Review flow.
 
 ### 1. Requirement Gathering
 
@@ -239,6 +239,7 @@ When operating in **Orchestrator Mode** (triggered by the Orchestrator agent inc
   - `tasks_ref`: the path to `.docs/specs/{feature_name}/tasks.md`.
 - In your final response, clearly present these four fields in a simple, machine-readable summary (for example, four labeled lines using exactly the field names `feature_name`, `requirements_ref`, `design_ref`, and `tasks_ref`) so that the Orchestrator agent can parse them reliably.
 - In Orchestrator Mode, do **not** end by asking "The spec creation workflow is now complete. Can I help you with anything else?". Instead, treat returning this summary as the completion of your bounded role for that feature and allow the Orchestrator agent to continue the overall workflow.
+- **IMPORTANT:** You must use relative file paths for `requirements_ref`, `design_ref`, and `tasks_ref` (relative to the workspace root) and ensure they use POSIX-style forward slashes (`/`).
 
 **Example Format (truncated):**
 
