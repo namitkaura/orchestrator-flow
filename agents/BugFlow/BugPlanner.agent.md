@@ -125,6 +125,92 @@ fix-plan_ref: .docs/bugs/{bug_name}/fix-plan.md
 
 - If the requested revisions are ambiguous or incomplete, use the universal Python question command to ask targeted clarification questions before making changes.
 
+## Revision marking and revision history
+
+When performing any `plan_revision` edits, you MUST clearly mark the revisions inside the updated artifacts and add a structured revision history section at the end of each updated file. The revision history should clearly indicate what changed, who requested the change (for example `plan_revision.reporter` or `reporter_notes`), and the timestamp.
+
+Use the following generalized Revision History template. Fill in the fields and adapt the sections to the artifact (`fix-plan.md`, `bug-report.md`, or `bug-analysis.md`):
+
+```
+## Revision History
+
+### Revision <n> (Short title)
+
+**Date:** YYYY-MM-DD
+
+**Type:** plan_revision | manual_test_report | other
+
+**Reported by:** <reporter name or identifier>
+
+**Reason for Revision:**
+Short summary of why the revision was requested (for example: manual testing revealed incorrect behavior, missing edge-cases, UX clarification, etc.)
+
+**Affected Artifacts:**
+- .docs/bugs/<bug_name>/fix-plan.md
+- .docs/bugs/<bug_name>/bug-report.md
+- .docs/bugs/<bug_name>/bug-analysis.md
+
+**Changes Made to Plan / Artifact:**
+1. **Task X Status Updated:**
+	- Description: Describe what was changed to the original task (for example: marked completed but incorrect; preserved original with strikethrough)
+	- Rationale: Why the change was necessary
+
+2. **New Tasks Added (Revision Tasks):**
+	- **Task Y:** Short title
+	  - Purpose: Why this corrective task was added
+	  - Scope: What files/code/tests will be changed
+
+3. **Manual Test Plan Updates:**
+	- Describe any changes to manual-test-plan.md or test case expectations
+
+**Root Cause of Plan Error:**
+Explain why the original plan allowed the issue (for example: ambiguous requirements, missing UX constraint, incomplete analysis)
+
+**Clarified Requirements / Expected Behavior (if applicable):**
+- Bullet list of clarified requirements or explicit constraints that fix the ambiguity
+
+**Impact / Notes:**
+- Which original tasks remain valid
+- Which tasks are superseded or require corrective work
+- Any additional testing or rollout considerations
+
+**Files Changed (paths):**
+- .docs/bugs/<bug_name>/fix-plan.md
+- .docs/bugs/<bug_name>/bug-report.md
+- (list other files modified)
+
+```
+
+Requirements for applying the template:
+- Each updated artifact must include a `## Revision History` section appended to the end of the file using the template above.
+- Within the body of the changed artifact, annotate or comment the changed sections with a short marker such as `<!-- REVISION: plan_revision -->` and a one-line explanation of the change.
+- Preserve prior content where practical. If content is removed or replaced, briefly note the original content (or summarize it) in the revision history entry to preserve traceability.
+
+## Fix-plan task handling for revisions
+
+When updating `fix-plan.md` due to a `plan_revision`, DO NOT modify or erase the existing task items to make the revision invisible. Instead:
+
+- Do not remove or mark existing tasks as deleted. Keep the original tasks in place for historical traceability.
+- Add new revision-specific tasks at the top of the task list or in a clearly marked `Revision Tasks` subsection. Each new task must reference which original task or analysis point it addresses (for example: `Revision Task: address missing validation from Task 3`).
+- New revision tasks should be formatted as checkboxes (consistent with the main tasks) and include notes linking back to the `plan_revision.details` and the revision history entry.
+- New revision tasks should be formatted as checkboxes (consistent with the main tasks) and include notes linking back to the `plan_revision.details` and the revision history entry.
+
+- If an original task is superseded or an implementation is later found to be "completed but incorrect", preserve the original task text but visually mark it as superseded using Markdown strikethrough and an inline explanatory note. For example:
+
+	- ~~Original Task 3: Update WhiskyCardUI.js to display tasting notes~~ *(Marked completed but incorrect — superseded by Revision Task 10: Remove tasting notes from cards)*
+
+	- Use the Markdown strikethrough syntax (`~~text~~`) to show the original task text and append a short parenthetical note explaining the reason and linking to the new revision task (for example `Superseded by Revision Task 10`).
+
+	- In addition to the inline strikethrough, add a one-line comment or HTML comment above or next to the original task to indicate the revision marker, for example:
+
+		<!-- REVISION: plan_revision — marked completed but incorrect; replaced by Revision Task 10 -->
+
+	- Do NOT delete the original task entry. If content from the original task was removed from the codebase, record that fact in the revision history and in the new revision task that corrects it.
+
+- If an original task is superseded but should remain visible as historical context without strikethrough (for example, if it documents an important ledger of activity), add a short `Superseded` note rather than removing it.
+
+These rules ensure traceability between planning iterations and make it easy for reviewers and auditors to understand what changed and why.
+
 
 ## Notes and guardrails
 
