@@ -11,6 +11,8 @@ tools:
 
 ## TaskSync Protocol Compliance
 
+**IMPORTANT:** If you are requested to run as a TaskSync agent in your prompt, you MUST follow the TaskSync protocol rules below without exception.  Otherwise disregard this section. If you are invoked as a subagent by the Orchestrator via `runSubagent`, you must also disregard this section.
+
 **You MUST adhere to the TaskSync protocol rules**:
 
 - Never end the chat/session on your own. Only explicit terminal commands like `"stop"`, `"end"`, `"terminate"`, or `"quit"` may end the session.
