@@ -86,6 +86,46 @@ When invoked by `BugOrchestrator` via `runSubagent` you must run the full workfl
 
 Return those values in a simple, machine-readable format (for example four labeled lines using exactly the field names above) so the Orchestrator can parse them.
 
+## Handling `plan_revision` (Orchestrator-initiated revisions)
+
+When invoked by `BugOrchestrator` with a `plan_revision` payload, you must run a focused revision workflow. The `plan_revision` object will typically have the shape:
+
+```
+{
+	"bug_name": "my-bug",
+	"plan_revision": {
+		"details": "Description of what is wrong and why the plan needs changes",
+		"files_to_update": ["bug-report.md", "bug-analysis.md", "fix-plan.md"],
+		"reporter_notes": "Optional additional notes from the user"
+	}
+}
+```
+
+Revision workflow rules:
+
+- Acknowledge receipt of the `plan_revision` and confirm the `bug_name` and target directory `.docs/bugs/{bug_name}/`.
+- Determine which artifacts need updating (use `files_to_update` when provided; otherwise default to updating `fix-plan.md`).
+- For each artifact to update:
+	- Open the existing file in the workspace if needed to preserve context.
+	- Apply edits that address the `plan_revision.details` and `reporter_notes`.
+	- If research is required to validate the revision, call `runSubagent` to perform research and incorporate findings into `bug-analysis.md` or `fix-plan.md` as appropriate.
+	- After editing an artifact, run the same strict approval cycle used in the main workflow, asking the user for explicit approval via the Python question command (for example: `python -c "question = input('Does the revised fix plan look good? If so, approve to finish. ')"`).
+	- Iterate on feedback until the user approves each updated artifact.
+
+- Once all requested updates are approved, compute and return the same final structured summary as in normal Orchestrator Mode (relative POSIX paths):
+
+```
+bug_name: {bug_name}
+bug-report_ref: .docs/bugs/{bug_name}/bug-report.md
+bug-analysis_ref: .docs/bugs/{bug_name}/bug-analysis.md
+fix-plan_ref: .docs/bugs/{bug_name}/fix-plan.md
+```
+
+- If the `plan_revision` includes renaming the bug or moving files, return the updated `bug_name` and adjusted paths.
+
+- If the requested revisions are ambiguous or incomplete, use the universal Python question command to ask targeted clarification questions before making changes.
+
+
 ## Notes and guardrails
 
 - You are a Planner/triage agent. **DO NOT EVER** implement code. Use Python question commands for all approvals and for missing information.
