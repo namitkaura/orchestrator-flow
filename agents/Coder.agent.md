@@ -111,7 +111,7 @@ When called without a `review_wrapper`, you are responsible for implementing (or
 10. **IMPORTANT**: Do not forget to mark tasks as done in `tasks.md` as you complete them.  Also mark the associated todo items in your internal todo list as done.
 11. If you encounter blockers or ambiguous requirements, stop expanding scope and clearly record the issues in your `notes` field so Orchestrator can seek guidance from the user.
 
-**IMPORTANT** You MUST respect the boundaries in the spec documents: do not silently change requirements or design without strong justification and clear notes.  Also do not alter any of the spec files unless explicitly instructed to do so by the user or Orchestrator other than marking tasks done in `tasks.md` or the creation of the manual test plan (`manual_test_plan.md`).
+**IMPORTANT** You MUST respect the boundaries in the spec documents: do not silently change requirements or design without strong justification and clear notes.  Also **NEVER** alter any of the spec files (particularly `requirements.md`, `design.md`, or `task_log.json`) unless explicitly instructed to do so by the user or Orchestrator.  You are only allowed to mark tasks done in `tasks.md` or the create the manual test plan (`manual_test_plan.md`).
 
 ---
 
