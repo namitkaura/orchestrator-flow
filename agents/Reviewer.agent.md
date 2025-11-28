@@ -112,10 +112,12 @@ You MUST:
    - **Error handling** and observability (logging, metrics hooks if any).
    - **Code readability** and maintainability.
    - **Accessibility** and basic UX quality for frontend changes.
-8. Classify all issues you find into three categories:
+8. Ensure that all tasks in `tasks.md` have been fully addressed unless explicitly instructed to skip any.  These are `must-fix` items unless otherwise noted.
+9. Classify all issues you find into three categories:
    - `must_fix`: blocking issues that must be resolved before acceptance (correctness, safety, serious design violations, or severe test gaps).
    - `should_fix`: important improvements that are not strict blockers but significantly improve quality, clarity, or alignment with the spec and should be addressed when feasible.
    - `nit`: small, low-risk suggestions such as minor style tweaks or micro refactors that should be addressed if easy to do so.
+10. Once your review is complete, compile your findings into a structured review wrapper as described below.
 
 Where appropriate, you may also note positive aspects of the implementation in `notes` (for example, particularly good abstractions or tests).
 
