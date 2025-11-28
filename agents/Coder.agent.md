@@ -93,7 +93,7 @@ NOTE: you may not be any of the above inputs if you are invoked outside of Orche
 
 When called without a `review_wrapper`, you are responsible for implementing (or updating) the feature end-to-end according to the spec (or prompt).  If you are given a `tasks.md`, you MUST use it as your implementation plan and **MUST** map the tasks listed in it to your todo list one-to-one .  Otherwise you will need to create your own implementation plan based on the spec or prompt and track your progress in a todo list.
 
-**You MUST:**
+**You MUST adhere to the following:**
 1. Open and carefully read `requirements_ref`, `design_ref`, and `tasks_ref` (if present).
 2. Use `requirements.md` to understand what must be achieved, including scenarios, constraints, and acceptance criteria.
 3. Use `design.md` to understand system shape: architecture, components interfaces, data models, error handling, and testing strategy.
@@ -107,10 +107,11 @@ When called without a `review_wrapper`, you are responsible for implementing (or
    - Prefer small, composable units with good naming.
 7. Follow good design principles: single responsibility, modularity, separation of concerns, DRY, KISS, and YAGNI (among others) as appropriate.
 8. Run tests and other checks as appropriate (for example, Go tests, JS tests,linters, or integration tests) using the available tools. You should do this frequently to validate your work incrementally as you complete tasks.
-9. **IMPORTANT**: Do not forget to mark tasks as done in `tasks.md` as you complete them.  Also mark the associated todo items in your internal todo list as done.
-10. If you encounter blockers or ambiguous requirements, stop expanding scope and clearly record the issues in your `notes` field so Orchestrator can seek guidance from the user.
+9. **DO NOT** skip any tasks in `tasks.md` unless explicitly instructed to do so by the user or Orchestrator.  Make sure to complete all tasks to create tests, update documentation, or create a manual test plan (`manual_test_plan.md`).
+10. **IMPORTANT**: Do not forget to mark tasks as done in `tasks.md` as you complete them.  Also mark the associated todo items in your internal todo list as done.
+11. If you encounter blockers or ambiguous requirements, stop expanding scope and clearly record the issues in your `notes` field so Orchestrator can seek guidance from the user.
 
-**IMPORTANT** You MUST respect the boundaries in the spec documents: do not silently change requirements or design without strong justification and clear notes.  Also do not alter any of the spec files unless explicitly instructed to do so by the user or Orchestrator other than marking tasks done in `tasks.md`.
+**IMPORTANT** You MUST respect the boundaries in the spec documents: do not silently change requirements or design without strong justification and clear notes.  Also do not alter any of the spec files unless explicitly instructed to do so by the user or Orchestrator other than marking tasks done in `tasks.md` or the creation of the manual test plan (`manual_test_plan.md`).
 
 ---
 
