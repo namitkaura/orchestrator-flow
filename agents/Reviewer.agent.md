@@ -130,11 +130,11 @@ At the end of each review pass, you MUST return a **review wrapper** that Orches
   - Possible values:
     - `true`: all blocking issues resolved; implementation is acceptable.
     - `false`: blocking issues remain; implementation is not acceptable.
-    - `conditionally accepted`: all blocking issues resolved, but some `should_fix` items remain that should be addressed in future work. Also some `nit` items may remain that the `Coder` should evaluate to see if they can be trivially addressed.
-- `must_fix`: list of blocking issues. Each entry SHOULD include enough detail for Coder to act (for example, file/area, brief description, and rationale).
-- `should_fix`: list of non-blocking but important issues.  Note if an issue is blocking then it should be categorized as `must_fix` instead.
-- `nit`: list of minor suggestions.
-- Optional `tests_passed`: your assessment of test status (for example, whether you reran tests and what passed/failed).
+    - `conditional`: all blocking issues resolved, but some `should_fix` items remain that should be addressed in future work. Also some `nit` items may remain that the `Coder` needs to evaluate to see if they can be trivially addressed.
+- `must_fix`: details of all blocking issues. Each entry SHOULD include enough detail for Coder to act (for example, file/area, brief description, and rationale).
+- `should_fix`: details of all non-blocking but important issues.  Note if an issue is blocking then it should be categorized as `must_fix` instead.
+- `nit`: details of all minor suggestions.
+- `tests_passed`: your assessment of test status (for example, whether you reran tests and what passed/failed).
 - `notes`: narrative detailing:
   - Detailed assessment of the implementation.
   - Risk areas or tradeoffs worth calling out.

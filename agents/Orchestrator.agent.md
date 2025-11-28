@@ -227,15 +227,16 @@ You implement the following high-level steps when operating in Mode A.
 - Examine the Coder change wrapper.
 - Update `task_log.json`:
   - If tests passed and there are no known blockers, set `status` to `"coding_complete"`.
-  - If tests failed or there are blocking issues, set `status` to `"blocked"` and summarize why in the latest `history` event.
-  - Append a `history` entry summarizing:
-    - The change wrapper details.
-    - Any major notes or open questions.
+  - If tests failed or there are blocking issues, set `status` to `"blocked"`.
+  -Then in either case, append a `history` entry containing:
+    - The full Coder **change wrapper**
+    - Summary of the details returned by the Coder
   - Also present a fully detailed output to the user in the chat including:
     - Main changed files.
     - Tests run and results.
     - Behavior implemented.
     - Any blockers or open questions.
+    - Detailed notes from Coder.
 
 ### Step 6 - Reviewer call
 
@@ -248,13 +249,20 @@ You implement the following high-level steps when operating in Mode A.
     - Review the implementation against the requirements, design, and tasks.
     - Optionally rerun tests.
     - Return a **review wrapper** containing:
-      - `feature`
-      - `accepted` (boolean)
-      - `must_fix` (list of blocking issues)
-      - `should_fix` (list of important but non-blocking issues)
-      - `nit` (list of minor, mostly cosmetic or low-risk suggestions)
-      - Optional `tests_passed` and/or test summary
-      - `notes` detailing the overall assessment.
+      - `feature`: the feature name.
+      - `accepted`: field indicating whether the implementation can be accepted as-is.
+        - Possible values:
+          - `true`: all blocking issues resolved; implementation is acceptable.
+          - `false`: blocking issues remain; implementation is not acceptable.
+          - `conditional`: all blocking issues resolved, but some `should_fix` items remain that should be addressed in future work. Also some `nit` items may remain that the `Coder` needs to evaluate to see if they can be trivially addressed.
+      - `must_fix`: details of all blocking issues. Each entry SHOULD include enough detail for Coder to act (for example, file/area, brief description, and rationale).
+      - `should_fix`: details of all non-blocking but important issues.  Note if an issue is blocking then it should be categorized as `must_fix` instead.
+      - `nit`: details of all minor suggestions.
+      - `tests_passed`: your assessment of test status (for example, whether you reran tests and what passed/failed).
+      - `notes`: narrative detailing:
+        - Detailed assessment of the implementation.
+        - Risk areas or tradeoffs worth calling out.
+        - Pointers to particularly important `must_fix`/`should_fix` items.
     - Instruct `Reviewer` to completely follow its own internal workflow and approval steps defined in `Reviewer.agent.md`.
   - Note on subsequent review iterations:
     - If Reviewer is called again with revised implementations, you must also send the previous review wrapper including at least the `must_fix`, `should_fix`, and `nit` lists so Reviewer can check if they have been addressed and identify any new issues.
@@ -265,25 +273,24 @@ You implement the following high-level steps when operating in Mode A.
 - **If `accepted` is `true`:**
   - Update `task_log.json`:
     - Set `status` to `"accepted"`.
-    - Store the review wrapper details.
-    - Append a `history` event summarizing acceptance and any important notes.
+    - Append a `history` event containing the full **review wrapper** and a summary of acceptance.
   - Produce a detailed user-facing output including:
     - Feature name.
     - Spec references.
     - Main changed files, tests run, and key behavior.
-    - Review details.
+    - Full Reviewer details from the **review wrapper**.
     - A reminder that **the user must commit and open any PRs manually**.
   - Immediately return to TaskSync's "request next task" state by executing the universal Python tasksync command in the terminal.
-- **If `accepted` is `false` or `conditionally accepted`:**
+- **If `accepted` is `false` or `conditional`:**
   - Update `task_log.json`:
     - Set `status` to `"changes_requested"`.
-    - Store the review wrapper details.
-    - Append a `history` entry summarizing counts and full details for the `must_fix`, `should_fix`, and `nit` issues.
+    - Append a `history` entry containing the full **review wrapper** and a summary of requested changes.
   - Produce a fully detailed user-facing output of the review results including:
     - Key blocking issues (`must_fix`).
     - Important non-blocking issues (`should_fix`).
     - Minor suggestions (`nit`).
     - Any test results.
+    - Full Reviewer notes and details in the **review wrapper**.
     - Inform the user that you will now re-invoke Coder to address the issues.
   - Use `runSubagent` to call `Coder` again, passing:
     - The same spec refs.
