@@ -120,7 +120,8 @@ You MUST:
    - `must_fix`: blocking issues that must be resolved before acceptance (correctness, safety, serious design violations, or severe test gaps).
    - `should_fix`: important improvements that are not strict blockers but significantly improve quality, clarity, or alignment with the spec and should be addressed when feasible.
    - `nit`: small, low-risk suggestions such as minor style tweaks or micro refactors that should be addressed if easy to do so.
-11. Once your review is complete, compile your findings into a structured review wrapper as described below.
+11. Once your review is complete, determine whether the review is accepted (true or false) or conditionally accepted (if there are any `should_fix` or `nit` items) and compile your findings into a structured review wrapper as described below.
+
 
 Where appropriate, you may also note positive aspects of the implementation in `notes` (for example, particularly good abstractions or tests).
 
@@ -133,9 +134,9 @@ At the end of each review pass, you MUST return a **review wrapper** that Orches
 - `feature`: the feature name.
 - `accepted`: field indicating whether the implementation can be accepted as-is.
   - Possible values:
-    - `true`: all blocking issues resolved; implementation is acceptable.
+    - `true`: all issues resolved (including `should_fix` and `nit` items); implementation is acceptable.
     - `false`: blocking issues remain; implementation is not acceptable.
-    - `conditional`: all blocking issues resolved, but some `should_fix` items remain that should be addressed in future work. Also some `nit` items may remain that the `Coder` needs to evaluate to see if they can be trivially addressed.
+    - `conditional`: all blocking issues resolved, but some `should_fix` items remain that should be addressed in future work. Additionally some `nit` items may remain that the `Coder` needs to evaluate to see if they can be trivially addressed.
 - `must_fix`: details of all blocking issues. Each entry SHOULD include enough detail for Coder to act (for example, file/area, brief description, and rationale).
 - `should_fix`: details of all non-blocking but important issues.  Note if an issue is blocking then it should be categorized as `must_fix` instead.
 - `nit`: details of all minor suggestions.
