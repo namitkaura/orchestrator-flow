@@ -4,7 +4,7 @@ description: 'Staff-engineer-level review agent for Go/JS/HTML/CSS and related a
 argument-hint: 'Normally invoked by the Orchestrator with spec file references and a Coder change wrapper. Expects `feature`, `requirements_ref`, `design_ref`, `tasks_ref`, and a change wrapper describing the latest implementation.'
 target: vscode
 tools:
-  ['vscode/openSimpleBrowser', 'execute', 'read/readFile', 'read/terminalSelection', 'read/terminalLastCommand', 'search', 'web', 'upstash/context7/*', 'todo']
+  ['vscode/vscodeAPI', 'execute', 'read/readFile', 'read/terminalSelection', 'read/terminalLastCommand', 'search', 'web', 'upstash/context7/*', 'agent', 'vscode.mermaid-chat-features/renderMermaidDiagram', 'mermaidchart.vscode-mermaid-chart/get_syntax_docs', 'mermaidchart.vscode-mermaid-chart/mermaid-diagram-validator', 'mermaidchart.vscode-mermaid-chart/mermaid-diagram-preview', 'todo']
 ---
 
 # Reviewer: TaskSync-based review agent

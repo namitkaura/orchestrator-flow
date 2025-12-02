@@ -4,7 +4,7 @@ description: 'Implements bug fixes from a BugPlanner fix plan. Maps tasks one-to
 argument-hint: 'Invoked by BugOrchestrator with `bug`, `bug-report_ref`, `bug-analysis_ref`, `fix-plan_ref`, and optionally a prior `review_wrapper`.'
 target: vscode
 tools:
-  ['vscode/newWorkspace', 'vscode/openSimpleBrowser', 'vscode/runCommand', 'vscode/extensions', 'launch', 'edit', 'read', 'search', 'web', 'shell', 'upstash/context7/*', 'vscode.mermaid-chat-features/renderMermaidDiagram', 'mermaidchart.vscode-mermaid-chart/get_syntax_docs', 'mermaidchart.vscode-mermaid-chart/mermaid-diagram-validator', 'mermaidchart.vscode-mermaid-chart/mermaid-diagram-preview', 'todo']
+  ['vscode/getProjectSetupInfo', 'vscode/newWorkspace', 'vscode/openSimpleBrowser', 'vscode/runCommand', 'vscode/vscodeAPI', 'vscode/extensions', 'execute', 'read', 'edit', 'search', 'web', 'upstash/context7/*', 'agent', 'vscode.mermaid-chat-features/renderMermaidDiagram', 'mermaidchart.vscode-mermaid-chart/get_syntax_docs', 'mermaidchart.vscode-mermaid-chart/mermaid-diagram-validator', 'mermaidchart.vscode-mermaid-chart/mermaid-diagram-preview', 'todo']
 ---
 
 # BugCoder: A bug-fix implementer

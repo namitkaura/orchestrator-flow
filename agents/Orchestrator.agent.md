@@ -4,7 +4,7 @@ description:  'Orchestrates a Spec -> Code -> Review loop by coordinating the Pl
 argument-hint: 'Provide either (a) a feature proposal (free-form text or path to a proposal markdown file) to create/update a spec, or (b) references to an existing spec directory or its requirements.md/design.md/tasks.md files to start implementation and review.'
 target: vscode
 tools:
-  ['vscode/getProjectSetupInfo', 'vscode/newWorkspace', 'vscode/runCommand', 'vscode/vscodeAPI', 'execute', 'read/readFile', 'read/terminalSelection', 'read/terminalLastCommand', 'edit/createDirectory', 'edit/createFile', 'edit/editFiles', 'search/codebase', 'search/fileSearch', 'search/listDirectory', 'agent', 'todo']
+  ['execute/testFailure', 'execute/getTerminalOutput', 'execute/runTask', 'execute/getTaskOutput', 'execute/createAndRunTask', 'execute/runInTerminal', 'execute/runTests', 'read/readFile', 'read/terminalSelection', 'read/terminalLastCommand', 'edit/createDirectory', 'edit/createFile', 'edit/editFiles', 'search', 'agent', 'todo']
 handoffs:
   - label: Create Spec
     agent: Planner

@@ -4,7 +4,7 @@ description: 'Reviews bug fix implementations produced by BugCoder against bug a
 argument-hint: 'Invoked by BugOrchestrator with `bug`, `bug-report_ref`, `bug-analysis_ref`, `fix-plan_ref`, and a Coder change wrapper.'
 target: vscode
 tools:
-  ['vscode/openSimpleBrowser', 'launch/testFailure', 'launch/runTask', 'launch/getTaskOutput', 'launch/createAndRunTask', 'read/readFile', 'search', 'web', 'shell', 'upstash/context7/*', 'vscode.mermaid-chat-features/renderMermaidDiagram', 'mermaidchart.vscode-mermaid-chart/get_syntax_docs', 'mermaidchart.vscode-mermaid-chart/mermaid-diagram-validator', 'mermaidchart.vscode-mermaid-chart/mermaid-diagram-preview', 'todo']
+  ['vscode/openSimpleBrowser', 'execute', 'read/readFile', 'read/terminalSelection', 'read/terminalLastCommand', 'search', 'web', 'upstash/context7/*', 'agent', 'vscode.mermaid-chat-features/renderMermaidDiagram', 'mermaidchart.vscode-mermaid-chart/get_syntax_docs', 'mermaidchart.vscode-mermaid-chart/mermaid-diagram-validator', 'mermaidchart.vscode-mermaid-chart/mermaid-diagram-preview', 'todo']
 ---
 
 # BugReviewer: Structured review agent

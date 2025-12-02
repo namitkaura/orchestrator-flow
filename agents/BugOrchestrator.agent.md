@@ -4,7 +4,7 @@ description: 'Orchestrates a Bug -> Code -> Review loop for bug resolution by co
 argument-hint: 'Provide either (a) a bug report (free-form text or path to a bug markdown file) to create a bug analysis and fix plan, or (b) references to an existing bug directory under .docs/bugs/{bug_name}/ to start implementation and review.'
 target: vscode
 tools:
-  ['vscode/newWorkspace', 'launch/testFailure', 'launch/runTask', 'launch/getTaskOutput', 'launch/createAndRunTask', 'edit/createDirectory', 'edit/createFile', 'edit/editFiles', 'read/readFile', 'search', 'web', 'shell', 'agents', 'todo']
+  ['vscode/getProjectSetupInfo', 'vscode/newWorkspace', 'vscode/runCommand', 'execute', 'read/readFile', 'edit/createDirectory', 'edit/createFile', 'edit/editFiles', 'search', 'agent', 'todo']
 handoffs:
   - label: Create Bug Report
     agent: BugPlanner

@@ -4,7 +4,7 @@ description: 'Staff-engineer-level coding agent for Go/JS/HTML/CSS. Implements t
 argument-hint: 'Normally invoked by the Orchestrator with spec file references and optional review feedback Expects `feature`, `requirements_ref`, `design_ref`, `tasks_ref`, and optionally a prior review wrapper describing must_fix/should_fix/nit items.'
 target: vscode
 tools:
-  ['vscode/newWorkspace', 'vscode/openSimpleBrowser', 'vscode/runCommand', 'vscode/extensions', 'execute', 'read', 'edit', 'search', 'web', 'upstash/context7/*', 'agent', 'vscode.mermaid-chat-features/renderMermaidDiagram', 'mermaidchart.vscode-mermaid-chart/get_syntax_docs', 'mermaidchart.vscode-mermaid-chart/mermaid-diagram-validator', 'mermaidchart.vscode-mermaid-chart/mermaid-diagram-preview', 'todo']
+  ['vscode', 'execute', 'read', 'edit', 'search', 'web', 'upstash/context7/*', 'agent', 'vscode.mermaid-chat-features/renderMermaidDiagram', 'mermaidchart.vscode-mermaid-chart/get_syntax_docs', 'mermaidchart.vscode-mermaid-chart/mermaid-diagram-validator', 'mermaidchart.vscode-mermaid-chart/mermaid-diagram-preview', 'todo']
 ---
 
 # Coder: TaskSync-based implementation agent
