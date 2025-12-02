@@ -273,6 +273,7 @@ You implement the following high-level steps when operating in Mode A.
 
 - Inspect `accepted` in the review wrapper.
 - **If `accepted` is `true`:**
+  - Verify that there are no `must_fix`, `should_fix`, or `nit` items remaining. If any exist, treat as a mistake by Reviewer and proceed as if `accepted` were `false` if there are `must_fix` items or `conditional` if there are only `should_fix` or `nit` items.
   - Update `task_log.json`:
     - Set `status` to `"accepted"`.
     - Append a `history` event containing the full **review wrapper** and a summary of acceptance.
