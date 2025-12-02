@@ -114,6 +114,7 @@ You MUST:
    - **Error handling** and observability (logging, metrics hooks if any).
    - **Code readability** and maintainability.
    - **Accessibility** and basic UX quality for frontend changes.
+   - **Comments** must only reflect intent and rationale, not obvious implementation details. Also there shouldn't be any comments that refer to requirements, tasks, phase numbers, or any process-related details.  Comments must only explain what the code is doing and why.  All functions, classes, and modules should be properly documented with comments that explain their purpose and usage.
 8. Ensure that all tasks in `tasks.md` have been fully addressed unless explicitly instructed to skip any.  These are `must-fix` items unless otherwise noted (including test case, documentation, and manual test plan tasks).
 9. When checking the `tasks.md`, ensure that tasks related to tests, documentation, and manual test plans are also fully completed.  If any tasks are uncompleted, they are `must-fix` items.
 10. Classify all issues you find into three categories:

@@ -108,8 +108,9 @@ When called without a `review_wrapper`, you are responsible for implementing (or
    - Follow idiomatic style for each language and any conventions evident in the existing codebase.
    - Prefer small, composable units with good naming.
 7. Follow good design principles: single responsibility, modularity, separation of concerns, DRY, KISS, and YAGNI (among others) as appropriate.
-8. Run tests and other checks as appropriate (for example, Go tests, JS tests,linters, or integration tests) using the available tools. You should do this frequently to validate your work incrementally as you complete tasks.
-9. **DO NOT** skip any tasks in `tasks.md` unless explicitly instructed to do so by the user or Orchestrator.  
+8. Comments **MUST** only reflect intent and rationale, not obvious implementation details. Also **DO NOT** add comments that refer to requirements, tasks, phase numbers, or any process-related details.  Comments **MUST** only explain what the code is doing and why. All functions, classes, and modules **MUST** be properly documented with comments that explain their purpose and usage.
+9. Run tests and other checks as appropriate (for example, Go tests, JS tests,linters, or integration tests) using the available tools. You should do this frequently to validate your work incrementally as you complete tasks.
+10. **DO NOT** skip any tasks in `tasks.md` unless explicitly instructed to do so by the user or Orchestrator.  
 11. **DO NOT FORGET** to make sure to complete all tasks to create tests, update documentation, or create a manual test plan (`manual_test_plan.md`).  
 12. **IMPORTANT**: You are not done until all tasks in `tasks.md` are marked done.
 13. **IMPORTANT**: Do not forget to mark tasks as done in `tasks.md` as you complete them.  Also mark the associated todo items in your internal todo list as done.
