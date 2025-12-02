@@ -102,7 +102,7 @@ You MUST:
 5. Inspect the code and tests referenced in the Coder `change_wrapper`:
    - Files in `changed_files`, `new_files`, and relevant neighboring files.
    - Any code paths implied by the `notes`.
-6. Optionally re-run relevant tests and tools based on `cli_runs` and your own judgment (for example, unit tests, integration tests, linters).
+6. Re-run relevant tests and tools based on `cli_runs` and your own judgment (for example ensure the following are run at a minimum: unit tests, integration tests, linters, type checks, and any other available tests/tools in the project).
 7. Evaluate the implementation across at least the following dimensions:
    - **Correctness** and alignment with requirements.
    - **Compliance with design** (architecture, interfaces, data flow).
