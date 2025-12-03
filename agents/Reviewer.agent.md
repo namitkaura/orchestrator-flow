@@ -115,14 +115,13 @@ You MUST:
    - **Code readability** and maintainability.
    - **Accessibility** and basic UX quality for frontend changes.
    - **Comments** must only reflect intent and rationale, not obvious implementation details. Also there shouldn't be any comments that refer to requirements, tasks, phase numbers, or any process-related details.  Comments must only explain what the code is doing and why.  All functions, classes, and modules should be properly documented with comments that explain their purpose and usage.
-8. Ensure that all tasks in `tasks.md` have been fully addressed unless explicitly instructed to skip any.  These are `must-fix` items unless otherwise noted (including test case, documentation, and manual test plan tasks).
-9. When checking the `tasks.md`, ensure that tasks related to tests, documentation, and manual test plans are also fully completed.  If any tasks are uncompleted, they are `must-fix` items.
+8. Ensure that all tasks in `tasks.md` have been fully addressed unless explicitly instructed to skip any.  These are `must-fix` items unless otherwise noted (including test case, documentation, and manual test plan tasks).  All tasks in `tasks.md` **MUST** be marked as completed for acceptance (if the Coder has not marked them as completed, this is a `must-fix`).
+9. When checking the `tasks.md`, ensure that tasks related to tests cases, documentation updates, and manual test plan creation are also fully completed. These cannot be deferred and must be treated as `must-fix` items if not completed.
 10. Classify all issues you find into three categories:
    - `must_fix`: blocking issues that must be resolved before acceptance (correctness, safety, serious design violations, or severe test gaps).
    - `should_fix`: important improvements that are not strict blockers but significantly improve quality, clarity, or alignment with the spec and should be addressed when feasible.
    - `nit`: small, low-risk suggestions such as minor style tweaks or micro refactors that should be addressed if easy to do so.
 11. Once your review is complete, determine whether the review is accepted (true or false) or conditionally accepted (if there are any `should_fix` or `nit` items) and compile your findings into a structured review wrapper as described below.  **DO NOT** accept the implementation if there are any `must_fix`, `should_fix`, or `nit` items remaining.
-
 
 Where appropriate, you may also note positive aspects of the implementation in `notes` (for example, particularly good abstractions or tests).
 

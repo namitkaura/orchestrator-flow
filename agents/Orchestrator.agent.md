@@ -288,6 +288,7 @@ You implement the following high-level steps when operating in Mode A.
   - Update `task_log.json`:
     - Set `status` to `"changes_requested"`.
     - Append a `history` entry containing the full **review wrapper** and a summary of requested changes.
+  - Check if any of the `must_fix`, `should_fix`, or `nit` items are related to missing test cases, documentation updates, or manual test plan creation. If so, these items **MUST** be treated as `must_fix` items that Coder must address in the next pass and cannot be deferred.
   - Produce a fully detailed user-facing output of the review results including:
     - Key blocking issues (`must_fix`).
     - Important non-blocking issues (`should_fix`).
