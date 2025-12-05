@@ -161,11 +161,11 @@ You implement the following high-level steps when operating in Mode A.
 
 ### Step 1 - Call Planner
 
-- Use `runSubagent` to invoke `Planner.agent.md`.
+- Use `runSubagent` to invoke `Planner` agent.
 - Provide the user proposal text and/or proposal file path as context.
 - In your subagent prompt, instruct Planner to:
   - Explicitly treat this as **Orchestrator Mode**, for example by including a line such as: 
-  ```You are being invoked by the Orchestrator agent via runSubagent to run your spec workflow defined in `Planner.agent.md` and then return feature_name, requirements_ref, design_ref, and tasks_ref.```
+  ```You are being invoked by the Orchestrator agent via runSubagent to run your spec workflow defined in `Planner.agent.md` (which you must first read) and then return feature_name, requirements_ref, design_ref, and tasks_ref.```
   - Run its existing spec-creation workflow end-to-end: requirements, design, tasks.
   - When it is fully done (after requirements, design, and tasks are approved according to its own rules), return a **final summary** that includes at least:
     - `feature_name`
@@ -174,6 +174,7 @@ You implement the following high-level steps when operating in Mode A.
     - `tasks_ref`
 - Do **not** attempt to override or short-circuit any of Planner's internal approval steps or Python universal TaskSync terminal commands.
 - **NEVER** create, modify, or interpret any spec files yourself.
+
 
 ### Step 2 - Capture spec references (metadata only)
 
@@ -184,6 +185,7 @@ You implement the following high-level steps when operating in Mode A.
   - `tasks_ref`
 - Store these as simple string references. You **MUST NOT** open the files or analyze their contents.
 - However validate that the files exist at the specified paths. If any are missing, use a universal TaskSync Python universal TaskSync terminal command, e.g. `python -c "task = input('')"`, in the terminal to ask the user for guidance on how to proceed.
+
 
 ### Step 3 - Create or update `task_log.json`
 
@@ -203,6 +205,7 @@ You implement the following high-level steps when operating in Mode A.
   - Preserve any fields that are not directly relevant to orchestration.
 - Once the `task_log.json` is created or updated, give a brief summary to the user in the chat of the completed specfile references but do not read or interpret their contents.
 
+
 ### Step 4 - First Coder call
 
 - Use `runSubagent` to call the `Coder` agent.
@@ -210,73 +213,91 @@ You implement the following high-level steps when operating in Mode A.
   - `feature`: the feature name.
   - `requirements_ref`, `design_ref`, `tasks_ref`.
   - Clear instructions that the Coder MUST:
-    - Read and understand all three spec files.
-    - Use `requirements.md` to understand what must be achieved.
-    - Use `design.md` to understand how the system should be structured.
-    - Use `tasks.md` as the actionable breakdown of work, implementing all tasks end-to-end (unless blocked) using TDD and best practices for Go/JS/HTML/CSS.
+    - Completely follow the workflow and approval steps defined in `Coder.agent.md` (which it must first read).
+    - Read and understand all three spec files:
+      - `requirements.md` to understand what must be achieved.
+      - `design.md` to understand how the system should be structured.
+      - `tasks.md` as the actionable breakdown of work, 
+    - MUST implement all tasks end-to-end (unless blocked), mapping them to todos and marking them as complete as each task is completed
+    - Use TDD and best practices for Go/JS/HTML/CSS
     - Run tests appropriately and keep track of CLI/test commands executed.
-    - Return a **change wrapper** describing at least:
-      - `feature`
-      - `requirements_ref`, `design_ref`, `tasks_ref`
-      - `changed_files`, `new_files`, `deleted_files`
+    - Return a **change wrapper** with the following fields:
+      - `feature` (string name of the feature / directory)
+      - `requirements_ref` (string relative path to `requirements.md`)
+      - `design_ref` (string relative path to `design.md`)
+      - `tasks_ref` (string relative path to `tasks.md`)
+      - `changed_files` (array of relative file paths changed)
+      - `new_files` (array of relative file paths newly created)
+      - `deleted_files` (array of relative file paths deleted)
       - `cli_runs` (list of commands executed)
-      - `tests_passed` (boolean or structured detail)
-      - `notes` (details of what was implemented, remaining work, blockers).
-    - Instruct `Coder` to completely follow its own internal workflow and approval steps defined in `Coder.agent.md`.
+      - `test_results` (object mapping all tests that were run to pass/fail and details)
+      - `implementation_details` (string details of what was implemented)
+      - `notes` (string with any additional details such as remaining work, blockers, etc.). 
 
-### Step 5 - Update task log after coding
 
-- Examine the Coder change wrapper.
+### Step 5 - Update `task_log.json` after coding complete and Coder returns
+
+- Examine the Coder **change wrapper**.
 - Update `task_log.json`:
   - If tests passed and there are no known blockers, set `status` to `"coding_complete"`.
   - If tests failed or there are blocking issues, set `status` to `"blocked"`.
   -Then in either case, append a `history` entry containing:
     - The full Coder **change wrapper**
-    - Summary of the details returned by the Coder
+    - The details returned by the `Coder`
   - Also present a fully detailed output to the user in the chat including:
-    - Main changed files.
+    - Changed/added/deleted files.
     - Tests run and results.
     - Behavior implemented.
     - Any blockers or open questions.
     - Detailed notes from Coder.
 
+
 ### Step 6 - Reviewer call
 
 - Use `runSubagent` to call the `Reviewer` agent.
-- In your subagent prompt, include at least:
+- In your subagent prompt, include:
+  - Instructions for the Reviewer to completely follow its own internal workflow and approval steps defined in `Reviewer.agent.md` (which it must first read).
   - `feature`.
   - `requirements_ref`, `design_ref`, `tasks_ref`.
-  - The **full** Coder change wrapper.
+  - The **full** Coder **change wrapper**.
   - Instructions for Reviewer to:
     - Review the implementation against the requirements, design, and tasks.
-    - Optionally rerun tests.
+      - Identify any issues, gaps, or deviations.
+    - Categorize issues into the following buckets: 
+      - `must_fix` (blocking issues that must be fixed before acceptance, including imcomplete tasks, missing test cases, or missing documentation updates)
+      - `should_fix` (non-blocking but important issues)
+      - `nit` (minor suggestions)
+    - Use best practices for code review, testing, and quality assurance.
+    - Rerun any tests.
     - Return a **review wrapper** containing:
       - `feature`: the feature name.
       - `accepted`: field indicating whether the implementation can be accepted as-is.
         - Possible values:
-          - `true`: all blocking issues resolved; implementation is acceptable.
-          - `false`: blocking issues remain; implementation is not acceptable.
-          - `conditional`: all blocking issues resolved, but some `should_fix` items remain that should be addressed in future work. Also some `nit` items may remain that the `Coder` needs to evaluate to see if they can be trivially addressed.
-      - `must_fix`: details of all blocking issues. Each entry SHOULD include enough detail for Coder to act (for example, file/area, brief description, and rationale).
-      - `should_fix`: details of all non-blocking but important issues.  Note if an issue is blocking then it should be categorized as `must_fix` instead.
-      - `nit`: details of all minor suggestions.
-      - `tests_passed`: your assessment of test status (for example, whether you reran tests and what passed/failed).
-      - `notes`: narrative detailing:
+          - `true`: all issues resolved; implementation is acceptable.
+          - `false`: `must_fix` items remain; implementation is not acceptable.
+          - `conditional`: all blocking issues resolved, but `should_fix` items remain that should be addressed if possible. Also some `nit` items may remain that the `Coder` needs to evaluate to see if they can be trivially addressed.
+      - `Issue details` object with three buckets:
+        - `must_fix`: list of details of all blocking issues. 
+        - `should_fix`: list of details of all non-blocking but important issues.  Note if an issue is blocking then it should be categorized as `must_fix` instead.
+        - `nit`: list of details of all minor suggestions.
+        - Each entry in the buckets SHOULD include enough detail for Coder to act (for example, file/area, brief description, and rationale).
+      - `test_results`: your assessment of test status
+      - `notes`:
         - Detailed assessment of the implementation.
         - Risk areas or tradeoffs worth calling out.
         - Pointers to particularly important `must_fix`/`should_fix` items.
-    - Instruct `Reviewer` to completely follow its own internal workflow and approval steps defined in `Reviewer.agent.md`.
   - Note on subsequent review iterations:
     - If Reviewer is called again with revised implementations, you must also send the previous review wrapper including at least the `must_fix`, `should_fix`, and `nit` lists so Reviewer can check if they have been addressed and identify any new issues.
 
-### Step 7 - Handle review result and (if needed) re-call Coder
 
-- Inspect `accepted` in the review wrapper.
-- **If `accepted` is `true`:**
-  - Verify that there are no `must_fix`, `should_fix`, or `nit` items remaining. If any exist, treat as a mistake by Reviewer and proceed as if `accepted` were `false` if there are `must_fix` items or `conditional` if there are only `should_fix` or `nit` items.
+### Step 7 - Handle Reviewer result and (if needed) re-call Coder
+
+- Inspect the `accepted`field in the **review wrapper**.
+- Conditionally If the `accepted` field is `true`:
+  - Verify that there are no `must_fix`, `should_fix`, or `nit` items remaining. If any exist, treat as a mistake by Reviewer and proceed as if `accepted` were `false` if there are `must_fix` items otherwise consider `accepted` to be `conditional` if there are are `should_fix` or `nit` items.
   - Update `task_log.json`:
     - Set `status` to `"accepted"`.
-    - Append a `history` event containing the full **review wrapper** and a summary of acceptance.
+    - Append a `history` event containing the full **review wrapper** and a details returned by the Reviewer.
   - Produce a detailed user-facing output including:
     - Feature name.
     - Spec references.
@@ -284,11 +305,11 @@ You implement the following high-level steps when operating in Mode A.
     - Full Reviewer details from the **review wrapper**.
     - A reminder that **the user must commit and open any PRs manually**.
   - Immediately return to TaskSync's "request next task" state by executing the universal Python tasksync command in the terminal.
-- **If `accepted` is `false` or `conditional`:**
+- Otherwise If the `accepted` field is `false` or `conditional`:
   - Update `task_log.json`:
     - Set `status` to `"changes_requested"`.
     - Append a `history` entry containing the full **review wrapper** and a summary of requested changes.
-  - Check if any of the `must_fix`, `should_fix`, or `nit` items are related to missing test cases, documentation updates, or manual test plan creation. If so, these items **MUST** be treated as `must_fix` items that Coder must address in the next pass and cannot be deferred.
+  - Check if any of the `must_fix`, `should_fix`, or `nit` items are related to missing test cases, documentation updates, or manual test plan creation. If so, these items **MUST** be treated as `must_fix` items that Coder must address in the next pass and these cannot be deferred.
   - Produce a fully detailed user-facing output of the review results including:
     - Key blocking issues (`must_fix`).
     - Important non-blocking issues (`should_fix`).
@@ -296,25 +317,29 @@ You implement the following high-level steps when operating in Mode A.
     - Any test results.
     - Full Reviewer notes and details in the **review wrapper**.
     - Inform the user that you will now re-invoke Coder to address the issues.
-  - Use `runSubagent` to call `Coder` again, passing:
-    - The same spec refs.
-    - The full review wrapper (including the full the `must_fix`, `should_fix`, and `nit` details).
-  - In your subagent prompt to Coder, instruct it to:
-    - Fix **all** `must_fix` items.
-    - Fix `should_fix` items where the scope is reasonable and aligned with the existing spec and design.
-    - For `nit` items:
-      - Fix trivial, low-risk nits.
-      - For nits that would significantly expand scope or introduce risk, leave them unfixed but document the reasons in the `notes` field of the next change wrapper.
-    - Instruct Coder to completely follow its own internal workflow and approval steps defined in `Coder.agent.md`.
+  - Use `runSubagent` to call `Coder` again, passing in the subagent prompt:
+    - Instructions for the Coder to completely follow its own internal workflow and approval steps defined in `Coder.agent.md` (which it must first read).
+    - The spec refs (`requirements_ref`, `design_ref`, `tasks_ref`)
+    - The full **review wrapper** (including the full the `must_fix`, `should_fix`, and `nit` details).
+    - Clear instructions that Coder MUST:
+      - Fix **all** `must_fix` items.
+      - Fix `should_fix` items where the scope is reasonable and aligned with the existing spec and design.  
+        - If a `should_fix` item would significantly expand scope or introduce risk, Coder may leave it unfixed but MUST document the reasons in the `notes` field of the next change wrapper.
+      - For `nit` items:
+        - Fix trivial, low-risk nits.
+        - For nits that would significantly expand scope or introduce risk, leave them unfixed but document the reasons in the `notes` field of the next change wrapper.
+    
 
 ### Step 8 - Update task log after the updated Coder wrapper
 
 - After Coder's follow-up run, update `task_log.json` again:
   - Adjust `status` to `"coding_complete"` or `"blocked"` depending on test results and blockers.
-  - Store the updated Coder wrapper details.
-  - Append a new `history` event summarizing the second-pass changes and outcomes.
-  - If all issue were deferred with justifications, note this clearly in the `task_log.json`, but consider the status as `"coding_complete"` if tests passed.
-  - Provide a detailed user-facing output of what was changed, tests run, and results, etc. similar to Step 5.
+  - Append a new `history` event detailing the second-pass changes and outcomes returned by Coder.  Also include the full Coder **change wrapper** from this follow-up run.
+  - Conditional If all issue were deferred with justifications, note this clearly in the `task_log.json`, but consider the status as `"coding_complete"` if tests passed.
+    - Provide a detailed user-facing output of what was changed, tests run, and results, etc. similar to Step 5.
+    - A reminder that **the user must commit and open any PRs manually**.
+    - Immediately return to TaskSync's "request next task" state by executing the universal Python tasksync command in the terminal.
+  - Otherwise, proceed to Step 9.
 
 ### Step 9 - Repeat until accepted or stuck
 
