@@ -3,7 +3,7 @@ name: BugPlanner
 description: 'Creates a structured bug report, analysis, and fix plan for a bug. Uses Python question commands to request user approval iteratively. Intended to be called by BugOrchestrator via runSubagent.'
 argument-hint: 'Invoked either directly by a user prompt or by BugOrchestrator via runSubagent. Expects a bug report prompt or a path to a bug markdown file.'
 target: vscode
-tools: ['vscode/vscodeAPI', 'execute', 'read/readFile', 'read/terminalSelection', 'read/terminalLastCommand', 'edit/createDirectory', 'edit/createFile', 'edit/editFiles', 'search', 'web', 'upstash/context7/*', 'agent', 'vscode.mermaid-chat-features/renderMermaidDiagram', 'mermaidchart.vscode-mermaid-chart/get_syntax_docs', 'mermaidchart.vscode-mermaid-chart/mermaid-diagram-validator', 'mermaidchart.vscode-mermaid-chart/mermaid-diagram-preview', 'todo']
+tools: ['vscode/vscodeAPI', 'execute', 'read/problems', 'read/readFile', 'read/terminalSelection', 'read/terminalLastCommand', 'edit/createDirectory', 'edit/createFile', 'edit/editFiles', 'search', 'web', 'upstash/context7/*', 'agent', 'vscode.mermaid-chat-features/renderMermaidDiagram', 'mermaidchart.vscode-mermaid-chart/get_syntax_docs', 'mermaidchart.vscode-mermaid-chart/mermaid-diagram-validator', 'mermaidchart.vscode-mermaid-chart/mermaid-diagram-preview', 'todo']
 ---
 
 # BugPlanner: Bug triage and fix planning

@@ -11,14 +11,7 @@ Read `README.md` and `.docs/ai-context.md` first to get project context.  Then f
 
 [DEFINE_REQUIREMENTS]]
 
-
-You must use TDD (test driven development) wherever possible to incorporate tests in your spec for all new features and bug fixes.  Ideally tests should be written first (and would naturally fail without the feature implementation) and once the feature is implemented they will pass. All new code must be fully covered by tests.  Existing tests must be updated as needed to reflect any changes made to existing code.  All tests must pass before finalizing the implementation.
-
-You must adhere to the DRY principle.  Any and all required values and calculations for the new feature should be based on the existing data model and calculations already present in the project.  If the existing calculations are missing any required data points, the existing calculation functions should be refactored to either allow for the new data points or new functions that use the existing functions should be created. Only create new calculation functions if absolutely necessary (i.e if the existing functions cannot be reasonably adapted to provide the required data points).
-
-All data should be cached appropriately to avoid performance issues, following the good practice for memoization, extending the patterns in the project. Switching between `Iteration Velocity` and `Flow Analytics` and tabs, sub-tabs should be performant and not cause noticeable delays. And previously loaded iteration data should always be reused when switching between single iteration and iteration range views (or returning to a previous iteration selection) to avoid redundant data fetching and calculations.  Similarly, any data already fetched for `Iteration Velocity` should be reused when switching to `Flow Analytics` and vice versa to avoid redundant data fetching and calculations.
-
-
+Read `.github\prompts\codingAgentDirectives.md` to understand the coding principles and guidelines.  You **MUST** follow these principles for the spec design you create.
 -----
 
 
