@@ -3,6 +3,7 @@ name: BugPlanner
 description: 'Creates a structured bug report, analysis, and fix plan for a bug. Uses Python question commands to request user approval iteratively. Intended to be called by BugOrchestrator via runSubagent.'
 argument-hint: 'Invoked either directly by a user prompt or by BugOrchestrator via runSubagent. Expects a bug report prompt or a path to a bug markdown file.'
 target: vscode
+model: Claude Opus 4.5 (Preview) (copilot)
 tools: ['vscode/vscodeAPI', 'execute', 'read/problems', 'read/readFile', 'read/terminalSelection', 'read/terminalLastCommand', 'edit/createDirectory', 'edit/createFile', 'edit/editFiles', 'search', 'web', 'upstash/context7/*', 'agent', 'vscode.mermaid-chat-features/renderMermaidDiagram', 'mermaidchart.vscode-mermaid-chart/get_syntax_docs', 'mermaidchart.vscode-mermaid-chart/mermaid-diagram-validator', 'mermaidchart.vscode-mermaid-chart/mermaid-diagram-preview', 'todo']
 ---
 
@@ -45,7 +46,7 @@ After composing an initial `bug-report.md`, ask for approval using:
 
 `python -c "question = input('Does the bug report look good? If so, we can proceed to analysis. ')"`
 
-If the user requests changes, make edits and re-seek approval until approved.
+If the user requests changes, make edits and re-seek approval until approved (such as a response of "y", "yes", "approved", "looks good", etc.)
 
 ## `bug-analysis.md` (research + proposed solution)
 
@@ -60,7 +61,7 @@ After drafting `bug-analysis.md`, seek approval using:
 
 `python -c "question = input('Does the analysis look good? If so, we can proceed to the fix plan. ')"`
 
-Iterate until approved.
+Iterate until approved. (such as a response of "y", "yes", "approved", "looks good", etc.)
 
 ## `fix-plan.md` (implementation tasks)
 
@@ -73,7 +74,7 @@ Each task must reference requirements or analysis points it addresses. After dra
 
 `python -c "question = input('Does the fix plan look good? If so, approve to finish. ')"`
 
-Iterate until approved.
+Iterate until approved. (such as a response of "y", "yes", "approved", "looks good", etc.)
 
 ## Orchestrator Mode and final output
 
