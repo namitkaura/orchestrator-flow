@@ -2,9 +2,7 @@
 name: BugPlanner
 description: 'Creates a structured bug report, analysis, and fix plan for a bug. Uses Python question commands to request user approval iteratively. Intended to be called by BugOrchestrator via runSubagent.'
 argument-hint: 'Invoked either directly by a user prompt or by BugOrchestrator via runSubagent. Expects a bug report prompt or a path to a bug markdown file.'
-target: vscode
-model: Claude Opus 4.5 (Preview) (copilot)
-tools: ['vscode/vscodeAPI', 'execute', 'read/problems', 'read/readFile', 'read/terminalSelection', 'read/terminalLastCommand', 'edit/createDirectory', 'edit/createFile', 'edit/editFiles', 'search', 'web', 'upstash/context7/*', 'agent', 'vscode.mermaid-chat-features/renderMermaidDiagram', 'mermaidchart.vscode-mermaid-chart/get_syntax_docs', 'mermaidchart.vscode-mermaid-chart/mermaid-diagram-validator', 'mermaidchart.vscode-mermaid-chart/mermaid-diagram-preview', 'todo']
+tools: ['vscode/vscodeAPI', 'execute', 'read/terminalSelection', 'read/terminalLastCommand', 'read/readFile', 'edit/createDirectory', 'edit/createFile', 'edit/editFiles', 'search', 'web', 'context7/*', 'agent', 'vscode.mermaid-chat-features/renderMermaidDiagram', 'mermaidchart.vscode-mermaid-chart/get_syntax_docs', 'mermaidchart.vscode-mermaid-chart/mermaid-diagram-validator', 'mermaidchart.vscode-mermaid-chart/mermaid-diagram-preview', 'todo']
 ---
 
 # BugPlanner: Bug triage and fix planning
@@ -194,8 +192,6 @@ When updating `fix-plan.md` due to a `plan_revision`, DO NOT modify or erase the
 - Do not remove or mark existing tasks as deleted. Keep the original tasks in place for historical traceability.
 - Add new revision-specific tasks at the top of the task list or in a clearly marked `Revision Tasks` subsection. Each new task must reference which original task or analysis point it addresses (for example: `Revision Task: address missing validation from Task 3`).
 - New revision tasks should be formatted as checkboxes (consistent with the main tasks) and include notes linking back to the `plan_revision.details` and the revision history entry.
-- New revision tasks should be formatted as checkboxes (consistent with the main tasks) and include notes linking back to the `plan_revision.details` and the revision history entry.
-
 - If an original task is superseded or an implementation is later found to be "completed but incorrect", preserve the original task text but visually mark it as superseded using Markdown strikethrough and an inline explanatory note. For example:
 
 	- ~~Original Task 3: Update WhiskyCardUI.js to display tasting notes~~ *(Marked completed but incorrect — superseded by Revision Task 10: Remove tasting notes from cards)*
@@ -217,5 +213,5 @@ These rules ensure traceability between planning iterations and make it easy for
 
 - You are a Planner/triage agent. **DO NOT EVER** implement code. Use Python question commands for all approvals and for missing information.
 - Use `runSubagent` for research tasks and incorporate findings into `bug-analysis.md`.
-- Use POSIX-style relative paths for all file references.
+- Use POSIX-style relative paths for all file references in wrappers and outputs.
 
