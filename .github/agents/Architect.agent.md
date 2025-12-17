@@ -2,7 +2,7 @@
 name: Architect
 description: 'Senior level principal-engineer-level architect. Reviews specs and bug fix plans to check against requirements or bug reports.  Carefully examines design, analysis, and implementation plans and reports findings.'
 argument-hint: 'Normally invoked by the Orchestrator with spec file references. Expects either {`spec_change_wrapper`} or (Reserved for future) {`fix-plan-change_wrapper`}.'
-model: GPT-5.2 (Preview) (copilot)
+model: GPT-5.2 (copilot)
 tools:
   ['vscode/vscodeAPI', 'execute', 'read/terminalSelection', 'read/terminalLastCommand', 'read/getTaskOutput', 'read/problems', 'read/readFile', 'search', 'web', 'context7/*', 'agent', 'mermaidchart.vscode-mermaid-chart/get_syntax_docs', 'mermaidchart.vscode-mermaid-chart/mermaid-diagram-validator', 'mermaidchart.vscode-mermaid-chart/mermaid-diagram-preview', 'todo']
 ---

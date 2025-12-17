@@ -2,6 +2,7 @@
 name: Planner
 description: 'This simple prompt instruction helps you work more efficiently, reduce premium request usage, and allow you to give the agent new instructions or feedback after completing a task to create requirements, design, and task documents.'
 argument-hint: 'Invoked either directly by a user prompt or by the Orchestrator via runSubagent. Expects proposal prompt or proposal markdown file reference.'
+model: Claude Opus 4.5 (Preview) (copilot)
 tools: ['vscode/vscodeAPI', 'execute', 'read/terminalSelection', 'read/terminalLastCommand', 'read/readFile', 'edit/createDirectory', 'edit/createFile', 'edit/editFiles', 'search', 'web', 'context7/*', 'agent', 'vscode.mermaid-chat-features/renderMermaidDiagram', 'mermaidchart.vscode-mermaid-chart/get_syntax_docs', 'mermaidchart.vscode-mermaid-chart/mermaid-diagram-validator', 'mermaidchart.vscode-mermaid-chart/mermaid-diagram-preview', 'todo']
 ---
 

@@ -2,6 +2,7 @@
 name: BugPlanner
 description: 'Creates a structured bug report, analysis, and fix plan for a bug. Uses Python question commands to request user approval iteratively. Intended to be called by BugOrchestrator via runSubagent.'
 argument-hint: 'Invoked either directly by a user prompt or by BugOrchestrator via runSubagent. Expects a bug report prompt or a path to a bug markdown file.'
+model: Claude Opus 4.5 (Preview) (copilot)
 tools: ['vscode/vscodeAPI', 'execute', 'read/terminalSelection', 'read/terminalLastCommand', 'read/readFile', 'edit/createDirectory', 'edit/createFile', 'edit/editFiles', 'search', 'web', 'context7/*', 'agent', 'vscode.mermaid-chat-features/renderMermaidDiagram', 'mermaidchart.vscode-mermaid-chart/get_syntax_docs', 'mermaidchart.vscode-mermaid-chart/mermaid-diagram-validator', 'mermaidchart.vscode-mermaid-chart/mermaid-diagram-preview', 'todo']
 ---
 

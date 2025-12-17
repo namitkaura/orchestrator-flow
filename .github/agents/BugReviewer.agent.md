@@ -2,7 +2,7 @@
 name: BugReviewer
 description: 'Reviews bug fix implementations produced by BugCoder against bug artifacts and returns structured review feedback (must_fix/should_fix/nit). Never creates commits, branches or PRs.'
 argument-hint: 'Invoked by BugOrchestrator with `bug`, `bug-report_ref`, `bug-analysis_ref`, `fix-plan_ref`, and a Coder change wrapper.'
-model: GPT-5.2 (Preview) (copilot)
+model: GPT-5.2 (copilot)
 tools:
   ['vscode/vscodeAPI', 'execute', 'read/terminalSelection', 'read/terminalLastCommand', 'read/readFile', 'search', 'web', 'context7/*', 'agent', 'vscode.mermaid-chat-features/renderMermaidDiagram', 'mermaidchart.vscode-mermaid-chart/get_syntax_docs', 'mermaidchart.vscode-mermaid-chart/mermaid-diagram-validator', 'mermaidchart.vscode-mermaid-chart/mermaid-diagram-preview', 'todo']
 ---
