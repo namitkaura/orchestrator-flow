@@ -2,7 +2,7 @@
 name: BugCoder
 description: 'Implements bug fixes from a BugPlanner fix plan. Maps tasks one-to-one to todos, implements code and tests, and returns a structured change wrapper. Never creates commits, branches, or PRs.'
 argument-hint: 'Invoked by BugOrchestrator with `bug`, `bug-report_ref`, `bug-analysis_ref`, `fix-plan_ref`, and optionally a prior `review_wrapper`.'
-model: Claude Opus 4.5 (Preview) (copilot)
+model: Claude Opus 4.5 (copilot)
 tools:
   ['vscode', 'execute', 'read', 'edit', 'search', 'web', 'context7/*', 'agent', 'vscode.mermaid-chat-features/renderMermaidDiagram', 'mermaidchart.vscode-mermaid-chart/get_syntax_docs', 'mermaidchart.vscode-mermaid-chart/mermaid-diagram-validator', 'mermaidchart.vscode-mermaid-chart/mermaid-diagram-preview', 'todo']
 ---

@@ -2,7 +2,7 @@
 name: Coder
 description: 'Staff-engineer-level coding agent for Go/JS/HTML/CSS. Implements tasks from tasks.md based on requirements/design/tasks, and handles review feedback. Never creates commits, branches, or PRs; only edits workspace files and runs tests/tools.'
 argument-hint: 'Normally invoked by the Orchestrator with spec file references and optional review feedback Expects `feature`, `requirements_ref`, `design_ref`, `tasks_ref`, and optionally a prior review wrapper describing must_fix/should_fix/nit items.'
-model: Claude Opus 4.5 (Preview) (copilot)
+model: Claude Opus 4.5 (copilot)
 tools:
   ['vscode', 'execute', 'read', 'edit', 'search', 'web', 'context7/*', 'agent', 'vscode.mermaid-chat-features/renderMermaidDiagram', 'mermaidchart.vscode-mermaid-chart/get_syntax_docs', 'mermaidchart.vscode-mermaid-chart/mermaid-diagram-validator', 'mermaidchart.vscode-mermaid-chart/mermaid-diagram-preview', 'todo']
 ---

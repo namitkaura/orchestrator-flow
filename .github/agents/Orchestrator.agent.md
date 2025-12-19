@@ -125,6 +125,7 @@ Your mission is to coordinate a Spec -> Architecture Review -> Coding -> Code Re
 - This is the metadata file that tracks the feature name, spec file references, current status, and a complete history of all significant events and serves as an audit trail.  
 - It must be kept up to date at all times and history entries must **never be deleted or modified** to ensure a complete and unaltered audit trail.
 - The file should follow the schema in the following section
+- You **MUST** get the accurate time for timestamps from the system clock in UTC format **DO NOT** make up timestamps.
 
 #### `task_log.json` schema
 
