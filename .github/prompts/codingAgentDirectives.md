@@ -26,6 +26,8 @@ This document defines universal coding principles that apply across all language
 - **Performance & Scalability**: write algorithms mindful of complexity, optimize resources, use caching/lazy loading appropriately.  
 - **Maintainability**: consistent naming conventions, documentation, meaningful version control practices.  
 - **Extensibility**: design for growth via modular architecture and configuration over hardcoding.  
+- **Commenting**: comments must only reflect intent and rationale, not obvious implementation details. Also there shouldn't be any comments that refer to requirements, tasks, phase numbers, or any process-related details.  Comments must only explain what the code is doing and why.  All functions, classes, and modules should be properly documented with comments that explain their purpose and usage.
+- **Tests and naming**: Test functions and classes must have names that clearly indicate what they are testing. Use descriptive names that reflect the behavior being verified. Do not reference requirements, tasks, or phase numbers, etc. in test names.
 
 ---
 

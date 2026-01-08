@@ -23,7 +23,9 @@ Rules:
 
 You are also **FORBIDDEN** from changing `task_log.json` for any reason.  Orchestrator is the sole owner of that file and the only agent allowed to modify it.
 
-**UNIVERSAL PYTHON COMMAND USAGE:** Whenever you need to ask the user a question or get their approval, you MUST use the universal Python command format: `python -c "question = input('Your question here')"`. 
+**UNIVERSAL PYTHON COMMAND USAGE:** Whenever you need to ask the user a question or get their approval, you MUST use the universal Python command format: `python -c "question = input('Your question here')"`. NOTE if you are invoked in Orchestrator Mode due to a revision request from the Architect agent, automatic approval is assumed after making the requested changes and you do NOT need to ask for explicit user approval using the universal Python command.  In that case only use the universal Python command if you get stuck or need clarification on something specific from the user.
+
+**ALWAYS** use the edit tools to create or modify files and **AVOID** using terminal commands to create or edit files unless absolutely necessary.
 
 ## Workflow Summary
 
@@ -41,7 +43,7 @@ All artifacts should be created under the path: `.docs/specs/{feature}/` where `
 3. Task List (see section below for details)
   - Create or iterate on an implementation plan with a checklist of coding tasks based on the approved design
   - If manual tests are required (and automated tests are not sufficient or feasible), you MUST include a final task to create `manual-test-plan.md` in the spec folder (DO NOT CREATE IT YOURSELF, just include it as a task)
-  - Ask for explicit user approval before considering the workflow complete using universal Python command
+  - Ask for explicit user approval before considering the workflow complete using universal Python command except if this is a revision due to a revision request from the Architect agent.  In this case automatic approval is assumed after making the requested changes.
   - If the user requests changes, make modifications and ask for approval again
 4. Workflow Completion
   - In *Standalone Mode*: inform the user that the spec creation workflow is complete and ask if you can help with anything else using universal Python command `python -c "question = input('Spec is complete. Can I help you with anything else? ')"`.  If the user then uses explicit termination language, you must provide a detailed summary of the created spec and what was done before ending the conversation.
@@ -100,7 +102,9 @@ This agent can be used in two modes:
       - `design_ref` (relative path to `design.md`)
       - `tasks_ref` (relative path to `tasks.md`)
       - `notes`: A brief note summarizing the completion of the spec creation workflow including potentially any resolution of previous spec review comments if applicable.
-      - `user_request`: The original feature proposal (or relative path to proposal file) or any user requested changes that need to be addressed. 
+      - `user_request`: Contains two fields:
+        - `original_request`: The original feature proposal (or relative path to proposal file) or any user requested changes that need to be addressed.
+        - `additional_context`: Any additional context or clarifications provided by the user during the spec creation/revision process or any additional requested changes. 
     - Return execution back to the Orchestrator and return this `spec_change_wrapper` as the response instead of asking whether you can help with anything else. This wrapper is used by the Orchestrator agent to continue the Spec -> Code -> Review flow.
 
 
@@ -155,13 +159,13 @@ This section should have EARS requirements
 ```
 
 - The model SHOULD consider edge cases, user experience, technical constraints, and success criteria in the initial requirements
-- After updating the requirement document, the model MUST ask the user "Do the requirements look good? If so, we can move on to the design." using the universal Python command `python -c "question = input('Do the requirements look good? If so, we can move on to the design. ')"`
+- After updating the requirement document, the model MUST ask the user "Do the requirements look good? If so, we can move on to the design." using the universal Python command `python -c "question = input('Do the requirements look good? If so, we can move on to the design. ')"` except if this is a revision due to a revision request from the Architect agent.  In this case automatic approval is assumed after making the requested changes.
 - The model MUST make modifications to the requirements document if the user requests changes or does not explicitly approve
 - The model MUST ask for explicit approval after every iteration of edits to the requirements document using the universal Python command.
 - The model MUST NOT proceed to the design document until receiving clear approval (such as "y", "yes", "approved", "looks good", etc.)
 - The model MUST continue the feedback-revision cycle until explicit approval is received
 - The model SHOULD suggest specific areas where the requirements might need clarification or expansion
-- The model MAY ask targeted questions about specific aspects of the requirements that need clarification using the universal Python command `python -c "question = input('Your question here')"`
+- The model MAY ask targeted questions about specific aspects of the requirements that need clarification using the universal Python command `python -c "question = input('Your question here')"` except if this is a revision due to a revision request from the Architect agent.  In this case automatic approval is assumed after making the requested changes.
 - The model MAY suggest options when the user is unsure about a particular aspect
 - The model MUST proceed to the design phase after the user accepts the requirements
 - Until the user explicitly approves the requirements document, the model MUST NOT proceed to the design phase
@@ -195,13 +199,14 @@ If the design document already exists (for example, if this is a spec revision),
 - Error Handling
 - Testing Strategy
 
-- The model SHOULD include diagrams or visual representations when appropriate (use Mermaid charts for diagrams if at all possible over ASCII art diagrams)
+- The model SHOULD include diagrams or visual representations when appropriate.
+  - Highly prefer the use of Mermaid charts for diagrams if at all possible over ASCII art diagrams or text descriptions with arrows
 - The model MUST ensure the design addresses all feature requirements identified during the clarification process
 - The model SHOULD highlight design decisions and their rationales
 - The model MAY ask the user for input on specific technical decisions during the design process using the universal Python command `python -c "question = input('Your question here')"`
-- After updating the design document, the model MUST ask the user "Does the design look good? If so, we can move on to the implementation plan." using the universal Python command `python -c "question = input('Does the design look good? If so, we can move on to the implementation plan. ')"`
+- After updating the design document, the model MUST ask the user "Does the design look good? If so, we can move on to the implementation plan." using the universal Python command `python -c "question = input('Does the design look good? If so, we can move on to the implementation plan. ')"` except if this is a revision due to a revision request from the Architect agent.  In this case automatic approval is assumed after making the requested changes.
 - The model MUST make modifications to the design document if the user requests changes or does not explicitly approve
-- The model MUST ask for explicit approval after every iteration of edits to the design document using the universal Python command `python -c "question = input('Does the design look good? If so, we can move on to the implementation plan. ')"`
+- The model MUST ask for explicit approval after every iteration of edits to the design document using the universal Python command `python -c "question = input('Does the design look good? If so, we can move on to the implementation plan. ')"` except if this is a revision due to a revision request from the Architect agent.  In this case automatic approval is assumed after making the requested changes.
 - The model MUST NOT proceed to the implementation plan until receiving clear approval (such as "y", "yes", "approved", "looks good", etc.)
 - The model MUST continue the feedback-revision cycle until explicit approval is received
 - The model MUST incorporate all user feedback into the design document before proceeding
@@ -251,6 +256,8 @@ Convert the feature design into a series of prompts for an AI code-generation ag
 - The model MUST NOT include tasks related to user testing (other than the creation of the manual test plan), deployment, performance metrics gathering, or other non-coding activities
 - The model MUST focus on code implementation tasks that can be executed within the development environment
 - The model MUST ensure each task is actionable by a coding agent by following these guidelines:
+- Tasks should be numbered checkboxes with strictly increasing whole number indices (1, 2, 3, etc.).  Do no use letters or decimals in the numbering.
+- If tasks are later added or removed, the numbering MUST be updated to ensure they remain strictly increasing whole numbers without gaps or duplicates.
 - Tasks should involve writing, modifying, or testing specific code components
 - Tasks should specify what files or components need to be created or modified
 - Tasks should be concrete enough that a coding agent can execute them without additional clarification
@@ -266,9 +273,9 @@ Convert the feature design into a series of prompts for an AI code-generation ag
   - Marketing or communication activities
   - Any task that cannot be completed through writing, modifying, testing code, or documentation updates
 - After the tasks section, add a coverage section to map the requirements to the tasks
-- After updating the tasks document, the model MUST ask the user "Do the tasks look good?" using the universal Python command `python -c "question = input('Do the tasks look good? ')"`
+- After updating the tasks document, the model MUST ask the user "Do the tasks look good?" using the universal Python command `python -c "question = input('Do the tasks look good? ')"` except if this is a revision due to a revision request from the Architect agent.  In this case automatic approval is assumed after making the requested changes.
 - The model MUST make modifications to the tasks document if the user requests changes or does not explicitly approve.
-- The model MUST ask for explicit approval after every iteration of edits to the tasks document using the universal Python command `python -c "question = input('Do the tasks look good? ')"`
+- The model MUST ask for explicit approval after every iteration of edits to the tasks document using the universal Python command `python -c "question = input('Do the tasks look good? ')"` except if this is a revision due to a revision request from the Architect agent.  In this case automatic approval is assumed after making the requested changes.
 - The model MUST NOT consider the workflow complete until receiving clear approval (such as "y", "yes", "approved", "looks good", etc.).
 - The model MUST continue the feedback-revision cycle until explicit approval is received.
 - The model MUST stop once the task document has been approved.
@@ -354,7 +361,9 @@ When operating in **Orchestrator Mode** (triggered by the Orchestrator agent inc
   - `design_ref`: the path to `.docs/specs/{feature}/design.md`.
   - `tasks_ref`: the path to `.docs/specs/{feature}/tasks.md`.
   - `notes`: A brief note summarizing the completion of the spec creation workflow include potentially any resolution of previous spec review comments if applicable.
-  - `user_request`: The original feature proposal (or relative path to proposal file) or any user requested changes that need to be addressed.
+  - `user_request`: Contains two fields:
+        - `original_request`: The original feature proposal (or relative path to proposal file) or any user requested changes that need to be addressed.
+        - `additional_context`: Any additional context or clarifications provided by the user during the spec creation/revision process or any additional requested changes.
 - In Orchestrator Mode, do **not** end by asking "The spec creation workflow is now complete. Can I help you with anything else?". Instead, treat returning the `spec_change_wrapper` as the completion of your bounded role for that feature and allow the Orchestrator agent to continue the overall workflow.
 - **IMPORTANT:** You must use relative file paths for `requirements_ref`, `design_ref`, and `tasks_ref` (relative to the workspace root) and ensure they use POSIX-style forward slashes (`/`).
 
@@ -368,11 +377,11 @@ If the user or Orchestrator requests a change (such as with a passed in `spec_re
 
 Note that you can be called directly by the user in which case you are in Standalone Mode, or you can be called by the Orchestrator agent via `runSubagent` in which case you are in Orchestrator Mode. In both cases, you MUST follow the same strict approval and feedback-revision cycle for each document being updated.
 
-For the `requirements.md` file, you can update any existing requirements or acceptance criteria as needed to update them for the requested revisions. You can also add new requirements and acceptance criteria as needed to cover the requested revisions.  But you must not remove any existing requirements or acceptance criteria unless they are completely obsolete due to the requested revisions.
+For the `requirements.md` file, you can update any existing requirements or acceptance criteria as needed to update them for the requested revisions. You can also add new requirements and acceptance criteria as needed to cover the requested revisions.  But you must not remove any existing requirements or acceptance criteria unless they are completely obsolete due to the requested revisions.  Also when adding new requirements or acceptance criteria, you must number them with whole number and not add alphanumeric or decimal numbering (for example, do not use 2.1a or 2.1.1, instead just use 3 if 2 is the last existing requirement).  If inserting between existing requirements or accepance criteria, you must renumber all subsequent requirements or acceptance criteria to ensure they remain strictly increasing whole numbers without gaps or duplicates.
 
 For the `design.md` file, ideally create a new revisions section to describe the changes for the requested revisions.  You can also update any existing design sections as needed to update them for the requested revisions but note that they are updates for the requested revision. 
 
-For any completed tasks in `tasks.md`, do not change them or their completion state, but add a note to the task to indicate that there will be follow up tasks to fix any issues discovered during implementation.  Then add the follow up tasks at the end of the task list.  
+For any completed tasks in `tasks.md`, do not change them or their completion state, but add a note to the task to indicate that there will be follow up tasks to fix any issues discovered during implementation.  Then add the follow up tasks at the end of the task list.  When adding tasks between existing tasks, you must renumber all subsequent tasks to ensure they remain strictly increasing whole numbers without gaps or duplicates. Do not use alphanumeric or decimal numbering (for example, do not use 2.1a or 2.1.1, instead just use 3 and renumber subsequent tasks accordingly).
 
 For any changes made to any of the spec documents, you MUST maintain a clear revision history at the end of each document as described in the next section.
 

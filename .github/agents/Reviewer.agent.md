@@ -39,13 +39,13 @@ You expect the following JSON only input (either from the user directly or from 
   - `design_ref`: path to the feature's `design.md` file.
   - `tasks_ref`: path to the feature's `tasks.md` file.
   - `change_wrapper`: the latest Coder wrapper containing:
-    - `changed_files` (array of relative file paths changed)
-    - `new_files` (array of relative file paths newly created)
-    - `deleted_files` (array of relative file paths deleted)
-    - `cli_runs` (list of commands executed)
-    - `test_results` (object mapping all tests that were run to pass/fail and details)
-    - `implementation_details` (string details of what was implemented or fixed, including mapping to tasks if applicable)
-    - `notes` (string with any additional details such as remaining work, blockers, justifications for not addressing certain issues, etc.). 
+    - `changed_files` (array of relative file paths changed **MUST** include all files you modified)
+      - `new_files` (array of relative file paths newly created **MUST** include all new files you created)
+      - `deleted_files` (array of relative file paths deleted **MUST** include all files you deleted)
+      - `cli_runs` (list of commands executed in the terminal including tests, linters, build commands, etc.)
+      - `test_results` (object mapping all tests that were run to pass/fail and details including your assessment of test status (for example, whether you reran tests and what passed/failed))
+      - `implementation_details` (string details of what was implemented or fixed, including mapping to tasks if applicable - for example, "Completed tasks 1, 2, and 3 from tasks.md which involved implementing the API endpoints and associated unit tests.")
+      - `notes` (string with any additional details such as remaining work, blockers, justifications for not addressing certain issues, etc.).
   - Optionally, previous `review_wrapper` for additional context, especially on subsequent review iterations.
 
 Treat the spec references as authoritative for expected behavior and constraints.

@@ -36,7 +36,6 @@ You are also **FORBIDDEN** from changing `task_log.json` for any reason.  Orches
 ### Expected inputs
 
 You expect the following inputs (either from the user directly or from the Orchestrator):
-- `user_request`: (optional) The original feature proposal (free-form string or relative path to a proposal markdown file). This may be omitted or `null` if you are reviewing a spec revision rather than a new spec.
 - A JSON only `spec_change_wrapper` containing:
   - `feature` (kebab-case name for the feature)
   - `feature_dir` (relative path to the feature/spec directory)
@@ -44,6 +43,9 @@ You expect the following inputs (either from the user directly or from the Orche
   - `design_ref` (relative path to `design.md`)
   - `tasks_ref` (relative path to `tasks.md`)
   - `notes`: A brief note summarizing the completion of the spec creation workflow including potentially any resolution of previous spec review comments if applicable.
+  - `user_request`: Contains two fields:
+    - `original_request`: The original feature proposal (or relative path to proposal file) or any user requested changes that need to be addressed.
+    - `additional_context`: Any additional context orclarifications provided by the user during the spec creation/revision process or any additional requested changes.
 - Optionally, previous `spec_review_wrapper` for additional context, especially on subsequent review iterations to validate that previous issues with the spec files have been addressed.
 
 NOTE: If you are invoked directly by the user (not as a subagent of Orchestrator), you may not have all of these inputs. See the "Called outside of Orchestrator" section below for guidance on how to handle that case.
