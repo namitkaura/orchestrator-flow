@@ -19,7 +19,7 @@ This document defines universal coding principles that apply across all language
 - **Law of Demeter**: minimize coupling; interact only with immediate collaborators.  
 - **Fail Fast**: detect and surface errors early.  
 - **Readability over Cleverness**: prioritize clarity for maintainers.  
-- **Testability & TDD (Test‑Driven Development)**: structure code for unit and integration testing; write tests first, then implement code to satisfy them.  
+- **Testability & TDD (Test‑Driven Development)**: structure code for unit and integration testing; write tests first, then implement code to satisfy them.  Tasks should orgnanized in a "red-green-refactor" cycle, where tests are written first (red), then code is implemented to pass the tests (green), followed by refactoring (refactor) for improvement (only if necessary) while ensuring tests still pass.
 - **Immutability where possible**: reduce side effects by preferring immutable data.  
 - **Least Privilege Principle**: limit access/permissions to only what’s needed.  
 - **Security & Privacy**: validate inputs, avoid hardcoding secrets, prefer secure defaults.  

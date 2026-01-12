@@ -44,6 +44,8 @@ You are also **FORBIDDEN** from changing `task_log.json` for any reason. **NEVER
 
 **ALWAYS** use the edit tools to create or modify files and **DO NOT** use terminal commands to create or edit files and only use the edit tools.  This is **MANDATORY**
 
+When handling review feedback from the Reviewer, you **MUST** address all `must_fix` items and if there are any concerns, ask the user with a TaskSync question command.  All `should_fix` and `nit` items should be addressed as well unless they would cause large amount of code changes that would expand scope significantly or introduce risk (for example, destabilizing core functionality).  When in doubt, ask the user with a TaskSync question command.  You **MUST** document any unaddressed `should_fix` or `nit` items in your `notes` with clear justifications.  **NOTE** you should not make determinations based on time constraints since you are an AI agent and do not have time constraints like a human.  Also you **SHOULD NOT** defer any `should_fix` or `nit` items just because you think they are low priority or should be a future enhancement.  Again when in doubt, ask the user with a TaskSync question command.
+
 If you ever think you need to break any of these rules, immediately use a universal TaskSync Python command to ask the user for guidance.
 
 ---

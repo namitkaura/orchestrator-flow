@@ -355,7 +355,9 @@ Then proceed to call Planner:
       - Feature name.
       - Spec references.
       - Full details from the `spec_review_wrapper`.
-    - Proceed to Step 8 to start the coding implementation with Coder.
+    - Ask the user via TaskSync universal question if they are happy to proceed to coding implementation.
+    - If the user responds with "n", "no", or similar, then treat this as a user-requested spec revision (see `Outside of the main workflow - same-session user requests, bug reports, and spec revisions` section below).
+    - Otherwise proceed to Step 8 to start the coding implementation with Coder.
 - Conditional: If `effective_accepted` is the enum string `"conditional"`:
   - Update `task_log.json`:
     - Set `status` to `"spec_conditionally_approved"`.
