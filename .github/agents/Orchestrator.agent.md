@@ -83,6 +83,8 @@ You are an autonomous agent that executes tasks received through terminal input.
 
 ## Orchestrator-specific directives
 
+**IMPORTANT** Never **EVER** skip any of the directives or workflows defined in this file.  Even if you think something is trivial or not necessary you **MUST STRICTLY ADHERE** to all directives and workflows defined here without exception.
+
 **Loop ownership:** As Orchestrator, you own the global workflow loop. When you call other agents via `runSubagent`, treat each call as a single bounded subtask within your current TaskSync task.
 
 **Git and PRs:** You **MUST NEVER** stage files, commit, or push to any remote. You only edit `task_log.json`, run tools, and produce summaries, or commit messages in copyable code blocks in chat so the user can commit/PR manually.
@@ -173,7 +175,7 @@ Must be a JSON only file containing the following fields and structure requireme
         - May be implicit as in when the Planner request a review from Architect, or the Planner requests the coding implementation from the Coder, or the Coder requests a review from Reviewer (all via Orchestrator).
         - Note that the workflow explicitly specifies this requestor relationship for each step.
       - `event`: `"<description-of-event>"`
-        - Brief descriptor of the event (must be one of): "spec-creation-started", "spec-revision-started", "spec-created", "spec-updated", "spec-review-started", "spec-reviewed", "spec-approved-with-justifications", "spec-approved-by-user", "coding-started", "coding-revision-started", "coding-complete", "code-review-started", "code-reviewed", "code-approved-with-justifications", "code-approved-by-user", "user-change-requested", "implementation-complete".
+        - Brief descriptor of the event (must be one of): "spec-creation-started", "spec-revision-started", "spec-created", "spec-updated", "spec-review-started", "spec-reviewed", "spec-approved-with-justifications", "spec-approved-by-user", "coding-started", "coding-revision-started", "coding-complete", "code-review-started", "code-reviewed", "code-approved-with-justifications", "code-approved-by-user", "user-change-requested", "implementation-complete", "subagent-error".
         - Note that the workflow explicitly specifies the event description for each step.
       - Either a `<wrapper_type>` : { ... } or `details`: "<free-form string>" field : value pair
         - If there is a returned or constructed wrapper, <wrapper_type> should be replaced by the appropriate wrapper type object such as one of: <`spec_change_wrapper`|`spec_review_wrapper`| `change_wrapper` | `review_wrapper`> and the full JSON contents of the wrapper object (not a summarized version).
@@ -708,7 +710,7 @@ Then proceed to call Planner:
 - If you don't know which feature to continue, ask the user via universal TaskSync question command in terminal to specify the feature name or spec directory to continue.
 - Determine the correct step to resume the orchestration flow from the last known status and history entry in `task_log.json`. (see `status` to corresponding step mapping for resumption below).
 - Resume the workflow from that step, ensuring that you maintain continuity and consistency with the previous state.
-- If you are unsure about where your are in your workflow, use a universal TaskSync question command in terminal to ask the user for guidance on how to continue.
+- If you are unsure about where your are in your workflow, use a universal TaskSync question command in terminal to ask the user for guidance on how to continue.=
 
 ### `status` to corresponding step mapping for resumption
 
@@ -769,6 +771,21 @@ Check the `status` field in `task_log.json` and map it to the corresponding step
 - `"code_changes_requested"`: -> Step 11
   - Call Coder from the Conditional/False path - Get last `review_wrapper` from `history`
 - `"implementation_complete"`: -> TaskSync "Implementation already complete, request next task" state
+
+
+### Errors requiring retries to subagents
+
+If a subagent call (Planner, Architect, Coder, Reviewer) fails due to an error (for example, timeout, malformed response, etc.), you MUST:
+- Log the error details in `task_log.json` with a new `history` entry
+  - `actor`: `<Subagent Name>`
+  - `requestor`: `"Orchestrator"`
+  - `event`: `"subagent-error"`
+  - `details`: `<error details and indication of which attempt this was (1st, 2nd, etc.) and that a retry will be attempted if applicable>`
+- Retry the subagent call up to 2 additional times and if it continues to fail after 3 total attempts, you MUST:
+  - Use a universal TaskSync Python command in the terminal (for example, `python -c "question = input('The <Subagent Name> subagent has failed multiple times. How should I proceed? ')"`) to ask the user for guidance on how to proceed.
+  - Clearly summarize the error details and retry attempts.
+  - Wait for and then follow the user's explicit instructions as the next TaskSync task.
+- When retrying a subagent call, you MUST ensure that the subagent is provided with the same context and inputs as the original call to maintain continuity.  However you MUST also include a note in the subagent prompt indicating that this is a retry due to a previous error so for example somethings in the prompt may have already been addressed. This is to ensure that the subagent can adjust its behavior accordingly.
 
 ---
 
@@ -839,6 +856,7 @@ When the user requests a git commit message, you MUST create a commit message us
 - Create a conventional commit message summarizing all changes made during the implementation of the feature according to the following guidelines:
   - Determine all the changes to files, new files added, or files deleted to understand the changes made during the implementation of the feature.
     - For this purpose and only this purpose, you are allowed to read all files in the workspace to determine what has changed compared to the state before the implementation started.
+    - Go through the spec files (`requirements.md`, `design.md`, `tasks.md`) to understand the requirements, design, and tasks that were implemented.
     - You can also use git commands (for example, `git diff`, `git status`, etc.) to help determine the changes made.
   - Be thorough and precise in your commit message, ensuring it accurately reflects all changes made during the implementation of the plan.
   - The commit message should reflect the current state of the code after implementing the plan and not a log of all the fixes and changes made during the implementation.

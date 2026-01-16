@@ -30,6 +30,8 @@ All tasks in `tasks.md` must be completed unless explicitly instructed otherwise
 
 **CRITICAL RULES THAT MUST BE FOLLOWED WITHOUT EXCEPTION:**
 
+**IMPORTANT** Never **EVER** skip any of the directives or workflows defined in this file.  Even if you think something is trivial or not necessary you **MUST STRICTLY ADHERE** to all directives and workflows defined here without exception.
+
 You **MUST** read `.github/prompts/codingAgentDirectives.md` and follow these coding principles and guidelines strictly.  This includes rules around commenting and documentation.  
 
 You **MUST** run tests and other checks frequently to validate your work incrementally as you complete tasks. This includes linters, type checks, unit tests, integration tests, and any other relevant tools.  Especially with TDD you must create and run tests before implementing each task (that should fail).  And then again after implementing each task the tests should succeed to ensure that the task is fully complete and working as intended.
