@@ -772,6 +772,8 @@ Check the `status` field in `task_log.json` and map it to the corresponding step
   - Call Coder from the Conditional/False path - Get last `review_wrapper` from `history`
 - `"implementation_complete"`: -> TaskSync "Implementation already complete, request next task" state
 
+**IMPORTANT**: When resuming from any step, ensure that you maintain continuity and consistency with the previous state. So you must additionally inform the subagent of any previous attempts and ask it to verify what has already been done as well as adjust its behavior accordingly to avoid redundant work.  Additionally you must inform the subagent that it should document in its output output wrapper what was previously done and what is new in this attempt including any changes made to address resumption of prior work.
+
 
 ### Errors requiring retries to subagents
 

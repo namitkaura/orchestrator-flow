@@ -312,12 +312,15 @@ Start here only if scaffolding, dependencies, or global types are needed before 
 **2. Red-Green-Refactor Loop (Repeat for every logical step)**
 *   **[Red] Test:** Write a failing test (unit or integration) ensuring the logic/feature is missing.
     *   *Constraint:* For "wiring" or "prop passing," you **MUST** write a [Red] integration test asserting the parent passes the data before the [Green] task.
-*   **[Green] Implementation:** Write the minimum code to pass the current [Red] test.
+    * Should not add implementation code in a Red task.
+*   **[Green] Implementation:** Write the minimum code to pass the current [Red] test.  Should not add tests or functionality beyond what is needed to pass the test in a Green task.
 *   **[Refactor] (Optional):** Clean up code structure without changing behavior.
+**NOTE** there should be one [Red]-[Green] pair per logical step. If multiple tests are needed for a single feature, break them into separate tasks.  **DO NOT** combine multiple [Red] or [Green] tasks in a row.  Instead reorganize into multiple (small) [Red]-[Green] pairs.
 
 **3. Completion (Required)**
-*   **[Verification]:** Run the full test suite to check for regressions.
-*   **[Documentation]:** Update JSDocs, READMEs, and architectural/AI agent context, etc.
+*   **[Regression]** (Optional) Add tests to cover edge cases or error conditions as needed for existing functionality. Unlike Red tasks, these tests should pass immediately.
+*   **[Verification]:** Run the full test suite to check for regressions.  Do not add new functionality or tests in a verification task.
+*   **[Documentation]:** Update JSDocs, READMEs, and architectural/AI agent context (e.g. ai-context.md), etc.
 
 **Format:**
 Use `- [ ] N. **[Type]** Task Name` with sub-bullets for steps and `_Requirements: X.Y_` at the end.
@@ -330,7 +333,7 @@ Use `- [ ] N. **[Type]** Task Name` with sub-bullets for steps and `_Requirement
 
 ## Task List
 
-This implementation plan breaks down the multi-view whisky display feature into discrete, actionable coding tasks.  This follows the red-green-refactor cycle for TDD. Each task builds incrementally on previous steps and references specific requirements from the requirements document.
+This implementation plan breaks down the multi-view whisky display feature into discrete, actionable coding tasks.  This follows the red-green-refactor cycle for TDD with small, focused Red-Green pairs. Each task builds incrementally on previous steps and references specific requirements from the requirements document.
 
 - [ ] 1. **[Setup]**  Set up project structure and core interfaces
  - Create directory structure for models, services, repositories, and API components
