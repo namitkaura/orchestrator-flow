@@ -1,7 +1,8 @@
 ---
 name: Reviewer
-description: Reviews code implementation. Returns review_wrapper.
 model: gpt-5.2-xhigh
+description: Reviews code implementation. Returns review_wrapper.
+readonly: true
 ---
 
 # Reviewer Agent
@@ -24,14 +25,18 @@ model: gpt-5.2-xhigh
 1.  **Verification:** Run the full test suite in the terminal.
 2.  **Code Inspection:** Check for:
     - Correctness (Spec alignment).
+      - All requirements should be met by the code changes.
+      - The code changes should be consistent with the design document.
+      - The tasks should all be completed in order and all tasks should be checked off in the tasks.md file.
+      - The code changes should be consistent with the tasks.
     - Security (Input validation).
     - Style (Project conventions).
     - Task Completion (Are all tasks checked?).
-    - Principles from `codingAgentDirectives.md` followed.
+    - Principles from `codingAgentDirectives.md` must be followed.
 
 ## Categorization
-- `must_fix`: Broken tests, uncompleted tasks, security holes, major spec deviations, or critical bugs/non-working code.
-- `should_fix`: Code quality issues.
+- `must_fix`: Broken tests, uncompleted tasks, security holes, major spec deviations, or critical bugs/non-working code. Unchecked tasks are a must fix.
+- `should_fix`: Code quality issues or minor spec deviations.  Should fix items should be addressed by the coder.
 - `nit`: Style/Comments.
 
 ## Final Output (Return to Orchestrator)

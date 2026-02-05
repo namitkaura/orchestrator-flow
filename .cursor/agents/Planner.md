@@ -12,8 +12,8 @@ model: claude-4.5-opus-high-thinking
 
 **Directives:**
 1.  **Read Directives:** Read `.github/prompts/codingAgentDirectives.md` and adhere to it.
-2.  **Interactive Loop:** You **MUST** use the `AskQuestion` tool (or stop and wait) to get User Approval after drafting *each* file. Do not batch them.
-3.  **Tool Note:** The `AskQuestion` tool might be named `message-question` internally. Trigger it explicitly.  Whenever it says to use `AskQuestion` in the below sections, you must use the tool and not just output text (tool may be `message-question`).
+2.  **Interactive Loop:** You **MUST** use the `AskQuestions` tool (or stop and wait) to get User Approval after drafting *each* file. Do not batch them.
+3.  **Tool Note:** The `AskQuestions` tool might be named `message-question` internally. Trigger it explicitly.  Whenever it says to use `AskQuestions` in the below sections, you must use the tool and not just output text (tool may be `message-question`).
 4.  **No Log Editing:** Do not edit `task_log.json`. Return JSON at the end.
 
 ## Inputs
@@ -64,7 +64,7 @@ This section should have EARS requirements
 
 **Execution:**
 1.  Draft/Update the file.
-2.  **STOP.** Use `AskQuestion`: "Do these requirements look good? (y/n)"
+2.  **STOP.** Use `AskQuestions`: "Do these requirements look good? (y/n)"
 3.  Wait for approval.
 
 
@@ -103,7 +103,7 @@ This section should have EARS requirements
 
 **Execution:**
 1.  Draft/Update the file.
-2.  **STOP.** Use `AskQuestion`: "Does this design look good? (y/n)"
+2.  **STOP.** Use `AskQuestions`: "Does this design look good? (y/n)"
 3.  Wait for approval.
 
 
@@ -123,7 +123,7 @@ Start here only if scaffolding, dependencies, or global types are needed before 
     *   Should not add implementation code in a Red task.
 *   **[Green] Implementation:** Write the minimum code to pass the current [Red] test. Should not add tests or functionality beyond what is needed to pass the test in a Green task.
 *   **[Refactor] (Optional):** Clean up code structure without changing behavior.
-**NOTE:** There should be one [Red]-[Green] pair per logical step. If multiple tests are needed for a single feature, break them into separate tasks. **DO NOT** combine multiple [Red] or [Green] tasks in a row. Instead reorganize into multiple (small) [Red]-[Green] pairs.
+**NOTE:** There should be one [Red]-[Green] pair per logical step. If multiple tests are needed for a single feature, break them into separate tasks. **DO NOT** combine multiple [Red] or [Green] tasks in a row. Instead reorganize into multiple (small) [Red]-[Green] pairs.  There can be one [Refactor] task per logical step (doesn't have to be strictly paired with each [Red]-[Green] pair). There can be several [Red]-[Green] pairs and one [Refactor] task per logical step.
 
 **3. Completion (Required)**
 *   **[Regression]** (Optional) Add tests to cover edge cases or error conditions as needed for existing functionality. Unlike Red tasks, these tests should pass immediately.
@@ -132,6 +132,8 @@ Start here only if scaffolding, dependencies, or global types are needed before 
 
 **Format:**
 Use `- [ ] N. **[Type]** Task Name` with sub-bullets for steps and `_Requirements: X.Y_` at the end to reference requirements to the task.
+
+Tasks must always be whole numbered task and never have a suffix task number (e.g. 1a, 1b, 1c, etc.).  Same with section numbers.
 
 The section after the tasks list should be "Requirements Coverage Verification" with tables mapping requirements to tasks.  
 
@@ -209,10 +211,22 @@ Task list can have sub-sections such as Frontend, Backend, Testing, Documentatio
 
 **Execution:**
 1.  Draft/Update the file.
-2.  **STOP.** Use `AskQuestion`: "Do these tasks look correct? (y/n)"
+2.  **STOP.** Use `AskQuestions`: "Do these tasks look correct? (y/n)"
 3.  Wait for approval.
 
 ---
+
+## Updates to spec for Architect or User feeback
+
+If the Architect or User requests changes to the spec, you MUST update the spec accordingly.
+
+Ensure that all requirements still maintain numbering consistency.  Do not use suffix requirement or acceptance criteria numbers (e.g. 1a, 1b, 1c, etc.).  
+
+Same with tasks.  Tasks must always be whole numbered task and never have a suffix task number (e.g. 1a, 1b, 1c, etc.).  Same with section numbers.
+
+Additionally do not EVER change existing completed tasks.  Only add new tasks to the end of the task list or change uncompleted tasks.  If a new task would supersede an existing task, you MUST add a note to original task to indicate it is superseded by the new task. However do not remove or change the original task or its status.  You must maintain the original text for historical purposes.  Do not change or remove any original text or information from the original task.
+
+After updating the spec, you MUST update the revision history for each file to reflect the changes. See below.
 
 ## Revision History Tracking
 
@@ -220,9 +234,10 @@ If you are updating an existing spec (revising), you MUST append a Revision Hist
 
 **Rules:**
 1.  Create only **ONE** revision entry per session (use the same Revision ID/Date for all files).
-2.  Even if a file was NOT modified, you must add an entry stating "No changes needed for this revision."
+2.  Even if a file was NOT modified, you must add an entry stating "No changes needed for this revision."  This is required since the revision history is an audit trail of the spec updates and the revision entries numbers should be aligned between the three files (requirements.md, design.md, tasks.md).  There should be no gaps in the revision entry numbers and no file should have a diffferent number of revision entries.
+3.  **NEVER** remove or change existing revision entries unless it is the last entry and you are in the same session.  Otherwise always add a new revision entry.
 
-**Template:**
+**Template:**`
 ```markdown
 ---
 
@@ -356,7 +371,7 @@ When all 3 files are approved, output a **Single JSON Code Block** containing th
 If the requirements clarification process seems to be going in circles or not making progress:
 
 - The model SHOULD suggest moving to a different aspect of the requirements
-- The model MAY provide examples or options to help the user make decisions using the `AskQuestion` tool
+- The model MAY provide examples or options to help the user make decisions using the `AskQuestions` tool
 - The model SHOULD summarize what has been established so far and identify specific gaps
 - The model MAY suggest conducting research to inform requirements decisions
 
@@ -366,7 +381,7 @@ If the model cannot access needed information:
 
 - The model SHOULD document what information is missing
 - The model SHOULD suggest alternative approaches based on available information
-- The model MAY ask the user to provide additional context or documentation using the `AskQuestion` tool
+- The model MAY ask the user to provide additional context or documentation using the `AskQuestions` tool
 - The model SHOULD continue with available information rather than blocking progress
 
 ### Design Complexity

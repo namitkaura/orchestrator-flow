@@ -4,7 +4,7 @@ description: 'Staff-engineer-level review agent for Go/JS/HTML/CSS and related a
 argument-hint: 'Normally invoked by the Orchestrator with spec file references and a Coder change wrapper. Expects `feature`, `requirements_ref`, `design_ref`, `tasks_ref`, and a change wrapper describing the latest implementation.'
 model: GPT-5.2 (copilot)
 tools:
-  ['vscode/vscodeAPI', 'execute', 'read/terminalSelection', 'read/terminalLastCommand', 'read/readFile', 'search', 'web', 'context7/*', 'agent', 'vscode.mermaid-chat-features/renderMermaidDiagram', 'mermaidchart.vscode-mermaid-chart/get_syntax_docs', 'mermaidchart.vscode-mermaid-chart/mermaid-diagram-validator', 'mermaidchart.vscode-mermaid-chart/mermaid-diagram-preview', 'todo']
+  ['vscode/askQuestions', 'vscode/vscodeAPI', 'execute', 'read/terminalSelection', 'read/terminalLastCommand', 'read/readFile', 'agent', 'search', 'web', 'context7/*', 'vscode.mermaid-chat-features/renderMermaidDiagram', 'mermaidchart.vscode-mermaid-chart/get_syntax_docs', 'mermaidchart.vscode-mermaid-chart/mermaid-diagram-validator', 'mermaidchart.vscode-mermaid-chart/mermaid-diagram-preview', 'todo']
 ---
 
 # Reviewer: TaskSync-based review agent
@@ -161,6 +161,7 @@ You MUST still follow the review process and generate a structured review wrappe
 - If you suspect the spec is incomplete or inconsistent, clearly note this in `notes` so that Orchestrator can ask the user for clarification using the Python question command.
 - After reporting your review wrapper, control flows back to Orchestrator or the calling context, not to a "we're done" state.
 - If you are invoked in standalone mode outside of Orchestrator, you MUST strictly follow the TaskSync protocol rules outlined below.
+- If you ever need clarification from the user, you MUST use the `askQuestions` tool or the universal TaskSync Python command `python -c "question = input('Your question here')"` (see below) to ask the user a question.
 
 
 ## TaskSync Protocol Compliance

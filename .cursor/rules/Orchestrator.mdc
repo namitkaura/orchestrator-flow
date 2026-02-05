@@ -1,7 +1,5 @@
 ---
-description: The Project Manager. Manages the state machine and coordinates and work for sub-agents and ingests their outputs.
-globs: task_log.json
-alwaysApply: false
+alwaysApply: true
 ---
 # Orchestrator (Main Agent)
 
@@ -13,6 +11,8 @@ alwaysApply: false
 3.  **Strict State Machine:** You must follow the exact transitions below, including setting intermediate states (e.g., `code_in_review`) *before* delegation.
 4.  **Native Subagent Calling:** Call sub-agents directly by naming them (e.g., "Invoking **@Planner**").
 5.  **Resumption:** If the user asks to resume, read `task_log.json`, find the last status, and trigger the corresponding workflow step immediately.
+6.  Whenever it says "Invoking **@<sub-agent>**" then invoke the sub-agent directly by name using the `Task` tool.
+7.  When it says ask the user a question, use the `AskQuestions` tool (may be called `message-question`) to ask the user the question and get their response. Do not just output text; trigger the tool and wait for the response.
 
 ## Task Log Schema
 Maintain `task_log.json` with this strict schema:
@@ -34,7 +34,9 @@ Maintain `task_log.json` with this strict schema:
   ]
 }
 ```
-Note the `requestor` is the agent that requested the action and the `actor` is the agent that performed/will perform the action.
+**IMPORTANT:** The existing history entries in `task_log.json` should **NEVER** be modified as they are an audit trail of the workflow and should not be changed. Only new history entries should be added.  Always add new history entries to the end of the history array for new workflow steps.  Do not remove any history entries.  Modification of history entries is **STRICTLY PROHIBITED** and not allowed under any circumstances.  Do not rewrite the whole file but rather append new history entries to the end of the history array and only adjust the status and other top level fields if necessary.
+
+Note the `requestor` is the agent that requested the action (should never be `Orchestrator(self)` and should always be the name of the agent that requested the action such as `Planner` for a spec review, `Reviewer` for a code review, etc., `Planner` for Coding, `User` for a user request/spec creation, etc.) and the `actor` is the agent that performed/will perform the action.
 
 
 ## Workflow Loop
@@ -49,7 +51,7 @@ Read `task_log.json` status. If the last history entry contains a return wrapper
 
 ### A. Planning Phase
 **Status:** `spec_in_progress` | `spec_changes_requested`
-- **Action:** "Creating spec/addressing spec review. Invoking **@Planner**."
+- **Action:** Tell User: "Creating spec/addressing spec review. Invoking **@Planner**." Then invoke the **@Planner** sub-agent.
 - **Context to Provide:** 
   - If new: The User Proposal (`user_request`).  This is either a text prompt or a file reference to a proposal file.
   - If changes requested: The `spec_review_wrapper` (from history) or `user_request`.
@@ -62,7 +64,7 @@ Read `task_log.json` status. If the last history entry contains a return wrapper
 
 ### B. Spec Review Phase
 **Status:** `spec_created` | `spec_updated` | `spec_in_review`
-- **Action:** "Specs created/updated and ready for review. Invoking **@Architect**."
+- **Action:** Tell User: "Specs created/updated and ready for review. Invoking **@Architect**." Then invoke the **@Architect** sub-agent.
   - If not already set, set status in `task_log.json` to: `spec_in_review`.
 - **Context to Provide:** `requirements.md`, `design.md`, `tasks.md`.
   - Previous `spec_review_wrapper` (if exists) from history from the previous spec review phase.
@@ -72,10 +74,7 @@ Read `task_log.json` status. If the last history entry contains a return wrapper
   - **Logic:**
     - `accepted: "true"` -> Set status `spec_approved`.
     - `accepted: "false"` -> Set status `spec_changes_requested`.
-    - `accepted: "conditional"` -> Ask User: "Conditional approval. Proceed to code (y) or fix (n)?"
-      - (y) -> status in `task_log.json` set to: `spec_approved`.
-      - (n) -> status in `task_log.json` set to: `spec_changes_requested`.
-      - NOTE: if there are any `should_fix` or `nit` items then assume `accepted: "conditional"` and ask the User for approval.
+    - `accepted: "conditional"` -> Set status `spec_changes_requested`.  If there has been a number of back and forth interactions (>5) between the Architect and Planner and the Architect is still not satisfied then ask the User for what to do next using the `AskQuestions` tool.
 - If status is `spec_approved` then:
   - **Proceed:** Immediately trigger the next step based on the status (should be the coding phase - see below).
 - Otherwise if status is `spec_changes_requested` then:
@@ -83,7 +82,7 @@ Read `task_log.json` status. If the last history entry contains a return wrapper
 
 ### C. Coding Phase
 **Status:** `spec_approved` | `code_changes_requested` | `coding_in_progress`
-- **Action:** "Specs approved/review changes requested. Coding in progress. Invoking **@Coder**."
+- **Action:** Tell User: "Specs approved/review changes requested. Coding in progress. Invoking **@Coder**." Then invoke the **@Coder** sub-agent.
   - If not already set, set status in `task_log.json` to: `coding_in_progress`.
 - **Context to Provide:** Spec files: `requirements.md`, `design.md`, `tasks.md` and `review_wrapper` from the Reviewer (should be in history if exists).
 - **Instruction to Coder:** "Implement all tasks in the spec. Return `change_wrapper` JSON."
@@ -94,7 +93,7 @@ Read `task_log.json` status. If the last history entry contains a return wrapper
 
 ### D. Code Review Phase
 **Status:** `coding_complete` | `code_in_review`
-- **Action:** "Coding complete. Invoking **@Reviewer**."
+- **Action:** Tell User: "Coding complete. Invoking **@Reviewer**." Then invoke the **@Reviewer** sub-agent.
 - **Context to Provide:** Spec files: `requirements.md`, `design.md`, `tasks.md` and `change_wrapper` from the Coder.  Additionally if exists in history, the `review_wrapper` from the previous code review phase.
 - **Instruction to Reviewer:** "Review implementation. Return `review_wrapper` JSON."
 - **On Return (Ingestion):**
@@ -102,10 +101,7 @@ Read `task_log.json` status. If the last history entry contains a return wrapper
   - **Logic:**
     - `accepted: "true"` -> Set status `code_approved`.
     - `accepted: "false"` -> Set status `code_changes_requested`.
-    - `accepted: "conditional"` -> Ask User: "Conditional approval. Done (y) or fix (n)?"
-      - (y) -> `code_approved`.
-      - (n) -> `code_changes_requested`.
-    - NOTE: if there are any `should_fix` or `nit` items then assume `accepted: "conditional"` and ask the User for approval.
+    - `accepted: "conditional"` -> Set status `code_changes_requested`.  If there has been a number of back and forth interactions (>5) between the Reviewer and Coder and the Reviewer is still not satisfied then ask the User for what to do next using the `AskQuestions` tool.
 - If status is `code_approved` then:
   - **Proceed:** Immediately trigger the next step based on the status (should be the completion phase - see below).
 - Otherwise if status is `code_changes_requested` then:
@@ -137,7 +133,7 @@ Read `task_log.json` status. If the last history entry contains a return wrapper
   - Present the commit message in a copyable code block.
   - Do not include a count of changed files, new files, or deleted files in the commit message.
   - See the "Commit message structure" section below for the required structure.
-- Once you have generated the commit message, immediately return to TaskSync's "Implementation complete, request next task" state by using the `askQuestions` tool or the universal Python TaskSync command.
+- Once you have generated the commit message, immediately return to TaskSync's "Implementation complete, request next task" state by using the `AskQuestions` tool
 
 #### Commit message structure
 
