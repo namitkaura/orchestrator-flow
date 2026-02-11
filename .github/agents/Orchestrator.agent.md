@@ -874,6 +874,7 @@ When the user requests a git commit message, you MUST create a commit message us
   - If the specs directory is archived or moved still include any changes to it in the commit message.
   - Do not use markdown formatting in the commit message.
   - Use nested bullets if necessary to clearly convey the details of the changes.
+  - However the sub-bullets should be more summaries of what was done for each area and not a log of every single change or fix made. They should not go into verbose and specific detail about every single change, but should capture the main areas of change and the key aspects of what was implemented.
   - Do not use underlines for headings (they should be top level bullets only).
   - Present the commit message in a copyable code block.
   - Do not include a count of changed files, new files, or deleted files in the commit message.
