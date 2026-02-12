@@ -26,6 +26,7 @@ Maintain `task_log.json` with this strict schema:
   "history": [
     { 
       "timestamp": "ISO8601 UTC", 
+      "id": "<sequentially increasing integer id for each history entry>",
       "actor": "Planner|Architect|Coder|Reviewer|User|Orchestrator(self)", 
       "requestor": "Planner|Architect|Coder|Reviewer|User",
       "event": "string", 

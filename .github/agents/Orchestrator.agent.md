@@ -174,6 +174,8 @@ Must be a JSON only file containing the following fields and structure requireme
     - array of event objects with the following fields:
       - `timestamp`: `"<UTC-timestamp>"`
         - UTC timestamp in seconds resolution e.g. "2025-12-31T12:34:56Z"
+      - `id`: `"<integer>"`
+        - Sequential integer starting from 1 for the first event and incrementing by 1 for each subsequent event to provide a total ordering of events in the history (this is to track when duplicate events are accidentally or events are writen to the history out of order.  This will allow the history to be cleanly sorted and interpreted even if events are added out of order or duplicated by mistake, as long as the timestamps are accurate.)
       - `actor`: `"<Agent>"`
         - The agent primarily responsible for the work done that is being recorded by this event, one of: "User", "Planner", "Architect", "Coder", "Reviewer", "Orchestrator"
       - `requestor`: `"<Agent or User>"`
