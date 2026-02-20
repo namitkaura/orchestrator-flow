@@ -1,0 +1,12 @@
+{
+  "feature": "kebab-case-feature",
+  "feature_dir": ".docs/specs/kebab-case-feature",
+  "requirements_ref": ".docs/specs/kebab-case-feature/requirements.md",
+  "design_ref": ".docs/specs/kebab-case-feature/design.md",
+  "tasks_ref": ".docs/specs/kebab-case-feature/tasks.md",
+  "notes": "Created or revised requirements/design/tasks and resolved prior review feedback.",
+  "user_request": {
+    "original_request": "<original user proposal or change request>",
+    "additional_context": "<optional clarifications from the user/session>"
+  }
+}

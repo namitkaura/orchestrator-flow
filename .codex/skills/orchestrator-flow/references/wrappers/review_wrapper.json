@@ -1,0 +1,37 @@
+{
+  "accepted": "false",
+  "issue_details": {
+    "must_fix": [
+      {
+        "file": "src/feature/service.ts",
+        "description": "Input validation is missing for empty payloads.",
+        "rationale": "Violates error-handling and security requirements."
+      }
+    ],
+    "should_fix": [
+      {
+        "file": "src/feature/service.test.ts",
+        "description": "Add a negative-path integration test for timeout behavior.",
+        "rationale": "Improves confidence in resilience behavior."
+      }
+    ],
+    "nit": [
+      {
+        "file": "src/feature/types.ts",
+        "description": "Rename a type alias for clarity.",
+        "rationale": "Improves readability."
+      }
+    ]
+  },
+  "test_results": {
+    "unit_tests": {
+      "status": "pass",
+      "details": "Current unit suite passes."
+    },
+    "integration_tests": {
+      "status": "fail",
+      "details": "One regression scenario is failing."
+    }
+  },
+  "notes": "Implementation is not yet acceptable due to must-fix issues."
+}

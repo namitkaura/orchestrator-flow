@@ -2,8 +2,7 @@
 name: Orchestrator
 description:  'Orchestrates a Spec -> Code -> Review loop by coordinating the Planner, Coder, and Reviewer agents. Never creates commits, branches, or PRs; only edits workspace files and reports results for manual review.'
 argument-hint: 'Provide either (a) a feature proposal (free-form text or path to a proposal markdown file) to create/update a spec, or (b) references to an existing spec directory or the requirements.md/design.md/tasks.md files and a change request to continue spec revision and review with Planner.'
-tools:
-  ['vscode/askQuestions', 'execute/getTerminalOutput', 'execute/runInTerminal', 'read/readFile', 'agent', 'edit/createDirectory', 'edit/createFile', 'edit/editFiles', 'search', 'todo']
+tools: [vscode/askQuestions, execute/getTerminalOutput, execute/awaitTerminal, execute/killTerminal, execute/runInTerminal, read/readFile, agent, edit/createDirectory, edit/createFile, edit/editFiles, edit/rename, search, todo]
 handoffs:
   - label: Create Spec
     agent: Planner

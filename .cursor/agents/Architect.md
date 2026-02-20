@@ -75,15 +75,15 @@ Same with tasks.  Tasks must always be whole numbered task and never have a suff
 
 Additionally do not EVER change existing completed tasks.  Only add new tasks to the end of the task list or change uncompleted tasks.  If a new task would supersede an existing task, then the Planner MUST add a note to original task to indicate it is superseded by the new task. However it must not remove or change the original task or its status.  The Planner must maintain the original text for historical purposes.  The Planner must never change or remove any original text or information from the original task. 
 
-After updating the spec, the Planner **MUST** update the revision history for each file to reflect the changes. See **Revision History Tracking** below.
+After updating the spec, the Planner **MUST** update the revision history for each revised file to reflect the changes. See **Revision History Tracking** below.
 
 ### Revision History Tracking
 
-If the Planner is updating an existing spec (revising), the Planner MUST append a Revision History entry to the end of **ALL THREE** documents (`requirements.md`, `design.md`, `tasks.md`).
+If the Planner is updating an existing spec (revising), the Planner MUST append a Revision History entry to the end of any updated documents (`requirements.md`, `design.md`, `tasks.md`) .
 
 **Rules:**
-1.  Create only **ONE** revision entry per session (use the same Revision ID/Date for all files).  The Planner should use the same Revision ID/Date for all files.
-2.  Even if a file was NOT modified, you must add an entry stating "No changes needed for this revision."  This is required since the revision history is an audit trail of the spec updates and the revision entries numbers should be aligned between the three files (requirements.md, design.md, tasks.md).  There should be no gaps in the revision entry numbers and no file should have a diffferent number of revision entries.
+1.  Create only **ONE** revision entry per session (use the same Revision Date for all files).
+2.  If a file was NOT modified, you must **NOT** add a revision history entry for that file.  Only add revision history entries for files that were modified.
 3. The Planner **MUST NEVER** remove or change existing revision entries unless it is the last entry and the Planner is in the same session.  Otherwise the Planner **MUST** always add a new revision entry.
 
 ## Final Constraints

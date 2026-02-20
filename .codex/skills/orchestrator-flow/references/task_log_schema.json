@@ -1,0 +1,154 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/task_log.schema.json",
+  "title": "Orchestrator Task Log",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "feature",
+    "feature_dir",
+    "requirements_ref",
+    "design_ref",
+    "tasks_ref",
+    "task_log_ref",
+    "status",
+    "history"
+  ],
+  "properties": {
+    "feature": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "feature_dir": {
+      "type": "string",
+      "pattern": "^\\.docs/specs/[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "requirements_ref": {
+      "type": "string",
+      "pattern": "^\\.docs/specs/.+/requirements\\.md$"
+    },
+    "design_ref": {
+      "type": "string",
+      "pattern": "^\\.docs/specs/.+/design\\.md$"
+    },
+    "tasks_ref": {
+      "type": "string",
+      "pattern": "^\\.docs/specs/.+/tasks\\.md$"
+    },
+    "task_log_ref": {
+      "type": "string",
+      "pattern": "^\\.docs/specs/.+/task_log\\.json$"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "spec_in_progress",
+        "spec_created",
+        "spec_updated",
+        "spec_in_review",
+        "spec_approved",
+        "spec_conditionally_approved",
+        "spec_changes_requested",
+        "coding_in_progress",
+        "coding_complete",
+        "blocked",
+        "code_in_review",
+        "code_approved",
+        "code_conditionally_approved",
+        "code_changes_requested",
+        "implementation_complete"
+      ]
+    },
+    "history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "timestamp",
+          "id",
+          "actor",
+          "requestor",
+          "event"
+        ],
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+          },
+          "id": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]*$",
+            "description": "Sequential string-encoded integer id for total ordering of history entries. First entry must be \"1\" and each subsequent entry must increase by 1."
+          },
+          "actor": {
+            "type": "string",
+            "enum": [
+              "User",
+              "Planner",
+              "Architect",
+              "Coder",
+              "Reviewer",
+              "Orchestrator"
+            ]
+          },
+          "requestor": {
+            "type": "string",
+            "enum": [
+              "User",
+              "Planner",
+              "Architect",
+              "Coder",
+              "Reviewer"
+            ]
+          },
+          "event": {
+            "type": "string",
+            "enum": [
+              "spec-creation-started",
+              "spec-revision-started",
+              "spec-created",
+              "spec-updated",
+              "spec-review-started",
+              "spec-reviewed",
+              "spec-approved-with-justifications",
+              "spec-approved-by-user",
+              "coding-started",
+              "coding-revision-started",
+              "coding-complete",
+              "code-review-started",
+              "code-reviewed",
+              "code-approved-with-justifications",
+              "code-approved-by-user",
+              "user-change-requested",
+              "implementation-complete",
+              "subagent-error"
+            ]
+          },
+          "details": {
+            "type": "string"
+          },
+          "spec_change_wrapper": {
+            "type": "object"
+          },
+          "spec_review_wrapper": {
+            "type": "object"
+          },
+          "change_wrapper": {
+            "type": "object"
+          },
+          "review_wrapper": {
+            "type": "object"
+          }
+        },
+        "anyOf": [
+          { "required": ["details"] },
+          { "required": ["spec_change_wrapper"] },
+          { "required": ["spec_review_wrapper"] },
+          { "required": ["change_wrapper"] },
+          { "required": ["review_wrapper"] }
+        ]
+      }
+    }
+  }
+}

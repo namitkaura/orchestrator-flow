@@ -1,0 +1,7 @@
+interface:
+  display_name: "Orchestrator Flow"
+  short_description: "Run spec-to-code loops with structured review gates"
+  default_prompt: "Use $orchestrator-flow to orchestrate Planner -> Architect -> Coder -> Reviewer loops for this feature proposal."
+
+policy:
+  allow_implicit_invocation: true

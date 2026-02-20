@@ -1,0 +1,27 @@
+{
+  "accepted": "conditional",
+  "issue_details": {
+    "must_fix": [
+      {
+        "file": ".docs/specs/kebab-case-feature/tasks.md",
+        "description": "A required acceptance criterion is not mapped to any implementation task.",
+        "rationale": "Unmapped criteria can cause incomplete implementation."
+      }
+    ],
+    "should_fix": [
+      {
+        "file": ".docs/specs/kebab-case-feature/design.md",
+        "description": "Error-handling strategy is under-specified for external API failures.",
+        "rationale": "Clear failure modes reduce production ambiguity."
+      }
+    ],
+    "nit": [
+      {
+        "file": ".docs/specs/kebab-case-feature/requirements.md",
+        "description": "Use consistent terminology for actor names.",
+        "rationale": "Improves readability and traceability."
+      }
+    ]
+  },
+  "notes": "Spec is close, but required coverage gaps remain."
+}

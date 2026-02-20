@@ -1,0 +1,26 @@
+{
+  "changed_files": [
+    "src/feature/service.ts",
+    "src/feature/service.test.ts"
+  ],
+  "new_files": [
+    "src/feature/types.ts"
+  ],
+  "deleted_files": [],
+  "cli_runs": [
+    "npm run test",
+    "npm run lint"
+  ],
+  "test_results": {
+    "unit_tests": {
+      "status": "pass",
+      "details": "All unit tests passed."
+    },
+    "integration_tests": {
+      "status": "pass",
+      "details": "Relevant integration tests passed."
+    }
+  },
+  "implementation_details": "Implemented tasks in tasks.md and updated tests/docs.",
+  "notes": "No blockers; all must-fix items addressed."
+}
