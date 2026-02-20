@@ -237,7 +237,12 @@ If you are updating an existing spec (revising), you MUST append a Revision Hist
 2.  Even if a file was NOT modified, you must add an entry stating "No changes needed for this revision."  This is required since the revision history is an audit trail of the spec updates and the revision entries numbers should be aligned between the three files (requirements.md, design.md, tasks.md).  There should be no gaps in the revision entry numbers and no file should have a diffferent number of revision entries.
 3.  **NEVER** remove or change existing revision entries unless it is the last entry and you are in the same session.  Otherwise always add a new revision entry.
 
-**Template:**`
+The revision history is meant as an audit log and to help resumption of of the spec creation or revision process if it is interrupted for any reason.  It is not meant to be a detailed description of the changes made during the revision, but rather a very brief summary of what was changed and why.  The details should be captured in the updated sections of the document itself (for example, in the updated requirements, design, or tasks sections) rather than in the revision history.  If there are multiple changes made to the same document during the same session, they should all be captured in the same Revision History entry for that document.  Prefer short and sweet summaries in the revision history rather than detailed descriptions, since the details should be in the updated sections of the document itself.  In other words make the revision history entry as small and concise as possible while still being sufficient as an audit log of what was changed and why for this revision.
+
+**Template:**
+
+The template for the Revision History section is as follows:
+
 ```markdown
 ---
 
@@ -255,20 +260,20 @@ If you are updating an existing spec (revising), you MUST append a Revision Hist
 
 1. Requirement 1 changed: <Description of change>
     - Purpose: <Explanation of why this change was made>
-    - Details: <Specific details about what was changed>
+    - Details: <Brief summary of what was changed>
 2. Requirement 2 added: <Description of added requirement>
     - Purpose: <Explanation of why this was added>
-    - Details: <Specific details about what was added> 
+    - Details: <Brief summary of what was added> 
 ... (add more changes as needed)
 
 **Root Cause of Plan Error:**
-Explanation of what caused the need for the revision (e.g., misinterpretation of requirements, oversight in design, etc.)
+Very brief explanation of what caused the need for the revision (e.g., misinterpretation of requirements, oversight in design, etc.)
 
 **Clarified Requirements / Expected Behavior:**
-- Bullet point list of any requirements or expected behaviors that were clarified during the revision process
+- Bullet point list of any requirements or expected behaviors that were clarified during the revision process.  Be very brief and high level here since the details should be in the updated requirements sections themselves.
 
 **Impact / Notes:**
-- Bullet point list of any impacts this revision has on the overall feature, implementation, or testing
+- Bullet point list of any impacts this revision has on the overall feature, implementation, or testing. Be very brief and high level here since the details should be in the updated requirements sections themselves.
 <end FOR `requirements.md` ONLY>
 
 <FOR `design.md` ONLY>
@@ -281,7 +286,7 @@ Explanation of what caused the need for the revision (e.g., misinterpretation of
 ... (add more changes as needed)
 
 **Root Cause of Plan Error:**
-<Explanation of what caused the need for the revision e.g., misinterpretation of requirements, oversight in design, etc.>
+Very brief explanation of what caused the need for the revision (e.g., misinterpretation of requirements, oversight in design, etc.)
 
 **Design Decisions for New Requirements:**
 
@@ -328,10 +333,10 @@ Explanation of what caused the need for the revision (e.g., misinterpretation of
    ... (add more updated tables as needed)
 
 **Root Cause of Plan Error:**
-<Explanation of what caused the need for the revision e.g., misinterpretation of requirements, oversight in design, etc.>
+Very brief explanation of what caused the need for the revision (e.g., misinterpretation of requirements, oversight in design, etc.)
 
 **Impact / Notes:**
-- <Bullet point list of any impacts this revision has on the overall feature, implementation, or testing>
+- Bullet point list of any impacts this revision has on the overall feature, implementation, or testing. Be very brief and high level here since the details should be in the updated requirements sections themselves.
 
 <end FOR `tasks.md` ONLY>
 

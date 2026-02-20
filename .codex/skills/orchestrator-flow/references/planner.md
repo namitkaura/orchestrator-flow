@@ -303,71 +303,114 @@ Rules:
 - If multiple edits happen in one session, consolidate into one entry for that session.
 - If a document is unchanged in a revision session, still append an entry explicitly stating no changes.
 
+The revision history is meant as an audit log and to help resumption of of the spec creation or revision process if it is interrupted for any reason.  It is not meant to be a detailed description of the changes made during the revision, but rather a very brief summary of what was changed and why.  The details should be captured in the updated sections of the document itself (for example, in the updated requirements, design, or tasks sections) rather than in the revision history.  If there are multiple changes made to the same document during the same session, they should all be captured in the same Revision History entry for that document.  Prefer short and sweet summaries in the revision history rather than detailed descriptions, since the details should be in the updated sections of the document itself.  In other words make the revision history entry as small and concise as possible while still being sufficient as an audit log of what was changed and why for this revision.
+
 ### Revision History Template
+
+The template for the Revision History section is as follows:
 
 ```markdown
 ---
 
 ## Revision History
 
-### Revision N: <REVISION TITLE>
+### Revision 1: <REVISION TITLE>
 
-**Date:** YYYY-MM-DD
+**Date:** 2025-11-24
 
-**Reason for Revision:** <Why this revision was needed>
+**Reason for Revision:** Explanation of why the revision was necessary (e.g., to fix an error in the original spec, to clarify requirements, to add missing details, etc.)
 
-<FOR requirements.md>
+
+<FOR `requirements.md` ONLY>
 **Changes Made to Requirements:**
-1. Requirement X changed: <Description>
-   - Purpose: <Why>
-   - Details: <What changed>
-2. Requirement Y added: <Description>
-   - Purpose: <Why>
-   - Details: <What changed>
+
+1. Requirement 1 changed: <Description of change>
+    - Purpose: <Explanation of why this change was made>
+    - Details: <Brief summary of what was changed>
+2. Requirement 2 added: <Description of added requirement>
+    - Purpose: <Explanation of why this was added>
+    - Details: <Brief summary of what was added> 
+... (add more changes as needed)
 
 **Root Cause of Plan Error:**
-<What created the need for revision>
+Very brief explanation of what caused the need for the revision (e.g., misinterpretation of requirements, oversight in design, etc.)
 
 **Clarified Requirements / Expected Behavior:**
-- <Clarification 1>
-- <Clarification 2>
+- Bullet point list of any requirements or expected behaviors that were clarified during the revision process.  Be very brief and high level here since the details should be in the updated requirements sections themselves.
 
 **Impact / Notes:**
-- <Impact summary>
-</FOR requirements.md>
+- Bullet point list of any impacts this revision has on the overall feature, implementation, or testing. Be very brief and high level here since the details should be in the updated requirements sections themselves.
+<end FOR `requirements.md` ONLY>
 
-<FOR design.md>
+<FOR `design.md` ONLY>
 **Changes Made to Design:**
-1. **<Design change title>**
-   - <Details>
-2. **<Design change title>**
-   - <Details>
+
+1. **<What changed>**
+    - <Description of change>
+2. **<What changed>:**
+    - <Description of change>
+... (add more changes as needed)
 
 **Root Cause of Plan Error:**
-<What created the need for revision>
+Very brief explanation of what caused the need for the revision (e.g., misinterpretation of requirements, oversight in design, etc.)
 
 **Design Decisions for New Requirements:**
-1. **<Decision title>**
-   - Implementation: <How>
-   - Rationale: <Why>
-2. **<Decision title>**
-   - Implementation: <How>
-   - Rationale: <Why>
-</FOR design.md>
 
-<FOR tasks.md>
+1. **<First design decision>:**
+    - <Detailed explanation of the design decision>
+    - <addition details as needed>
+    - Implementation: <How this should be implemented>
+    - Rationale: <Why this design decision was made>
+2. **<Second design decision>:**
+    - <Detailed explanation of the design decision>
+    - <addition details as needed>
+    - Implementation: <How this should be implemented>
+    - Rationale: <Why this design decision was made>
+... (add more design decisions as needed)
+<end FOR `design.md` ONLY>
+
+
+<FOR `tasks.md` ONLY>
 **Changes Made to Tasks:**
-1. Task X-Y status preserved as completed (unchanged)
-2. Added follow-up task Z to address review feedback
-3. Renumbered tasks to maintain strict whole-number ordering
+
+ <if applicable>
+1. **Original Tasks X-Y:** Status preserved as completed (unchanged)
+
+ <if applicable>
+2. **Task X Updated:**
+    - <Description and details of the update>
+... (add more updated tasks as needed)
+
+ <if applicable>
+2. **New Tasks Added (Revision Tasks):**
+    - **Task X:**  <Description of new task>
+        - Scope: <Scope of the task, such as what files/components are affected, etc.>
+        - Requirements covered: <which requirements are covered e.g. 3.2, 5.4, etc>
+    - **Task Y:** 
+        - <Description of new task>
+        - Scope: <Scope of the task, such as what files/components are affected, etc.>
+        - Requirements covered: <which requirements are covered e.g. 3.2, 5.4, etc> 
+    ... (add more new tasks as needed)
+
+ <if applicable>
+3. **Requirements Coverage Tables Updated:**
+   - Added Requirement X table (<Description of requirement>)
+   - Updated Requirement Y table (<Description of requirement>)
+   ... (add more updated tables as needed)
 
 **Root Cause of Plan Error:**
-<What created the need for revision>
+Very brief explanation of what caused the need for the revision (e.g., misinterpretation of requirements, oversight in design, etc.)
 
 **Impact / Notes:**
-- <Implementation/testing impact>
-</FOR tasks.md>
+- Bullet point list of any impacts this revision has on the overall feature, implementation, or testing. Be very brief and high level here since the details should be in the updated requirements sections themselves.
+
+<end FOR `tasks.md` ONLY>
+
+
+<for subsequent revisions, increment the revision number accordingly>
+### Revision 2: <REVISION TITLE>
 ```
+
 
 ## Completion Rules
 

@@ -1,0 +1,75 @@
+# .gitignore for orchestrator-flow
+# Purpose: ignore local OS/editor/tool artifacts, runtime files, and common language folders
+
+### macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+### Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+### Editor / IDE
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+*.code-workspace
+
+### Environment / secrets
+.env
+.env.*
+*.secret
+
+### Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnp.*
+
+### Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.venv/
+venv/
+ENV/
+env/
+pip-wheel-metadata/
+
+### Build / output
+dist/
+build/
+out/
+target/
+
+### Logs and runtime files
+*.log
+logs/
+tmp/
+temp/
+.cache/
+
+### Coverage
+coverage/
+.coverage
+coverage.xml
+htmlcov/
+
+### Misc
+*.swp
+*~
+*.bak
+*.tmp
+*.orig
+
+# Local DB / generated
+*.sqlite3
+*.db
+
+# End of file
