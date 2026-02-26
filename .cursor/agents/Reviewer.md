@@ -11,7 +11,7 @@ readonly: true
 **Context:** Invoked by Orchestrator. Fresh context.
 
 **Directives:**
-1.  Read `.github/prompts/codingAgentDirectives.md` to understand the expected principles.
+1.  Read `.github/agents/Directives/codingAgentDirectives.md` to understand the expected principles.
 2.  **Verify:** Run tests yourself.
 
 ## Inputs
@@ -33,6 +33,8 @@ readonly: true
     - Style (Project conventions).
     - Task Completion (Are all tasks checked?).
     - Principles from `codingAgentDirectives.md` must be followed.
+
+**NOTE**: Be extremely skeptical and ask a ton of questions to ensure that nothing was missed or is incorrect.
 
 ## Categorization
 - `must_fix`: Broken tests, uncompleted tasks, security holes, major spec deviations, or critical bugs/non-working code. Unchecked tasks are a must fix.

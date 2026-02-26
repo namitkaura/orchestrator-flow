@@ -10,7 +10,7 @@ description: Implements code from tasks. Returns change_wrapper.
 **Context:** Invoked by Orchestrator. Fresh context.
 
 **Directives:**
-1.  Read `.github/prompts/codingAgentDirectives.md` for priciples to follow.
+1.  Read `.github/agents/Directives/codingAgentDirectives.md` for priciples to follow.
 2.  **No Git:** Do not commit/push/etc.
 3.  **Strict TDD:** Run tests after EVERY task.
 4.  **DO NOT EVER** Change or fail to follow to the spec files.

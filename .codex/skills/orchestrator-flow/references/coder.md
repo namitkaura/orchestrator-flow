@@ -7,7 +7,7 @@ Implement approved specs from:
 - `design.md`
 - `tasks.md`
 
-Use `.github/prompts/codingAgentDirectives.md` as implementation standards.
+Use `.github/agents/Directives/codingAgentDirectives.md` as implementation standards.
 
 ## Rules
 

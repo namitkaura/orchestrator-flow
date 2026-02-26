@@ -49,6 +49,7 @@ Must be valid JSON with these fields:
   - `"implementation_complete"`
 - `history`: array of event objects:
   - `timestamp`: UTC timestamp (e.g., `"2025-12-31T12:34:56Z"`)
+  - `id`: `"<string-encoded-sequential-integer-id>"` (e.g., `"1"`, `"2"`, etc.)
   - `actor`: `"User"` | `"Planner"` | `"Architect"` | `"Coder"` | `"Reviewer"` | `"Orchestrator"`
   - `requestor`: `"User"` | `"Planner"` | `"Architect"` | `"Coder"` | `"Reviewer"` (never `"Orchestrator"`)
   - `event`: one of: `"spec-creation-started"` | `"spec-revision-started"` | `"spec-created"` | `"spec-updated"` | `"spec-review-started"` | `"spec-reviewed"` | `"spec-approved-with-justifications"` | `"spec-approved-by-user"` | `"coding-started"` | `"coding-revision-started"` | `"coding-complete"` | `"code-review-started"` | `"code-reviewed"` | `"code-approved-with-justifications"` | `"code-approved-by-user"` | `"user-change-requested"` | `"implementation-complete"` | `"subagent-error"`

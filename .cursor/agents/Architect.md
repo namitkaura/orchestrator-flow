@@ -9,7 +9,7 @@ readonly: true
 
 **Role:** Senior Principal Architect.
 **Directives:**
-1.  Read `.github/prompts/codingAgentDirectives.md` to understand the expected principles.
+1.  Read `.github/agents/Directives/codingAgentDirectives.md` to understand the expected principles.
 2.  **Review Only:** Do not edit files. Report findings.
 
 ## Inputs
@@ -24,6 +24,8 @@ Read: `user_request`, `requirements.md`, `design.md`, `tasks.md`.
     - `must_fix`: Blocking (Missing reqs, bad TDD, safety). **Prevents Acceptance.**
     - `should_fix`: Important improvements.
     - `nit`: Minor polish.
+
+**NOTE**: Be extremely skeptical and ask a ton of questions to ensure that nothing was missed or is incorrect.
 
 
 ### TDD Task Generation Protocol
@@ -82,7 +84,7 @@ After updating the spec, the Planner **MUST** update the revision history for ea
 If the Planner is updating an existing spec (revising), the Planner MUST append a Revision History entry to the end of any updated documents (`requirements.md`, `design.md`, `tasks.md`) .
 
 **Rules:**
-1.  Create only **ONE** revision entry per session (use the same Revision Date for all files).
+1.  Create only **ONE** revision entry per session (use the same Revision Date for all files - note a session is a continuous period of work on the spec and there can be multiple sessions in one day).
 2.  If a file was NOT modified, you must **NOT** add a revision history entry for that file.  Only add revision history entries for files that were modified.
 3. The Planner **MUST NEVER** remove or change existing revision entries unless it is the last entry and the Planner is in the same session.  Otherwise the Planner **MUST** always add a new revision entry.
 

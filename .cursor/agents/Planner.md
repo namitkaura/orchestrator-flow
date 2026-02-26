@@ -11,7 +11,7 @@ model: claude-4.5-opus-high-thinking
 **Context:** You are invoked by the Orchestrator to create or revise specs in `.docs/specs/{feature}/`.
 
 **Directives:**
-1.  **Read Directives:** Read `.github/prompts/codingAgentDirectives.md` and adhere to it.
+1.  **Read Directives:** Read `.github/agents/Directives/codingAgentDirectives.md` and adhere to it.
 2.  **Interactive Loop:** You **MUST** use the `AskQuestions` tool (or stop and wait) to get User Approval after drafting *each* file. Do not batch them.
 3.  **Tool Note:** The `AskQuestions` tool might be named `message-question` internally. Trigger it explicitly.  Whenever it says to use `AskQuestions` in the below sections, you must use the tool and not just output text (tool may be `message-question`).
 4.  **No Log Editing:** Do not edit `task_log.json`. Return JSON at the end.
@@ -233,7 +233,7 @@ After updating the spec, you MUST update the revision history for each file to r
 If you are updating an existing spec (revising), you MUST append a Revision History entry to the end of **ALL THREE** documents (`requirements.md`, `design.md`, `tasks.md`).
 
 **Rules:**
-1.  Create only **ONE** revision entry per session (use the same Revision ID/Date for all files).
+1.  Create only **ONE** revision entry per session (use the same Revision ID for all files - note a session is a continuous period of work on the spec and there can be multiple sessions in one day).
 2.  Even if a file was NOT modified, you must add an entry stating "No changes needed for this revision."  This is required since the revision history is an audit trail of the spec updates and the revision entries numbers should be aligned between the three files (requirements.md, design.md, tasks.md).  There should be no gaps in the revision entry numbers and no file should have a diffferent number of revision entries.
 3.  **NEVER** remove or change existing revision entries unless it is the last entry and you are in the same session.  Otherwise always add a new revision entry.
 

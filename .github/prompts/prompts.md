@@ -11,7 +11,7 @@ Read `README.md` and `.docs/ai-context.md` (if they exist) first to get project 
 
 [DEFINE_REQUIREMENTS]
 
-Read `.github/prompts/codingAgentDirectives.md` to understand the coding principles and guidelines.  You **MUST** follow these principles for the spec design you create.
+Read `.github/agents/Directives/codingAgentDirectives.md` to understand the coding principles and guidelines.  You **MUST** follow these principles for the spec design you create.
 
 
 ---
@@ -83,3 +83,15 @@ Create a commit message using conventional commit format adhering to the followi
 
 ---
 
+
+# REVIEWER STANDALONE REVIEW (GitLab Issue and Merge Request):
+
+Whenever accessing Gitlab resources, you must use the Gitlab MCP tools only and not try to use the fetch or web access tools (they won't work).  
+
+Given this Gitlab issue [`issue`] and associated merge request [`merge_request`] you must do a complete review of the merge request changes in relation to the issue. 
+
+Perform a through review being a skeptical and critical reviewer and follow your workflow. 
+
+Also whenever you need to search, read through the code, run tests, or do any other things that would add to your context windows, you must use the `searchSubagent` or `runSubagent` tools to do so using a subagent prompt that is clear and specific about what you need to do and what information you need to gather.  You must also specify specifically what you want the subagent to return to you as only that should be added to your context window.  You should not try to do any of these things yourself and must use the tools to do so through subagents and avoid filling your context window with unnecessary information.  Always use the GPT-5.3-Codex (copilot) model (it has the highest context window and is best for this type of work) for your subagents when doing reviews.
+
+When the review is completed, instead of the normal reviewer_wrapper, create a detailed review report in markdown format in a copyable code block using four backticks.

@@ -7,7 +7,7 @@ Create or revise feature specs under `.docs/specs/{feature}/`:
 - `design.md`
 - `tasks.md`
 
-Use `.github/prompts/codingAgentDirectives.md` as quality and engineering guidance.
+Use `.github/agents/Directives/codingAgentDirectives.md` as quality and engineering guidance.
 
 ## Rules
 
@@ -301,6 +301,7 @@ Rules:
 - Append-only.
 - One entry per session per document.
 - If multiple edits happen in one session, consolidate into one entry for that session.
+- Note a session is a continuous period of work on the spec and there can be multiple sessions in one day.
 - If a document is unchanged in a revision session, still append an entry explicitly stating no changes.
 
 The revision history is meant as an audit log and to help resumption of of the spec creation or revision process if it is interrupted for any reason.  It is not meant to be a detailed description of the changes made during the revision, but rather a very brief summary of what was changed and why.  The details should be captured in the updated sections of the document itself (for example, in the updated requirements, design, or tasks sections) rather than in the revision history.  If there are multiple changes made to the same document during the same session, they should all be captured in the same Revision History entry for that document.  Prefer short and sweet summaries in the revision history rather than detailed descriptions, since the details should be in the updated sections of the document itself.  In other words make the revision history entry as small and concise as possible while still being sufficient as an audit log of what was changed and why for this revision.

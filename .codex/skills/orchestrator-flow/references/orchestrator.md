@@ -58,8 +58,8 @@ For every step that changes workflow state:
    - If `history` is empty, `next_history_id = "1"`.
    - Otherwise parse existing `history[*].id` as integers and set `next_history_id` to `(max + 1)` encoded back to string.
 4. Append exactly one new `history` entry with:
-   - `id` (`next_history_id`)
    - `timestamp` (UTC)
+   - `id` (`next_history_id`)
    - `actor`
    - `requestor` (never `Orchestrator`)
    - `event`
