@@ -112,87 +112,101 @@ This section should have EARS requirements
 **Goal:** Create an actionable implementation plan.
 
 #### TDD Task Generation Protocol
-The tasks defined in `tasks.md` should strictly follow the **Red-Green-Refactor** TDD methodology:
 
-**1. [Setup] (Optional)**
+Generate sequential implementation plans using strict **Red-Green-Refactor** methodology.
+
+**1. [Scaffolding] (Optional)**
 Start here only if scaffolding, dependencies, or global types are needed before testing.
 
 **2. Red-Green-Refactor Loop (Repeat for every logical step)**
 *   **[Red] Test:** Write a failing test (unit or integration) ensuring the logic/feature is missing.
     *   *Constraint:* For "wiring" or "prop passing," you **MUST** write a [Red] integration test asserting the parent passes the data before the [Green] task.
-    *   Should not add implementation code in a Red task.
-*   **[Green] Implementation:** Write the minimum code to pass the current [Red] test. Should not add tests or functionality beyond what is needed to pass the test in a Green task.
-*   **[Refactor] (Optional):** Clean up code structure without changing behavior.
-**NOTE:** There should be one [Red]-[Green] pair per logical step. If multiple tests are needed for a single feature, break them into separate tasks. **DO NOT** combine multiple [Red] or [Green] tasks in a row. Instead reorganize into multiple (small) [Red]-[Green] pairs.  There can be one [Refactor] task per logical step (doesn't have to be strictly paired with each [Red]-[Green] pair). There can be several [Red]-[Green] pairs and one [Refactor] task per logical step.
+    * Should not add implementation code in a Red task.
+*   **[Green] Implementation:** Write the minimum code to pass the current [Red] test.  Should not add tests or functionality beyond what is needed to pass the test in a Green task.
+*   **[Refactor] (Optional):** Clean up production code structure without changing behavior.
+
+**NOTE** there should be one [Red]-[Green] pair per logical step. If multiple tests are needed for a single feature, break them into separate tasks.  **DO NOT** create multiple [Red] or [Green] tasks in a row.  Instead reorganize into multiple (small) [Red]-[Green] pairs.
 
 **3. Completion (Required)**
-*   **[Regression]** (Optional) Add tests to cover edge cases or error conditions as needed for existing functionality. Unlike Red tasks, these tests should pass immediately.
+*   **[EdgeCase-Red]** (Optional) Write failing (or passing) tests for edge cases or error conditions on *already-implemented* features. Scoped to hardening existing behavior — not introducing new features.
+*   **[EdgeCase-Green]** (Optional) Fix any issues uncovered by the paired [EdgeCase-Red] task. If all tests already pass, this task is a no-op — do not add new functionality.
+*   **[Test-Maintenance]** (Optional) Update existing tests to reflect changes in the codebase. Avoid making large changes to existing tests that are not necessary to maintain coverage or accuracy.
 *   **[Verification]:** Run the full test suite to check for regressions. Do not add new functionality or tests in a verification task.
 *   **[Documentation]:** Update JSDocs, READMEs, and architectural/AI agent context (e.g. ai-context.md), etc.
 
 **Format:**
-Use `- [ ] N. **[Type]** Task Name` with sub-bullets for steps and `_Requirements: X.Y_` at the end to reference requirements to the task.
+Use `- [ ] N. **[Type]** Task Name` with sub-bullets for steps and `_Requirements: X.Y_` at the end. [EdgeCase-Red] and [EdgeCase-Green] tasks use `_Requirements: N/A — hardening existing behavior_` instead.
 
-Tasks must always be whole numbered task and never have a suffix task number (e.g. 1a, 1b, 1c, etc.).  Same with section numbers.
 
-The section after the tasks list should be "Requirements Coverage Verification" with tables mapping requirements to tasks.  
+#### Example Format
 
-See the **Format Example Template** below for details of how to format the task list and requirements coverage section.
-
-**Format Example Template:**
 ```markdown
 # Implementation Plan - {Feature Name}
 
 ## Task List
 
-This implementation plan breaks down the multi-view whisky display feature into discrete, actionable coding tasks.  This follows the red-green-refactor cycle for TDD with small, focused Red-Green pairs. Each task builds incrementally on previous steps and references specific requirements from the requirements document.
+This implementation plan breaks down the [FEATURE NAME] feature into discrete, actionable coding tasks. This follows the red-green-refactor cycle for TDD with small, focused Red-Green pairs. Each task builds incrementally on previous steps and references specific requirements from the requirements document.
 
-- [ ] 1. **[Setup]**  Set up project structure and core interfaces
- - Create directory structure for models, services, repositories, and API components
- - Define interfaces that establish system boundaries
- - _Requirements: 1.3_
-
-- [ ] 2. **[Red]** Write initial unit tests for core interfaces
-  - Write unit tests for all core interfaces defined in step 1
-  - Ensure tests fail initially (red phase of TDD)
+- [ ] 1. **[Scaffolding]** Set up project structure and core interfaces
+  - Create directory structure for models, services, repositories, and API components
+  - Define interfaces that establish system boundaries
   - _Requirements: 1.3_
 
-- [ ] 3. **[Green]** Implement data models and validation
-  - Write TypeScript interfaces for all data models
-  - Implement validation functions for data integrity
-  - Run unit tests to ensure they pass (green phase of TDD)
-  - _Requirements: 2.1, 3.2, 1.3_
-
-- [ ] 5. **[Refactor]** Refactor data models and validation
-  - Review and improve data model implementations
-  - Optimize validation functions for performance and readability
-  - Ensure all unit tests still pass after refactoring
-  - _Requirements: 2.1, 3.2, 1.3_
-
-- [ ] 6. **[Red]** Write unit tests for User model with validation
+- [ ] 2. **[Red]** Write unit tests for User model validation
   - Write unit tests covering all validation scenarios for User model
   - Ensure tests fail initially (red phase of TDD)
   - _Requirements: 1.3_
 
-- [ ] 7. **[Green]** Implement User model with validation
+- [ ] 3. **[Green]** Implement User model with validation
   - Write User class with validation methods
-  - Run unit tests for User model validation
-  - _Requirements: 1.3 _
+  - Run unit tests to ensure they pass (green phase of TDD)
+  - _Requirements: 1.3_
 
-- [ ] 8. **[Verification]** Verify overall system functionality
+- [ ] 4. **[Refactor]** Refactor User model implementation
+  - Review and improve User model structure and readability
+  - Ensure all unit tests still pass after refactoring
+  - _Requirements: 1.3_
+
+- [ ] 5. **[Red]** Write unit tests for data models and validation
+  - Write unit tests for all data model validation functions
+  - Ensure tests fail initially (red phase of TDD)
+  - _Requirements: 2.1, 3.2_
+
+- [ ] 6. **[Green]** Implement data models and validation
+  - Write TypeScript interfaces for all data models
+  - Implement validation functions for data integrity
+  - Run unit tests to ensure they pass (green phase of TDD)
+  - _Requirements: 2.1, 3.2_
+
+- [ ] 7. **[EdgeCase-Red]** Test User model edge cases
+  - Write tests for invalid email formats, empty required fields, and boundary values
+  - Tests may pass immediately if already handled, or fail if gaps exist
+  - _Requirements: N/A — hardening existing behavior_
+
+- [ ] 8. **[EdgeCase-Green]** Fix User model edge case failures
+  - Update validation to handle any failing edge cases uncovered in task 7
+  - If all tests already pass, this task is a no-op
+  - _Requirements: N/A — hardening existing behavior_
+
+- [ ] 9. **[Test-Maintenance]** Update tests to reflect refactored interfaces
+  - Update existing unit tests affected by interface changes
+  - Avoid rewriting tests beyond what is necessary to maintain accuracy
+  - _Requirements: 1.3, 2.1_
+
+- [ ] 10. **[Verification]** Verify overall system functionality
   - Run the full test suite to ensure no regressions
   - Address any failing tests
   - _Requirements: All_
 
-- [ ] 9. **[Documentation]** Update project documentation
+- [ ] 11. **[Documentation]** Update project documentation
   - Update JSDocs for all new/modified classes and methods
   - Revise README to reflect new feature and usage instructions
-  - Update architectural diagrams and ai-context.md as needed
+  - Update architectural diagrams and AGENTS.md as needed
   - _Requirements: All_
 
 ## Requirements Coverage Verification
 
-This section provides a detailed mapping of all X acceptance criteria to implementation tasks.
+This section provides a detailed mapping of all X acceptance criteria to implementation tasks. Note: [EdgeCase-Red]/[EdgeCase-Green] tasks are excluded as they harden existing behavior rather than satisfy new requirements.
 
 ### Requirement 1: Name of requirement (Y criteria)
 
@@ -204,6 +218,7 @@ This section provides a detailed mapping of all X acceptance criteria to impleme
 
 (Add additional tables for each requirement...)
 ```
+
 Note the `_Requirements: X.X_` references the specific requirements and acceptance criteria from the requirements document that each task addresses.
 
 Task list can have sub-sections such as Frontend, Backend, Testing, Documentation, etc., but should avoid excessive hierarchy.

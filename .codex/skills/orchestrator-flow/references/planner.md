@@ -189,96 +189,113 @@ Task constraints:
 
 Generate sequential implementation plans using strict **Red-Green-Refactor** methodology.
 
-1. **[Setup]** (optional)
-- Use only when scaffolding/dependencies/types are needed before tests.
+**1. [Scaffolding] (Optional)**
+Start here only if scaffolding, dependencies, or global types are needed before testing.
 
-2. **Red-Green-Refactor Loop** (repeat per logical step)
-- **[Red] Test:** add failing test for missing behavior.
-- **[Green] Implementation:** add minimal implementation to pass the current Red test.
-- **[Refactor]** (optional): improve structure without behavior changes.
+**2. Red-Green-Refactor Loop (Repeat for every logical step)**
+*   **[Red] Test:** Write a failing test (unit or integration) ensuring the logic/feature is missing.
+    *   *Constraint:* For "wiring" or "prop passing," you **MUST** write a [Red] integration test asserting the parent passes the data before the [Green] task.
+    * Should not add implementation code in a Red task.
+*   **[Green] Implementation:** Write the minimum code to pass the current [Red] test.  Should not add tests or functionality beyond what is needed to pass the test in a Green task.
+*   **[Refactor] (Optional):** Clean up production code structure without changing behavior.
 
-Rules:
-- Keep one [Red]-[Green] pair per logical step.
-- Do not chain multiple [Red] tasks without a matching [Green].
-- Do not chain multiple [Green] tasks without a prior [Red].
-- [Red] tasks must not include implementation work.
-- [Green] tasks must not introduce unrelated behavior.
+**NOTE** there should be one [Red]-[Green] pair per logical step. If multiple tests are needed for a single feature, break them into separate tasks.  **DO NOT** create multiple [Red] or [Green] tasks in a row.  Instead reorganize into multiple (small) [Red]-[Green] pairs.
 
-3. **Completion** (required)
-- **[Verification]:** run full relevant checks.
-- **[Documentation]:** update technical docs and developer-facing context.
-- **[Regression]** optional: add passing tests for additional edge conditions.
+**3. Completion (Required)**
+*   **[EdgeCase-Red]** (Optional) Write failing (or passing) tests for edge cases or error conditions on *already-implemented* features. Scoped to hardening existing behavior — not introducing new features.
+*   **[EdgeCase-Green]** (Optional) Fix any issues uncovered by the paired [EdgeCase-Red] task. If all tests already pass, this task is a no-op — do not add new functionality.
+*   **[Test-Maintenance]** (Optional) Update existing tests to reflect changes in the codebase. Avoid making large changes to existing tests that are not necessary to maintain coverage or accuracy.
+*   **[Verification]:** Run the full test suite to check for regressions. Do not add new functionality or tests in a verification task.
+*   **[Documentation]:** Update JSDocs, READMEs, and architectural/AI agent context (e.g. ai-context.md), etc.
 
-Task line format:
-- Use `- [ ] N. **[Type]** Task Name`
-- Include sub-bullets for executable steps.
-- End with `_Requirements: X.Y_` references.
+**Format:**
+Use `- [ ] N. **[Type]** Task Name` with sub-bullets for steps and `_Requirements: X.Y_` at the end. [EdgeCase-Red] and [EdgeCase-Green] tasks use `_Requirements: N/A — hardening existing behavior_` instead.
 
-#### Implementation Plan Example
+
+#### Example Format
 
 ```markdown
 # Implementation Plan - {Feature Name}
 
 ## Task List
 
-This implementation plan breaks down the feature into discrete, actionable coding tasks.  This follows the red-green-refactor cycle for TDD with small, focused Red-Green pairs. Each task builds incrementally on previous steps and references specific requirements from the requirements document.
+This implementation plan breaks down the [FEATURE NAME] feature into discrete, actionable coding tasks. This follows the red-green-refactor cycle for TDD with small, focused Red-Green pairs. Each task builds incrementally on previous steps and references specific requirements from the requirements document.
 
-- [ ] 1. **[Setup]** Create feature module scaffolding and interfaces
-  - Add base directories and interface/type files
-  - Define boundaries for API/service/data layers
+- [ ] 1. **[Scaffolding]** Set up project structure and core interfaces
+  - Create directory structure for models, services, repositories, and API components
+  - Define interfaces that establish system boundaries
   - _Requirements: 1.3_
 
-- [ ] 2. **[Red]** Add failing tests for core domain model validation
-  - Add unit tests for invalid/valid payload handling
-  - Confirm tests fail before implementation
-  - _Requirements: 1.1, 1.2_
+- [ ] 2. **[Red]** Write unit tests for User model validation
+  - Write unit tests covering all validation scenarios for User model
+  - Ensure tests fail initially (red phase of TDD)
+  - _Requirements: 1.3_
 
-- [ ] 3. **[Green]** Implement minimal domain model validation
-  - Add validation logic required for tests in Task 2
-  - Run targeted unit tests until passing
-  - _Requirements: 1.1, 1.2_
+- [ ] 3. **[Green]** Implement User model with validation
+  - Write User class with validation methods
+  - Run unit tests to ensure they pass (green phase of TDD)
+  - _Requirements: 1.3_
 
-- [ ] 4. **[Refactor]** Simplify validation helpers and naming
-  - Remove duplication and improve readability
-  - Keep behavior unchanged and tests passing
-  - _Requirements: 1.1, 1.2_
+- [ ] 4. **[Refactor]** Refactor User model implementation
+  - Review and improve User model structure and readability
+  - Ensure all unit tests still pass after refactoring
+  - _Requirements: 1.3_
 
-- [ ] 5. **[Red]** Add failing integration tests for API error paths
-  - Add tests for timeout/dependency failure behavior
-  - Confirm tests fail before implementation
-  - _Requirements: 2.1, 2.3_
+- [ ] 5. **[Red]** Write unit tests for data models and validation
+  - Write unit tests for all data model validation functions
+  - Ensure tests fail initially (red phase of TDD)
+  - _Requirements: 2.1, 3.2_
 
-- [ ] 6. **[Green]** Implement API error handling and response mapping
-  - Add minimal code to satisfy integration tests from Task 5
-  - Run integration tests until passing
-  - _Requirements: 2.1, 2.3_
+- [ ] 6. **[Green]** Implement data models and validation
+  - Write TypeScript interfaces for all data models
+  - Implement validation functions for data integrity
+  - Run unit tests to ensure they pass (green phase of TDD)
+  - _Requirements: 2.1, 3.2_
 
-- [ ] 7. **[Verification]** Run full project checks
-  - Run unit tests, integration tests, lint, and type checks
-  - Resolve regressions discovered by the suite
+- [ ] 7. **[EdgeCase-Red]** Test User model edge cases
+  - Write tests for invalid email formats, empty required fields, and boundary values
+  - Tests may pass immediately if already handled, or fail if gaps exist
+  - _Requirements: N/A — hardening existing behavior_
+
+- [ ] 8. **[EdgeCase-Green]** Fix User model edge case failures
+  - Update validation to handle any failing edge cases uncovered in task 7
+  - If all tests already pass, this task is a no-op
+  - _Requirements: N/A — hardening existing behavior_
+
+- [ ] 9. **[Test-Maintenance]** Update tests to reflect refactored interfaces
+  - Update existing unit tests affected by interface changes
+  - Avoid rewriting tests beyond what is necessary to maintain accuracy
+  - _Requirements: 1.3, 2.1_
+
+- [ ] 10. **[Verification]** Verify overall system functionality
+  - Run the full test suite to ensure no regressions
+  - Address any failing tests
   - _Requirements: All_
 
-- [ ] 8. **[Documentation]** Update docs and developer context
-  - Update README/JSDoc and architecture notes as needed
-  - Capture operational/testing notes for maintainers
+- [ ] 11. **[Documentation]** Update project documentation
+  - Update JSDocs for all new/modified classes and methods
+  - Revise README to reflect new feature and usage instructions
+  - Update architectural diagrams and AGENTS.md as needed
   - _Requirements: All_
 
 ## Requirements Coverage Verification
 
-### Requirement 1: Input validation and normalization
+This section provides a detailed mapping of all X acceptance criteria to implementation tasks. Note: [EdgeCase-Red]/[EdgeCase-Green] tasks are excluded as they harden existing behavior rather than satisfy new requirements.
+
+### Requirement 1: Name of requirement (Y criteria)
 
 | Criterion | Description | Covered By |
 |-----------|-------------|------------|
-| 1.1 | Reject malformed payloads | Task 2, Task 3 |
-| 1.2 | Normalize accepted payloads | Task 2, Task 3, Task 4 |
+| 1.1 | Acceptance criteria 1.1 name (brief description) | Task Z (Task name/brief description) |
+| 1.2 | Acceptance criteria 1.2 name (brief description) | Task W (Task name/brief description) |
+(...continue for all criteria...)
 
-### Requirement 2: Error handling
-
-| Criterion | Description | Covered By |
-|-----------|-------------|------------|
-| 2.1 | Return stable error codes on dependency failures | Task 5, Task 6 |
-| 2.3 | Handle timeout scenarios predictably | Task 5, Task 6 |
+(Add additional tables for each requirement...)
 ```
+
+Note the `_Requirements: X.X_` references the specific requirements and acceptance criteria from the requirements document that each task addresses.
+
+Task list can have sub-sections such as Frontend, Backend, Testing, Documentation, etc., but should avoid excessive hierarchy.
 
 ## Revision Workflow (Existing Spec)
 
