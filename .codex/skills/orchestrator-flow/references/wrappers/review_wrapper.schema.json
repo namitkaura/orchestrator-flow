@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/review_wrapper.schema.json",
+  "title": "Review Wrapper",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "accepted",
+    "issue_details",
+    "test_results",
+    "notes"
+  ],
+  "properties": {
+    "accepted": {
+      "type": "string",
+      "enum": [
+        "true",
+        "false",
+        "conditional"
+      ]
+    },
+    "issue_details": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "must_fix",
+        "should_fix",
+        "nit"
+      ],
+      "properties": {
+        "must_fix": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/issue"
+          }
+        },
+        "should_fix": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/issue"
+          }
+        },
+        "nit": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/issue"
+          }
+        }
+      }
+    },
+    "test_results": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "unit_tests",
+        "integration_tests"
+      ],
+      "properties": {
+        "unit_tests": {
+          "$ref": "#/$defs/test_result"
+        },
+        "integration_tests": {
+          "$ref": "#/$defs/test_result"
+        }
+      }
+    },
+    "notes": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "$defs": {
+    "issue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "file",
+        "description",
+        "rationale"
+      ],
+      "properties": {
+        "file": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "test_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "details"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "pass",
+            "fail",
+            "not_run",
+            "skipped"
+          ]
+        },
+        "details": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

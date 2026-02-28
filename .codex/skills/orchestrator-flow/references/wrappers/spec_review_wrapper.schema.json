@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/spec_review_wrapper.schema.json",
+  "title": "Spec Review Wrapper",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "accepted",
+    "issue_details",
+    "notes"
+  ],
+  "properties": {
+    "accepted": {
+      "type": "string",
+      "enum": [
+        "true",
+        "false",
+        "conditional"
+      ]
+    },
+    "issue_details": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "must_fix",
+        "should_fix",
+        "nit"
+      ],
+      "properties": {
+        "must_fix": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/issue"
+          }
+        },
+        "should_fix": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/issue"
+          }
+        },
+        "nit": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/issue"
+          }
+        }
+      }
+    },
+    "notes": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "$defs": {
+    "issue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "file",
+        "description",
+        "rationale"
+      ],
+      "properties": {
+        "file": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

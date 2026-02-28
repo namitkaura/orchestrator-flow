@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/spec_change_wrapper.schema.json",
+  "title": "Spec Change Wrapper",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "feature",
+    "feature_dir",
+    "requirements_ref",
+    "design_ref",
+    "tasks_ref",
+    "notes",
+    "user_request"
+  ],
+  "properties": {
+    "feature": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "feature_dir": {
+      "type": "string",
+      "pattern": "^\\.docs/specs/[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "requirements_ref": {
+      "type": "string",
+      "pattern": "^\\.docs/specs/.+/requirements\\.md$"
+    },
+    "design_ref": {
+      "type": "string",
+      "pattern": "^\\.docs/specs/.+/design\\.md$"
+    },
+    "tasks_ref": {
+      "type": "string",
+      "pattern": "^\\.docs/specs/.+/tasks\\.md$"
+    },
+    "notes": {
+      "type": "string",
+      "minLength": 1
+    },
+    "user_request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "original_request"
+      ],
+      "properties": {
+        "original_request": {
+          "type": "string",
+          "minLength": 1
+        },
+        "additional_context": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

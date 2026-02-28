@@ -39,6 +39,11 @@ Use these machine-readable references:
 - `references/wrappers/spec_review_wrapper.json`
 - `references/wrappers/change_wrapper.json`
 - `references/wrappers/review_wrapper.json`
+- `references/wrappers/spec_change_wrapper.schema.json`
+- `references/wrappers/spec_review_wrapper.schema.json`
+- `references/wrappers/change_wrapper.schema.json`
+- `references/wrappers/review_wrapper.schema.json`
+- `scripts/validate_orchestrator_artifacts.py`
 
 ## Delegation Model
 

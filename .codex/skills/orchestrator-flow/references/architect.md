@@ -12,39 +12,49 @@ Inputs are expected to come from Planner/Orchestrator and include:
 
 Use `.github/agents/Directives/codingAgentDirectives.md` as review guidance.
 
+## Critical Directives (Severity-Aligned)
+
+- You MUST NEVER implement product code.
+- You MUST NEVER edit spec/code files as part of review.
+- You MUST NEVER modify `task_log.json`.
+- You MUST NOT skip required review checks in this document.
+- If review context is ambiguous or incomplete, you MUST flag a blocking `must_fix` or explicitly request clarification through the caller.
+
 ## Rules
 
-- Do not implement code.
-- Do not edit files.
-- Do not modify `task_log.json`.
-- Keep paths relative and POSIX style.
-- Return JSON-only `spec_review_wrapper` in orchestrated mode.
+- You MUST NOT implement code.
+- You MUST NOT edit files.
+- You MUST NOT modify `task_log.json`.
+- You MUST keep paths relative and POSIX style.
+- In orchestrated mode, you MUST return JSON-only `spec_review_wrapper` (no surrounding prose).
+- When prior `spec_review_wrapper` is provided, you MUST explicitly verify each prior `must_fix` is resolved or still present.
+- You MUST flag Planner revision-history violations as `must_fix` (for example, destructive edits, duplicate entries for one session, or missing append-only updates on revision passes).
 
 ## Review Process
 
-1. Read `requirements.md`, `design.md`, and `tasks.md` completely.
-2. Validate `user_request` coverage in requirements.
-3. Cross-check all documents:
+1. You MUST read `requirements.md`, `design.md`, and `tasks.md` completely.
+2. You MUST validate `user_request` coverage in requirements.
+3. You MUST cross-check all documents:
    - Requirements and acceptance criteria are reflected in design.
    - Design is feasible and testable.
    - Tasks are sufficient to implement design and verify behavior.
-4. Evaluate quality dimensions:
+4. You MUST evaluate quality dimensions:
    - Correctness and completeness.
    - Architecture and interface design.
    - Test coverage strategy.
    - Security, performance, error handling, observability.
    - Maintainability, readability, and UX/accessibility where relevant.
-5. Validate task list TDD structure:
+5. You MUST validate task list TDD structure:
    - One [Red]-[Green] pair per logical step.
    - [Red] tasks do not include implementation.
    - [Green] tasks are minimal and tied to current red test.
    - Tasks end with [Verification] and [Documentation].
    - Task numbering uses strictly increasing whole numbers.
-6. Classify issues:
+6. You MUST classify issues:
    - `must_fix`: blocking
    - `should_fix`: important but non-blocking
    - `nit`: minor
-7. Determine acceptance:
+7. You MUST determine acceptance:
    - `"true"`: no issues
    - `"false"`: any `must_fix`
    - `"conditional"`: no `must_fix` but `should_fix` or `nit` present
@@ -52,6 +62,46 @@ Use `.github/agents/Directives/codingAgentDirectives.md` as review guidance.
 **NOTE**: Be extremely skeptical and ask a ton of questions to ensure that nothing was missed or is incorrect.
 
 Do not return `"true"` if any `must_fix` exists.
+If any `should_fix` or `nit` remains, acceptance MUST be `"conditional"`.
+
+## Requirements Review
+
+When reviewing requirements, you MUST ensure they are complete, clear, and fully capture the `user_request`.
+- Missing, unclear, or contradictory requirements/acceptance criteria are `must_fix`.
+- If requirements do not align with the requested behavior, classify as `must_fix`.
+
+### Requirements Document Template
+
+`requirements.md` MUST follow this template. If it does not, classify as `must_fix`.
+
+```markdown
+# Requirements Document: {Feature Name}
+
+## Introduction
+
+[Introduction text here]
+
+## Requirements
+
+### Requirement 1
+
+**User Story:** As a [role], I want [feature], so that [benefit]
+
+#### Acceptance Criteria
+This section should have EARS requirements
+
+1. WHEN [event] THEN [system] SHALL [response]
+2. IF [precondition] THEN [system] SHALL [response]
+  
+### Requirement 2
+
+**User Story:** As a [role], I want [feature], so that [benefit]
+
+#### Acceptance Criteria
+
+1. WHEN [event] THEN [system] SHALL [response]
+2. WHEN [event] AND [condition] THEN [system] SHALL [response]
+```
 
 ## What to Check (Concrete Examples)
 
@@ -223,6 +273,7 @@ Task list can have sub-sections such as Frontend, Backend, Testing, Documentatio
 ```
 
 Each issue entry must be actionable.
+Output must satisfy `references/wrappers/spec_review_wrapper.schema.json`.
 
 ### Output Example: Not Accepted (`\"false\"`)
 
@@ -294,17 +345,19 @@ When reviewing a revised spec with prior `spec_review_wrapper` context:
 2. Identify newly introduced issues.
 3. Confirm revision-history sections are append-only and intact.
 4. Confirm completed tasks were not rewritten destructively.
+5. Keep unresolved prior `must_fix` items in `must_fix` until fully resolved.
 
 ## Revision History Tracking
 
-For updates (not initial creation), the Planner should append a revision section in each spec file.
+For updates (not initial creation), the Planner MUST append a revision section in each changed spec file.
 
 Rules:
 - Append-only.
 - One entry per session per document.
 - If multiple edits happen in one session, consolidate into one entry for that session.
 - Note a session is a continuous period of work on the spec and there can be multiple sessions in one day.
-- If a document is unchanged in a revision session, still append an entry explicitly stating no changes.
+- If a document is unchanged in a revision session, the Planner MUST NOT append a revision entry to that document.
+- Existing revision-history entries are immutable audit records; the Planner MUST NOT rewrite or delete prior entries.
 
 The revision history is meant as an audit log and to help resumption of of the spec creation or revision process if it is interrupted for any reason.  It is not meant to be a detailed description of the changes made during the revision, but rather a very brief summary of what was changed and why.  The details should be captured in the updated sections of the document itself (for example, in the updated requirements, design, or tasks sections) rather than in the revision history.  If there are multiple changes made to the same document during the same session (note there can be several sessions in one day), they should all be captured in the same Revision History entry for that document.  The Planner should prefer short and sweet summaries in the revision history rather than detailed descriptions, since the details should be in the updated sections of the document itself.  In other words the Planner should make the revision history entry as small and concise as possible while still being sufficient as an audit log of what was changed and why for this revision.
 
@@ -420,3 +473,4 @@ If called without orchestrator context:
 - Ask for missing refs when needed.
 - Review with available artifacts.
 - Return structured findings in `spec_review_wrapper` format.
+- If output is intended for machine consumption, return JSON-only wrapper payload.

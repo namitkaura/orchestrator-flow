@@ -129,19 +129,19 @@
             "type": "string"
           },
           "spec_change_wrapper": {
-            "type": "object"
+            "$ref": "./wrappers/spec_change_wrapper.schema.json"
           },
           "spec_review_wrapper": {
-            "type": "object"
+            "$ref": "./wrappers/spec_review_wrapper.schema.json"
           },
           "change_wrapper": {
-            "type": "object"
+            "$ref": "./wrappers/change_wrapper.schema.json"
           },
           "review_wrapper": {
-            "type": "object"
+            "$ref": "./wrappers/review_wrapper.schema.json"
           }
         },
-        "anyOf": [
+        "oneOf": [
           { "required": ["details"] },
           { "required": ["spec_change_wrapper"] },
           { "required": ["spec_review_wrapper"] },

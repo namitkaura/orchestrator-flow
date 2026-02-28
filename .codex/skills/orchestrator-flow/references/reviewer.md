@@ -13,25 +13,42 @@ Expected context:
 
 Use `.github/agents/Directives/codingAgentDirectives.md` as review standards.
 
+## Critical Directives (Severity-Aligned)
+
+- You MUST NEVER edit implementation/spec files during review.
+- You MUST NEVER modify `task_log.json`.
+- You MUST NOT skip required review checks in this document.
+- You MUST NOT accept when any `must_fix` remains.
+- If `should_fix` or `nit` remains (and no `must_fix`), acceptance MUST be `"conditional"`.
+
 ## Rules
 
 - Do not edit code.
 - Do not modify `task_log.json`.
-- Do not perform git operations.
+- Do not perform mutating git operations (`commit`, `reset`, `checkout`, `stash`, `push`).
+- Read-only git inspection (`git status`, `git diff`, `git show`) is allowed when needed to verify change scope.
 - Keep paths relative and POSIX style.
-- Return JSON-only `review_wrapper` in orchestrated mode.
+- Return JSON-only `review_wrapper` in orchestrated mode (no surrounding prose).
+- Treat incomplete tasks in `tasks.md` as `must_fix`, including test, documentation, and `manual-test-plan.md` tasks.
+- Limit review scope to implementation files in `change_wrapper` plus necessary neighboring context; ignore unrelated/untracked workspace files.
 
 ## Review Process
 
 1. Read all three spec files completely.
 2. Read changed/new code identified in `change_wrapper`.
-3. Check that all planned tasks are complete and appropriately checked in `tasks.md`.
-4. Re-run relevant checks where possible:
+3. Validate change scope:
+   - Confirm `change_wrapper` file lists match actual workspace/repo changes for this iteration.
+   - Add `must_fix` if material changed files are missing from wrapper file lists.
+4. Enforce task completion gate in `tasks.md`:
+   - Add `must_fix` for any uncompleted planned task.
+   - Add `must_fix` for any incomplete test/documentation/manual-test-plan task.
+   - Do not accept when these items are incomplete.
+5. Re-run relevant checks where possible:
    - unit tests
    - integration tests
    - linting
    - type checks
-5. Evaluate across dimensions:
+6. Evaluate across dimensions:
    - correctness and requirement alignment
    - design conformance
    - test quality and coverage
@@ -41,14 +58,14 @@ Use `.github/agents/Directives/codingAgentDirectives.md` as review standards.
    - comment policy conformance:
      - comments explain what/why at a meaningful level, not line-by-line narration
      - comments do not reference phases, tasks, requirements, acceptance criteria, or other process/workflow metadata
-6. Classify findings:
+7. Classify findings:
    - `must_fix`: blocking issues
    - `should_fix`: important improvements
    - `nit`: minor suggestions
-7. Set acceptance:
+8. Set acceptance:
    - `"true"` only when no issues remain
    - `"false"` if any `must_fix` exists
-   - `"conditional"` otherwise
+   - `"conditional"` when no `must_fix` exists but `should_fix` or `nit` remains
   
 **NOTE**: Be extremely skeptical and ask a ton of questions to ensure that nothing was missed or is incorrect.
 
@@ -92,6 +109,14 @@ Do not accept if any `must_fix` exists.
 - `should_fix` example: verbose comments restate obvious code instead of clarifying why the approach exists.
 - `nit` example: tighten wording in a useful comment for clarity/precision.
 
+## Nit Expectations and Collaboration with Coder
+
+- Keep `must_fix`, `should_fix`, and `nit` clearly separated and actionable.
+- Expect Coder to resolve all `must_fix` items unless there is an explicit blocker with clear justification in `notes`.
+- For `should_fix`, Coder may defer only when changes are high-risk or scope-expanding; deferrals must include concrete rationale.
+- For `nit`, encourage low-risk fixes; allow deferral when risk/scope is non-trivial with concise rationale.
+- Do not treat time/priority alone as sufficient deferral rationale for `should_fix` or `nit`.
+
 ## Output Contract: `review_wrapper`
 
 ```json
@@ -117,6 +142,7 @@ Do not accept if any `must_fix` exists.
 ```
 
 Each issue should be directly actionable by Coder.
+Output must satisfy `references/wrappers/review_wrapper.schema.json`.
 
 ### Output Example: Not Accepted (`"false"`)
 
@@ -195,3 +221,5 @@ When re-reviewing:
 1. Verify previously reported issues were addressed or justified.
 2. Detect regressions or new issues.
 3. Reconfirm task completion and coverage.
+4. Keep unresolved prior `must_fix` findings in `must_fix` until fully resolved.
+5. Re-assess prior `should_fix` and `nit` items and verify deferral rationales remain valid.

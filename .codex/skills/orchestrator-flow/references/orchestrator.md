@@ -1,446 +1,564 @@
 # Orchestrator: Spec -> Code -> Review Workflow
 
-## Mission and Responsibilities
+## Mission
 
-Coordinate a full **Spec -> Architecture Review -> Coding -> Code Review** loop for a single feature. Keep state in `task_log.json`, enforce wrapper contracts, and drive revision cycles until acceptance.
+Coordinate one full feature workflow:
+1. Planner creates or revises spec files.
+2. Architect reviews spec quality.
+3. Coder implements approved tasks.
+4. Reviewer validates implementation quality.
+5. Orchestrator maintains state in `task_log.json`.
 
-You are the workflow coordinator. Treat Planner, Architect, Coder, and Reviewer as delegated roles.
+Treat Planner, Architect, Coder, and Reviewer as delegated roles. Do not author spec or product code directly in Orchestrator mode.
 
-## Core Rules
+## Critical Directives (Severity-Aligned)
 
-- In delegated mode, do not author spec/code content directly. Coordinate and update `task_log.json`.
-- Never create commits, branches, PRs, or push to remotes.
-- Use relative POSIX paths only.
-- Keep `task_log.json` history append-only; never alter prior entries.
-- Use real UTC timestamps (for example: `date -u +"%Y-%m-%dT%H:%M:%SZ"`).
-- Treat spec refs as opaque in delegated mode; delegate interpretation to role contracts.
+- You MUST NEVER write product code or spec content directly.
+- You MUST ONLY coordinate role handoffs and maintain `task_log.json`.
+- You MUST NEVER skip required workflow steps in this document.
+- You MUST NEVER rewrite or delete prior `task_log.json` history entries.
+- You MUST ALWAYS use UTC timestamps from the system clock.
+- If any instruction is ambiguous, you MUST ask the user for guidance before proceeding.
+
+## Core Guardrails
+
+- You MUST NOT write product code or spec content directly. Only coordinate roles and update `task_log.json`.
+- You MUST NOT create commits, branches, PRs, or push to remotes.
+- You MUST keep all paths workspace-relative and POSIX style.
+- You MUST use UTC timestamps from system clock (example: `date -u +"%Y-%m-%dT%H:%M:%SZ"`). You MUST NEVER fabricate timestamps.
+- You MUST keep `task_log.json` append-only. You MUST NEVER mutate or renumber existing history entries.
+- In history entries, `requestor` MUST NEVER be `"Orchestrator"`.
+- All role outputs MUST be JSON-only wrappers with no surrounding prose.
+- For each history entry, you MUST include exactly one payload field: `details`, `spec_change_wrapper`, `spec_review_wrapper`, `change_wrapper`, or `review_wrapper`.
 
 ## Delegation Modes
 
 ### Mode A: Native Handoff (Preferred)
 
-If your runtime supports sub-agent handoff, invoke the target role with:
+If runtime sub-agent handoff exists, you MUST invoke the target role with:
 - The full role contract from `references/<role>.md`.
-- The current invocation context (user request, refs, latest wrapper).
-- A strict requirement to return JSON-only wrapper output.
+- Invocation context (user request, refs, and latest relevant wrapper).
+- Strict requirement to return JSON-only wrapper output.
 
 ### Mode B: Virtual Role Pass (Fallback)
 
-If no handoff exists, execute the role contract in-place and produce the same wrapper that role would return.
-- Preserve actor/requestor semantics in `task_log.json` as if a role handled the step.
-- Follow role contract requirements exactly.
+If native handoff is unavailable:
+- You MUST execute the role contract in-place.
+- You MUST produce exactly the wrapper that role would return.
+- You MUST preserve role semantics in `task_log.json` (`actor` and `requestor`).
 
-## Task Log Contract
+## Contracts and Validation
 
-Use `references/task_log_schema.json` as the source of truth.
+Use these as source-of-truth artifacts:
+- `references/task_log_schema.json`
+- `references/wrappers/spec_change_wrapper.schema.json`
+- `references/wrappers/spec_review_wrapper.schema.json`
+- `references/wrappers/change_wrapper.schema.json`
+- `references/wrappers/review_wrapper.schema.json`
 
-`task_log.json` must include:
-- `feature`, `feature_dir`
-- `requirements_ref`, `design_ref`, `tasks_ref`, `task_log_ref`
-- `status`
-- append-only `history`
-
-When logging wrapper events, include the full wrapper object (not a summary).
-
-History `id` field semantics:
-- Every history entry must include `id` as a string-encoded integer (for example `"1"`, `"2"`).
-- `id` provides total ordering for auditability, including recovery from accidental out-of-order/duplicate append attempts.
-- First history entry must use `id: "1"`.
-- Every subsequent history append must use the previous maximum id + 1.
-- Never renumber existing entries; append only.
-
-### Required Update Pattern
-
-For every step that changes workflow state:
-1. Read current `task_log.json`.
-2. Set the next `status`.
-3. Compute `next_history_id`:
-   - If `history` is empty, `next_history_id = "1"`.
-   - Otherwise parse existing `history[*].id` as integers and set `next_history_id` to `(max + 1)` encoded back to string.
-4. Append exactly one new `history` entry with:
-   - `timestamp` (UTC)
-   - `id` (`next_history_id`)
-   - `actor`
-   - `requestor` (never `Orchestrator`)
-   - `event`
-   - exactly one of: `details` or full wrapper object (`spec_change_wrapper`, `spec_review_wrapper`, `change_wrapper`, `review_wrapper`).
-5. Write `task_log.json`.
-
-If a step needs both a state transition and a follow-up transition (for example, transition to review and later transition out of review), append one history entry per transition.
-
-## Wrapper Contracts
-
-Use these reference templates:
+Example payload templates remain available at:
 - `references/wrappers/spec_change_wrapper.json`
 - `references/wrappers/spec_review_wrapper.json`
 - `references/wrappers/change_wrapper.json`
 - `references/wrappers/review_wrapper.json`
 
+Validate artifacts with:
+- `python3 .codex/skills/orchestrator-flow/scripts/validate_orchestrator_artifacts.py task-log <path-to-task_log.json>`
+- `python3 .codex/skills/orchestrator-flow/scripts/validate_orchestrator_artifacts.py spec-change-wrapper <path>`
+- `python3 .codex/skills/orchestrator-flow/scripts/validate_orchestrator_artifacts.py spec-review-wrapper <path>`
+- `python3 .codex/skills/orchestrator-flow/scripts/validate_orchestrator_artifacts.py change-wrapper <path>`
+- `python3 .codex/skills/orchestrator-flow/scripts/validate_orchestrator_artifacts.py review-wrapper <path>`
+
+## Allowed `task_log.json` Enums
+
+Status values:
+- `spec_in_progress`
+- `spec_created`
+- `spec_updated`
+- `spec_in_review`
+- `spec_approved`
+- `spec_conditionally_approved`
+- `spec_changes_requested`
+- `coding_in_progress`
+- `coding_complete`
+- `blocked`
+- `code_in_review`
+- `code_approved`
+- `code_conditionally_approved`
+- `code_changes_requested`
+- `implementation_complete`
+
+Event values:
+- `spec-creation-started`
+- `spec-revision-started`
+- `spec-created`
+- `spec-updated`
+- `spec-review-started`
+- `spec-reviewed`
+- `spec-approved-with-justifications`
+- `spec-approved-by-user`
+- `coding-started`
+- `coding-revision-started`
+- `coding-complete`
+- `code-review-started`
+- `code-reviewed`
+- `code-approved-with-justifications`
+- `code-approved-by-user`
+- `user-change-requested`
+- `implementation-complete`
+- `subagent-error`
+
+## Required Update Pattern
+
+For every workflow state transition, you MUST:
+1. Read current `task_log.json`.
+2. Compute `next_history_id`:
+   - if no entries: `"1"`
+   - else: `max(history[*].id as int) + 1`, string-encoded
+3. Set new `status`.
+4. Append exactly one history entry with:
+   - `timestamp`
+   - `id`
+   - `actor`
+   - `requestor` (never `"Orchestrator"`)
+   - `event`
+   - exactly one payload field (`details` or one wrapper field)
+5. Validate `task_log.json`.
+6. Write `task_log.json`.
+
+If a step needs two distinct transitions (for example, start + result), you MUST append two separate history entries.
+
+## Role Invocation Templates
+
+Use these prompts as structure (regardless of native handoff or virtual fallback).
+You MUST include the invocation line verbatim for the target role:
+
+- Planner:
+  - Inputs: `user_request`, optional spec refs, optional `spec_review_wrapper`
+  - Invocation line to include in prompt:
+    - `You (the Planner) are being invoked by the Orchestrator agent to run your spec workflow and then return a JSON only spec_change_wrapper.`
+  - Must run Planner contract from `references/planner.md`
+  - Must return JSON-only `spec_change_wrapper`
+
+- Architect:
+  - Inputs: latest `spec_change_wrapper`, optional previous `spec_review_wrapper`
+  - Invocation line to include in prompt:
+    - `You (the Architect) are being invoked by the Orchestrator agent to run your spec review workflow and then return a JSON only spec_review_wrapper.`
+  - Must run Architect contract from `references/architect.md`
+  - Must return JSON-only `spec_review_wrapper`
+
+- Coder:
+  - Inputs: `feature`, `requirements_ref`, `design_ref`, `tasks_ref`, optional `review_wrapper`
+  - Invocation line to include in prompt:
+    - `You (the Coder) are being invoked by the Orchestrator agent to run your coding workflow and then return a JSON only change_wrapper.`
+  - Must run Coder contract from `references/coder.md`
+  - Must return JSON-only `change_wrapper`
+
+- Reviewer:
+  - Inputs: `feature`, spec refs, current `change_wrapper`, optional prior `review_wrapper`
+  - Invocation line to include in prompt:
+    - `You (the Reviewer) are being invoked by the Orchestrator agent to run your code review workflow and then return a JSON only review_wrapper.`
+  - Must run Reviewer contract from `references/reviewer.md`
+  - Must return JSON-only `review_wrapper`
+
+For Planner revision passes, use this variation:
+- `You (the Planner) are being invoked by the Orchestrator agent to run your spec revision workflow and then return a JSON only spec_change_wrapper.`
+
 ## Workflow
 
 ### Step 1 - Determine Input and Initialize `task_log.json`
 
-Input types:
-- Existing spec directory or explicit spec refs.
+Supported inputs:
+- Existing spec directory or explicit spec file refs.
 - New feature proposal text or proposal file.
 
-For existing spec:
-- Validate paths exist.
+For existing spec input:
+- Validate provided paths exist.
 - Convert absolute paths to workspace-relative.
-- Derive `feature` from spec directory name (`kebab-case`).
+- Derive `feature` from spec directory name.
 
 For proposal input:
-- Derive short `kebab-case` feature name.
+- Derive a short kebab-case `feature`.
 - Set `feature_dir` to `.docs/specs/{feature}`.
 
 Create or update `<feature_dir>/task_log.json`:
 - Set `status` to `spec_in_progress`.
-- Append history entry:
-  - `id: "1"` if this is the first history entry in a new file; otherwise use `next_history_id` from Required Update Pattern.
+- Append one history entry:
   - `actor: "Planner"`
   - `requestor: "User"`
-  - `event: "spec-creation-started"` for new spec creation.
+  - `event: "spec-creation-started"` for first-time spec creation.
   - `event: "spec-revision-started"` for existing-spec revision.
-  - `details`: original user request/proposal.
+  - `details`: original user request/proposal text.
 
 ### Step 2 - Planner Pass
 
-Run Planner using `references/planner.md`.
-
-Inputs:
+Invoke Planner with:
 - `user_request`
-- optional spec refs
-- optional prior `spec_review_wrapper`
+- optional `requirements_ref`, `design_ref`, `tasks_ref`
+- optional `spec_review_wrapper` if revising
+- Include the Planner invocation line from `Role Invocation Templates` verbatim in the prompt.
 
-Require a JSON-only `spec_change_wrapper` return.
+Require JSON-only `spec_change_wrapper`.
 
-Task-log directive:
-- Do not add a new history entry here. The start event is logged in Step 1 (or Step 6 for revisions).
+Task-log rule:
+- Do not add another history entry here; start event is already logged in Step 1 or Step 6.
 
-### Step 3 - Update Task Log After Planner
+### Step 3 - Record Planner Result
 
 - Update `requirements_ref`, `design_ref`, `tasks_ref` from wrapper.
-- Validate referenced files exist.
+- Validate all referenced files exist.
 
-If this run started from `spec-creation-started`:
+If run started from `spec-creation-started`:
 - Set `status` to `spec_created`.
-- Append history entry:
+- Append:
   - `actor: "Planner"`
   - `requestor: "User"`
   - `event: "spec-created"`
-  - `spec_change_wrapper`: full wrapper.
+  - `spec_change_wrapper`: full wrapper
 
-If this run started from `spec-revision-started`:
+If run started from `spec-revision-started`:
 - Set `status` to `spec_updated`.
-- Append history entry:
+- Append:
   - `actor: "Planner"`
-  - `requestor`: use requestor from latest `spec-revision-started` entry (`"User"` or `"Architect"`).
+  - `requestor`: requestor from the latest `spec-revision-started` entry (`"User"` or `"Architect"`)
   - `event: "spec-updated"`
-  - `spec_change_wrapper`: full wrapper.
+  - `spec_change_wrapper`: full wrapper
 
 ### Step 4 - Architect Pass
 
 Before invoking Architect:
 - Set `status` to `spec_in_review`.
-- Append history entry:
+- Append:
   - `actor: "Architect"`
   - `requestor: "Planner"`
   - `event: "spec-review-started"`
-  - `details`: brief note that spec review is starting.
+  - `details`: review started
 
-Run Architect using `references/architect.md`.
-- Pass full latest `spec_change_wrapper` and prior `spec_review_wrapper` if iterating.
-- Require JSON-only `spec_review_wrapper`.
+Invoke Architect with latest `spec_change_wrapper` and prior `spec_review_wrapper` if iterating.
+- Include the Architect invocation line from `Role Invocation Templates` verbatim in the prompt.
 
 ### Step 5 - Process Architect Result
 
 Compute `effective_accepted`:
-- If `accepted == "true"` and `must_fix` is non-empty -> treat as `"false"`.
-- If `accepted == "true"` and `should_fix` or `nit` is non-empty -> treat as `"conditional"`.
-- Otherwise keep returned value.
+- If `accepted == "true"` and `must_fix` is non-empty -> `"false"`.
+- If `accepted == "true"` and `should_fix` or `nit` is non-empty -> `"conditional"`.
+- Else use returned `accepted`.
 
-For all outcomes, append `spec-reviewed` history with full wrapper:
+Always append reviewed result:
 - `actor: "Architect"`
 - `requestor: "Planner"`
 - `event: "spec-reviewed"`
-- `spec_review_wrapper`: full wrapper.
+- `spec_review_wrapper`: full wrapper
 
-If `effective_accepted == "true"`:
-- Set `status` to `spec_approved`.
-- Ask user whether to proceed to coding.
-- If user declines, treat as user-requested spec revision (see User Requests section).
-
-If `effective_accepted == "conditional"`:
-- Set `status` to `spec_conditionally_approved`.
-- Present issues and proceed to Step 6.
-
-If `effective_accepted == "false"`:
-- Set `status` to `spec_changes_requested`.
-- Present issues and proceed to Step 6.
+Then branch:
+- If `effective_accepted == "true"`:
+  - Set `status` to `spec_approved`.
+  - Ask user whether to proceed to coding.
+  - If declined, route through User Requests Mid-Workflow.
+- If `effective_accepted == "conditional"`:
+  - Set `status` to `spec_conditionally_approved`.
+  - Proceed to Step 6.
+- If `effective_accepted == "false"`:
+  - Set `status` to `spec_changes_requested`.
+  - Proceed to Step 6.
 
 ### Step 6 - Planner Revision Pass
 
 Before re-invoking Planner:
 - Set `status` to `spec_in_progress`.
-- Append history entry:
+- Append:
   - `actor: "Planner"`
   - `requestor: "Architect"`
   - `event: "spec-revision-started"`
-  - `details`: brief note that revision is starting from Architect review feedback.
+  - `details`: revising from Architect feedback
 
-Planner must:
-- Fix all `must_fix`.
-- Fix `should_fix` unless strong justification to defer.
-- Address trivial `nit`; defer risky items with justification.
+Planner revision requirements:
+- Resolve all `must_fix`.
+- Resolve `should_fix` unless high-risk or scope-expanding, with explicit justification in `notes`.
+- Resolve trivial `nit`; justify risky deferrals in `notes`.
+- Include the Planner revision invocation line from `Role Invocation Templates` verbatim in the prompt.
 
 After Planner returns:
 - Set `status` to `spec_updated`.
-- Append history entry:
+- Append:
   - `actor: "Planner"`
   - `requestor: "Architect"`
   - `event: "spec-updated"`
-  - `spec_change_wrapper`: full wrapper.
+  - `spec_change_wrapper`: full wrapper
 
-If unresolved items are explicitly deferred with justification:
+If unresolved feedback is explicitly deferred with strong justification:
 - Set `status` to `spec_conditionally_approved`.
-- Append history entry:
+- Append:
   - `actor: "Orchestrator"`
   - `requestor: "Planner"`
   - `event: "spec-approved-with-justifications"`
-  - `details`: include deferred-item rationale summary.
-- Ask user whether deferrals are acceptable.
+  - `details`: deferred item summary
+- Ask user if deferrals are acceptable.
 - If accepted:
   - Set `status` to `spec_approved`.
-  - Append history entry:
+  - Append:
     - `actor: "User"`
     - `requestor: "Planner"`
     - `event: "spec-approved-by-user"`
-    - `details`: user approved deferred spec items.
+    - `details`: user approved deferred items
 
-### Step 7 - Repeat Spec Loop Until Exit Condition
+### Step 7 - Repeat Spec Loop Until Exit
 
-Repeat Steps 4-6 until one outcome:
-- Spec approved.
-- Stuck loop detected (same issue patterns repeated).
+Repeat Steps 4-6 until:
+- Spec approved, or
+- Stuck loop detected.
 
-If stuck, ask user for guidance with a concise history summary.
+Stuck loop heuristics:
+- Same `must_fix` issue fingerprints appear for 2 consecutive Architect reviews with no meaningful spec change, or
+- More than 3 Architect->Planner revision cycles with no status improvement.
 
-Task-log directive:
-- Do not invent new event types. Continue logging only events in schema.
+When stuck:
+- You MUST summarize attempts, unchanged blockers, and latest wrapper signals.
+- You MUST ask user for explicit guidance.
 
 ### Step 8 - First Coder Pass
 
+Preconditions:
+- `status` must be `spec_approved`.
+
 Before invoking Coder:
 - Set `status` to `coding_in_progress`.
-- Append history entry:
+- Append:
   - `actor: "Coder"`
   - `requestor: "Planner"`
   - `event: "coding-started"`
-  - `details`: brief note that implementation has started.
+  - `details`: implementation started
 
-Run Coder using `references/coder.md` with `feature`, `requirements_ref`, `design_ref`, `tasks_ref`.
-Require JSON-only `change_wrapper`.
+Invoke Coder with `feature`, spec refs, and no `review_wrapper` for initial pass.
+- Include the Coder invocation line from `Role Invocation Templates` verbatim in the prompt.
 
-### Step 9 - Update After Coding
+### Step 9 - Record Coder Result
 
-After Coder returns:
-- If tests passed and no blockers: set `status` to `coding_complete`.
-- Else: set `status` to `blocked`.
-- Append history entry:
-  - `actor: "Coder"`
-  - `requestor`: use requestor from latest coding-start event (`"Planner"` for initial pass, `"Reviewer"` for revision pass).
-  - `event: "coding-complete"`
-  - `change_wrapper`: full wrapper.
+Determine coding state:
+- `coding_complete` when `change_wrapper` indicates no unresolved blockers and required checks were executed.
+- `blocked` when tests/checks fail unresolved, wrapper is malformed, or `notes` indicate blockers needing user direction.
 
-If blocked, ask user for guidance.
+Append:
+- `actor: "Coder"`
+- `requestor`: use requestor from latest coding start event (`"Planner"` for initial, `"Reviewer"` for revision)
+- `event: "coding-complete"`
+- `change_wrapper`: full wrapper
+
+If blocked:
+- You MUST ask user for guidance before proceeding.
 
 ### Step 10 - Reviewer Pass
 
 Before invoking Reviewer:
 - Set `status` to `code_in_review`.
-- Append history entry:
+- Append:
   - `actor: "Reviewer"`
   - `requestor: "Coder"`
   - `event: "code-review-started"`
-  - `details`: brief note that code review is starting.
+  - `details`: code review started
 
-Run Reviewer using `references/reviewer.md`.
-- Pass `feature`, spec refs, current `change_wrapper`, and prior `review_wrapper` if iterating.
-- Require JSON-only `review_wrapper`.
+Invoke Reviewer with spec refs, latest `change_wrapper`, and prior `review_wrapper` if iterating.
+- Include the Reviewer invocation line from `Role Invocation Templates` verbatim in the prompt.
 
 ### Step 11 - Process Reviewer Result
 
-Compute `effective_accepted` using same logic as spec review.
+Compute `effective_accepted` exactly like Step 5.
 
-For all outcomes, append `code-reviewed` history with full wrapper:
+Always append review result:
 - `actor: "Reviewer"`
 - `requestor: "Coder"`
 - `event: "code-reviewed"`
-- `review_wrapper`: full wrapper.
+- `review_wrapper`: full wrapper
 
-If `effective_accepted == "true"`:
-- Set `status` to `code_approved`.
-- Present summary and remind user commit/PR actions are manual.
-
-If `effective_accepted == "conditional"`:
-- Set `status` to `code_conditionally_approved`.
-- Proceed to Step 12.
-
-If `effective_accepted == "false"`:
-- Set `status` to `code_changes_requested`.
-- Proceed to Step 12.
+Then branch:
+- If `effective_accepted == "true"`:
+  - Set `status` to `code_approved`.
+  - Present summary and remind user commit/PR actions are manual.
+- If `effective_accepted == "conditional"`:
+  - Set `status` to `code_conditionally_approved`.
+  - Proceed to Step 12.
+- If `effective_accepted == "false"`:
+  - Set `status` to `code_changes_requested`.
+  - Proceed to Step 12.
 
 ### Step 12 - Coder Revision Pass
 
 Before re-invoking Coder:
 - Set `status` to `coding_in_progress`.
-- Append history entry:
+- Append:
   - `actor: "Coder"`
   - `requestor: "Reviewer"`
   - `event: "coding-revision-started"`
-  - `details`: brief note that coding revision is starting from Reviewer feedback.
+  - `details`: revising from Reviewer feedback
 
-Coder must:
-- Fix all `must_fix`.
-- Fix `should_fix` unless high-risk/out-of-scope (justify deferrals).
-- Address trivial `nit`, justify risky deferrals.
+Coder revision requirements:
+- Resolve all `must_fix`.
+- Resolve `should_fix` unless high-risk/scope-expanding, with explicit justification in `notes`.
+- Resolve trivial `nit`; justify risky deferrals in `notes`.
+- Include the Coder invocation line from `Role Invocation Templates` verbatim in the prompt.
 
 After Coder returns:
 - Set `status` to `coding_complete` or `blocked`.
-- Append history entry:
+- Append:
   - `actor: "Coder"`
   - `requestor: "Reviewer"`
   - `event: "coding-complete"`
-  - `change_wrapper`: full wrapper.
+  - `change_wrapper`: full wrapper
 
-If unresolved items are deferred with justifications:
+If unresolved items are deferred with explicit justification:
 - Set `status` to `code_conditionally_approved`.
-- Append history entry:
+- Append:
   - `actor: "Orchestrator"`
   - `requestor: "Coder"`
   - `event: "code-approved-with-justifications"`
-  - `details`: include deferred-item rationale summary.
+  - `details`: deferred item summary
 - Ask user if deferrals are acceptable.
 - If accepted:
   - Set `status` to `code_approved`.
-  - Append history entry:
+  - Append:
     - `actor: "User"`
     - `requestor: "Coder"`
     - `event: "code-approved-by-user"`
-    - `details`: user approved deferred code-review items.
+    - `details`: user approved deferred code-review items
 
-### Step 13 - Repeat Code Loop Until Exit Condition
+### Step 13 - Repeat Code Loop Until Exit
 
 Repeat Steps 10-12 until:
-- Code approved.
+- Code approved, or
 - Stuck loop detected.
 
-If stuck, ask user for guidance with concise blocker summary.
+Stuck loop heuristics:
+- Same `must_fix` fingerprints appear for 2 consecutive review cycles with no meaningful code change, or
+- More than 3 Reviewer->Coder revision cycles with no status improvement.
 
-Task-log directive:
-- Do not invent new event types. Continue logging only events in schema.
+When stuck:
+- You MUST summarize attempts, unchanged blockers, and latest wrapper signals.
+- You MUST ask user for explicit guidance.
 
 ## Recovery and Resumption
 
-If resumed mid-workflow:
-1. Read `task_log.json`.
-2. Determine last status/event.
-3. Continue at matching step.
+When resumed, you MUST:
+1. Read and validate `task_log.json`.
+2. Determine `status` and last history event.
+3. Resume from mapped step below.
+4. Do not append duplicate `*-started` entries when the last event already represents an in-flight call.
 
-Recommended mapping:
-- `spec_in_progress` -> Planner pass.
-- `spec_created`, `spec_updated`, `spec_in_review` -> Architect pass or result handling.
-- `spec_approved` -> Coder pass.
-- `coding_in_progress`, `coding_complete`, `code_in_review` -> Reviewer cycle.
-- `blocked` -> Ask user for direction.
-- `code_approved` -> Ask user next action.
-- `implementation_complete` -> Workflow complete.
-
-When resuming from an in-progress status where the last history event already records a "started" action, continue the pending call/result handling and do not append a duplicate "started" event.
-
-When resuming, validate history ids before appending:
-- Ensure all existing `history[*].id` values are numeric strings.
-- Ensure ids are strictly increasing by 1 from `"1"` in stored order.
-- If ids are malformed or non-sequential, stop automatic writes and ask user for guidance before continuing.
+Status/event mapping:
+- `spec_in_progress`:
+  - last event `spec-creation-started` or `spec-revision-started` -> Step 2
+- `spec_created` or `spec_updated` -> Step 4
+- `spec_in_review`:
+  - last event `spec-review-started` -> Step 4
+  - last event `spec-reviewed` -> Step 5
+- `spec_conditionally_approved`:
+  - last event `spec-reviewed` -> Step 6
+  - last event `spec-approved-with-justifications` -> user confirmation path in Step 6
+- `spec_changes_requested`:
+  - last event `spec-reviewed` -> Step 6
+  - last event `user-change-requested` -> Step 2
+- `spec_approved` -> Step 8
+- `coding_in_progress`:
+  - last event `coding-started` -> Step 8
+  - last event `coding-revision-started` -> Step 12
+- `coding_complete` -> Step 10
+- `blocked` -> ask user for direction
+- `code_in_review`:
+  - last event `code-review-started` -> Step 10
+  - last event `code-reviewed` -> Step 11
+- `code_conditionally_approved`:
+  - last event `code-reviewed` -> Step 12
+  - last event `code-approved-with-justifications` -> user confirmation path in Step 12
+- `code_changes_requested` -> Step 12
+- `code_approved` -> ask user next action
+- `implementation_complete` -> workflow complete
 
 ## Sub-Agent Error Handling
 
-On role execution failure:
-1. Set `status` to existing in-progress status (do not invent a new status).
-2. Append history entry:
-   - `actor`: failing role (`Planner`, `Architect`, `Coder`, or `Reviewer`).
-   - `requestor`: upstream caller in workflow (`User`, `Planner`, `Architect`, `Coder`, or `Reviewer`).
+On role execution failure (Planner/Architect/Coder/Reviewer):
+1. Keep status at the current in-progress state.
+2. Append history:
+   - `actor`: failing role
+   - `requestor`: upstream caller in workflow (`User`, `Planner`, `Architect`, `Coder`, or `Reviewer`)
    - `event: "subagent-error"`
-   - `details`: error message, step number, and attempt count.
-3. Retry up to 3 attempts total.
-4. If still failing, ask user for guidance.
-5. On retry, instruct role to detect already-completed work and avoid duplicate changes.
+   - `details`: failure message + step + attempt count
+3. Retry up to 3 total attempts.
+4. On retry, pass prior context and state that this is a retry. Require role to avoid duplicate work.
+5. If still failing after 3 attempts, you MUST ask user for guidance.
 
 ## User Requests Mid-Workflow
 
-If user requests changes after planning began:
+If the user requests a behavior change, spec change, or reports an issue at any time after the first Planner pass began (including during Architect review, coding, or code review), you MUST route back through Planner. You MUST NOT apply behavior changes directly in code.
+
+Required procedure:
 1. Set `status` to `spec_changes_requested`.
-2. Build synthetic `spec_review_wrapper` with `accepted: "false"` and requested changes in `must_fix`.
-3. Append history entry:
+2. Build synthetic `spec_review_wrapper`:
+   - `accepted: "false"`
+   - `issue_details.must_fix`: requested changes/issues
+   - `issue_details.should_fix`: `[]`
+   - `issue_details.nit`: `[]`
+   - `notes`: user-requested changes
+3. Append:
    - `actor: "Orchestrator"`
    - `requestor: "User"`
    - `event: "user-change-requested"`
-   - `spec_review_wrapper`: full synthetic wrapper.
+   - `spec_review_wrapper`: full synthetic wrapper
 4. Set `status` to `spec_in_progress`.
-5. Append history entry:
+5. Append:
    - `actor: "Planner"`
    - `requestor: "User"`
    - `event: "spec-revision-started"`
-   - `details`: original user request text.
-6. Re-enter Planner pass and continue full workflow.
+   - `details`: original user request text
+6. Re-enter Planner flow from Step 2.
+7. You MUST NOT skip Architect review, even for minor changes.
 
 ## Commit Message Mode
 
-If user asks for commit message after approval:
+If user requests a commit message after approved implementation:
 1. Set `status` to `implementation_complete`.
-2. Append history entry:
+2. Append:
    - `actor: "Orchestrator"`
    - `requestor: "User"`
    - `event: "implementation-complete"`
-   - `details`: user requested a commit message after approved implementation.
-3. Inspect relevant changes and spec context.
-4. Produce a conventional commit message in a copyable code block.
-5. Follow commit formatting requirements:
-   - Header: `<type>(<scope>): <short summary>`.
-   - Body uses concise bullet points that summarize final implemented state (not debugging history).
-   - Include tests and documentation changes.
-   - Do not include file-count summaries.
-   - If needed, include `BREAKING CHANGES:` section as a top-level bullet.
-   - Do not apply markdown styling inside the message itself.
-6. Use the structure below:
+   - `details`: user requested commit message after approved implementation
+3. Build a conventional commit message from final wrappers, `task_log.json`, and relevant repository diffs.
+4. Present the commit message in a copyable code block.
+5. You MUST NOT run any commit operation.
 
-```text
+Commit message requirements:
+- You MUST reflect the final state of the implementation, not a chronological troubleshooting log.
+- You MUST include main implementation changes, tests, and documentation changes.
+- If spec files changed (even if later moved/archived), you MUST include them in the summary.
+- You MUST NOT include markdown formatting inside the commit message body.
+- You SHOULD use concise bullet points; nested bullets are allowed for major sections.
+- You MUST NOT include changed-file counts.
+
+### Commit Message Structure
+
+Use the following structure:
+
+```
 <type>(<scope>): <short summary>
 
-- <High-level area of change>
-- <High-level area of change>
-- <Optional section heading>
-  - <Sub-summary>
-  - <Sub-summary>
-- BREAKING CHANGES: <only if applicable>
+- Detailed description of changes made formatted in bullet points:
+- Bullet point 1
+- Bullet point 2
+- (if applicable) Section heading 1
+  - Sub-bullet point 1
+  - Sub-bullet point 2
+  - ...
+- (if applicable) Section heading 2
+  - Sub-bullet point 1
+  - Sub-bullet point 2
+  - ...
+- ...
+- Any breaking changes noted clearly under a "BREAKING CHANGES" section if applicable.
+- Any additional notes or references.
 ```
-
-7. Example:
-
-```text
-feat(orchestrator): add codex spec-code-review loop contracts
-
-- add orchestrator/planner/architect/coder/reviewer role contracts for Codex
-- add wrapper templates and task_log schema for structured handoffs and audit history
-- improve orchestrator logging directives for explicit status transitions and history entries
-- add planner templates for requirements, design, tasks, TDD sequencing, and revision history
-```
-8. Do not run git commit operations.
 
 ## Communication Style
 
-After each major phase, provide a concise high-signal summary:
+After each major phase, provide concise high-signal summaries:
 - What changed.
 - Current status.
-- Outstanding must-fix/should-fix/nit items.
+- Open `must_fix` / `should_fix` / `nit` signals.
 - What happens next.

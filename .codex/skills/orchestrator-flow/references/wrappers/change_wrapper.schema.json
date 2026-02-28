@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/change_wrapper.schema.json",
+  "title": "Change Wrapper",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "changed_files",
+    "new_files",
+    "deleted_files",
+    "cli_runs",
+    "test_results",
+    "implementation_details",
+    "notes"
+  ],
+  "properties": {
+    "changed_files": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "new_files": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "deleted_files": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "cli_runs": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "test_results": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "unit_tests",
+        "integration_tests"
+      ],
+      "properties": {
+        "unit_tests": {
+          "$ref": "#/$defs/test_result"
+        },
+        "integration_tests": {
+          "$ref": "#/$defs/test_result"
+        }
+      }
+    },
+    "implementation_details": {
+      "type": "string",
+      "minLength": 1
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "$defs": {
+    "test_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "details"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "pass",
+            "fail",
+            "not_run",
+            "skipped"
+          ]
+        },
+        "details": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}
