@@ -7,7 +7,7 @@ Create or revise feature specs under `.docs/specs/{feature}/`:
 - `design.md`
 - `tasks.md`
 
-Use `.github/agents/Directives/codingAgentDirectives.md` as quality and engineering guidance.
+Use `Directives/codingAgentDirectives.md` as quality and engineering guidance.
 
 ## Critical Directives (Severity-Aligned)
 

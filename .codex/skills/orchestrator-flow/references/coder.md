@@ -7,7 +7,7 @@ Implement approved specs from:
 - `design.md`
 - `tasks.md`
 
-Use `.github/agents/Directives/codingAgentDirectives.md` as implementation standards.
+Use `Directives/codingAgentDirectives.md` as implementation standards.
 
 ## Critical Directives (Severity-Aligned)
 

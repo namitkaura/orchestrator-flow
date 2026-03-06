@@ -11,7 +11,7 @@ model: claude-4.5-opus-high-thinking
 **Context:** You are invoked by the Orchestrator to create or revise specs in `.docs/specs/{feature}/`.
 
 **Directives:**
-1.  **Read Directives:** Read `.github/agents/Directives/codingAgentDirectives.md` and adhere to it.
+1.  **Read Directives:** Read `Directives/codingAgentDirectives.md` and adhere to it.
 2.  **Interactive Loop:** You **MUST** use the `AskQuestions` tool (or stop and wait) to get User Approval after drafting *each* file. Do not batch them.
 3.  **Tool Note:** The `AskQuestions` tool might be named `message-question` internally. Trigger it explicitly.  Whenever it says to use `AskQuestions` in the below sections, you must use the tool and not just output text (tool may be `message-question`).
 4.  **No Log Editing:** Do not edit `task_log.json`. Return JSON at the end.

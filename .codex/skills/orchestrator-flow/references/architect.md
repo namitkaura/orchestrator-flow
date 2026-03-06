@@ -10,7 +10,7 @@ Inputs are expected to come from Planner/Orchestrator and include:
 - `tasks.md`
 - `user_request` context from `spec_change_wrapper`
 
-Use `.github/agents/Directives/codingAgentDirectives.md` as review guidance.
+Use `Directives/codingAgentDirectives.md` as review guidance.
 
 ## Critical Directives (Severity-Aligned)
 

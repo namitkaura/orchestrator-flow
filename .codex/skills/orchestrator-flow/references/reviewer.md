@@ -11,7 +11,7 @@ Expected context:
 - `change_wrapper`
 - optional prior `review_wrapper`
 
-Use `.github/agents/Directives/codingAgentDirectives.md` as review standards.
+Use `Directives/codingAgentDirectives.md` as review standards.
 
 ## Critical Directives (Severity-Aligned)
 

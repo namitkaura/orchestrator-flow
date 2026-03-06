@@ -1,11 +1,28 @@
 # Orchestrator workflow: Spec → Architecture Review → Code → Code Review
 
-This repository documents a set of **VS Code custom agents** (stored under `.github/agents/`) that work together to take a feature from a rough idea through:
+This repository documents an orchestrator workflow that supports **GitHub Copilot, Claude Code, Codex, and Cursor**.
+
+The repository contains platform-specific agent and skill artifacts, while preserving one shared workflow contract across all supported platforms:
+
+| Platform | Repository-internal artifact location | Notes |
+|---|---|---|
+| GitHub Copilot | `.github/agents` | VS Code custom agent contracts (`*.agent.md`) |
+| Claude Code | `.claude/agents` | Claude agent contracts |
+| Codex | `.codex/skills/orchestrator-flow/references` | Codex orchestrator skill reference contracts |
+| Cursor | `.cursor/agents` | Cursor agent contracts |
+
+These platform-specific paths represent implementation-location differences only; they do not change the base workflow contract.
+
+This repository documents platform-specific artifacts that work together to take a feature from a rough idea through:
 
 1. **Spec creation / revision** (requirements, design, tasks)
 2. **Architecture review of the spec** (structured feedback)
 3. **Implementation** (test-driven coding)
 4. **Code review** (structured feedback and acceptance)
+
+In this opening section, `.github/agents` contract paths are shown as the **GitHub Copilot-specific** implementation detail for loading the shared workflow roles in VS Code.
+
+If you are using **Claude Code**, **Codex**, or **Cursor**, use the later sections in this README—**Setup options for other projects**, **Setup commands**, and **Usage by platform**—for harness-specific artifact locations, setup options, and usage commands.
 
 This README is intentionally scoped to the five agent contracts that define that workflow:
 
@@ -132,6 +149,72 @@ The exact schema, allowed `status` values, and allowed `event` values are define
    - A spec directory / explicit spec file paths (and optionally a change request).
 3. Review the generated/updated spec files, code changes, and `task_log.json` as the workflow proceeds.
 4. Create commits/PRs manually when you’re satisfied.
+
+## Setup options for other projects
+
+You can adopt this workflow in another repository using one of these setup approaches:
+
+- **project-local copy**: copy the relevant platform artifacts into each destination project.
+- **home-directory copy**: copy platform assets into a machine-level location in your home directory.
+- **home-directory symlink**: keep this repository as a source of truth and link home-directory entries to it.
+
+For machine-local setup, treat home-directory paths as **external setup paths** (`~/.claude/agents`, `~/.codex/skills/orchestrator-flow`, and similar). These paths are machine-local configuration, are not repository-committed artifacts, and are not repository path-existence checks.
+
+### Placeholder definitions
+
+- `[ORCHESTRATOR_REPO_PATH]`: full absolute path to this repository root on your machine.
+- `[TARGET_PROJECT_PATH]`: full absolute path to a destination project where you want to consume orchestrator assets.
+
+### Platform-specific setup guidance
+
+- **GitHub Copilot**: configure VS Code `chat.agentFilesLocations` with the full path to `[ORCHESTRATOR_REPO_PATH]/.github/agents`.
+- **Claude Code**: use the machine-local path `~/.claude/agents` and point it to this repository's `.claude/agents` artifacts.
+- **Codex**: use the machine-local path `~/.codex/skills/orchestrator-flow` and point it to this repository's `.codex/skills/orchestrator-flow` artifacts.
+- **Cursor (copy mode)**: copy this repository's `.cursor` directory into each destination project's `.cursor` directory.
+- **Cursor (copy mode Directives contract)**: copy this repository's `Directives` directory into the destination project root (sibling of `.cursor`) so `.cursor/agents/Directives -> ../../Directives` resolves correctly.
+- **Cursor (symlink alternative)**: create a per-project symlink from the destination project's `.cursor/agents` to `[ORCHESTRATOR_REPO_PATH]/.cursor/agents`.
+
+### Symlink strategy and caveats
+
+This repository supports an optional hub-and-spoke symlink pattern where `Directives/codingAgentDirectives.md` is the shared source of truth and platform folders consume it through relative `Directives` links.
+Use relative symlink targets (avoid absolute paths); relative links are required for portability across machines and clones.
+
+Some tools or sandboxed environments may not follow symlinks. If that happens, use a fallback by copying or syncing the `Directives` content directly into the destination project layout.
+
+## Setup commands
+
+These are **POSIX** shell command snippets. On **Windows**, use equivalent **PowerShell** or Command Prompt commands, or run the POSIX commands through **WSL** or **Git Bash**.
+
+### Repository-committed commands
+
+Use these in this repository to create in-repo `Directives` symlinks for each platform directory:
+Always keep these link targets relative so the repository setup remains portable across machines and clones.
+
+```sh
+ln -s ../../Directives .claude/agents/Directives
+ln -s ../../../../Directives .codex/skills/orchestrator-flow/references/Directives
+ln -s ../../Directives .cursor/agents/Directives
+ln -s ../../Directives .github/agents/Directives
+```
+
+### Machine-local commands
+
+Use these for machine-local setup paths that are not committed:
+
+```sh
+ln -s "[ORCHESTRATOR_REPO_PATH]/.claude/agents" ~/.claude/agents
+ln -s "[ORCHESTRATOR_REPO_PATH]/.codex/skills/orchestrator-flow" ~/.codex/skills/orchestrator-flow
+ln -s "[ORCHESTRATOR_REPO_PATH]/.cursor/agents" "[TARGET_PROJECT_PATH]/.cursor/agents"
+```
+
+## Usage by platform
+
+Use the same workflow contract across platforms, with platform-specific invocation entry points:
+
+- **GitHub Copilot**: select the appropriate custom agent mode in the **Copilot Chat agent selector**, then provide your prompt.
+- **Claude Code**: run `/orchestrate` followed by your prompt.
+- **Codex**: select the `Orchestrator Flow` skill, then provide your prompt.
+- **Cursor**: run `/orchestrate` followed by your prompt.
 
 ## Guardrails & design goals
 

@@ -11,7 +11,7 @@ readonly: true
 **Context:** Invoked by Orchestrator. Fresh context.
 
 **Directives:**
-1.  Read `.github/agents/Directives/codingAgentDirectives.md` to understand the expected principles.
+1.  Read `Directives/codingAgentDirectives.md` to understand the expected principles.
 2.  **Verify:** Run tests yourself.
 
 ## Inputs
