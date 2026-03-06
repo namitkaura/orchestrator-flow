@@ -296,7 +296,7 @@ If the user requests spec changes or reports a bug at any point after Planner ha
 
 ---
 
-## Git Commit Message
+## User Requested Git Commit Message
 
 When the user requests a commit message (typically after code is approved and manually tested):
 
@@ -309,6 +309,54 @@ When the user requests a commit message (typically after code is approved and ma
    - No markdown formatting in the message.
    - Present in a copyable code block.
 5. Ask the user what they'd like to do next.
+
+### Git Commit Message Details
+
+- Create a conventional commit message summarizing all changes made during the implementation of the feature according to the following guidelines:
+  - Determine all the changes to files, new files added, or files deleted to understand the changes made during the implementation of the feature.
+    - For this purpose and only this purpose, you are allowed to read all files in the workspace to determine what has changed compared to the state before the implementation started.
+    - Go through the spec files (`requirements.md`, `design.md`, `tasks.md`) to understand the requirements, design, and tasks that were implemented.
+    - You can also use git commands (for example, `git diff`, `git status`, etc.) to help determine the changes made.
+  - Be thorough and precise in your commit message, ensuring it accurately reflects all changes made during the implementation of the plan.
+  - The commit message should reflect the current state of the code after implementing the plan and not a log of all the fixes and changes made during the implementation.
+  - All tests and documentation changes should be included in the commit.
+  - If the specs directory is archived or moved still include any changes to it in the commit message.
+  - Do not use markdown formatting in the commit message.
+  - Use nested bullets if necessary to clearly convey the details of the changes.
+  - However the sub-bullets should be more summaries of what was done for each area and not a log of every single change or fix made. They should not go into verbose and specific detail about every single change, but should capture the main areas of change and the key aspects of what was implemented.
+  - Do not use underlines for headings (they should be top level bullets only).
+  - Present the commit message in a copyable code block.
+  - Do not include a count of changed files, new files, or deleted files in the commit message.
+  - If tests were added or changed, include a summary of the testing changes and how many were added or changed, 
+    - Also include the overall test status as sub-bullet in the test section
+    - e.g. "All 1000 tests passing across 100 test files, type-check and lint clear"
+  - See the "Commit message structure" section below for the required structure.
+- Once you have generated the commit message, immediately return to TaskSync's "Implementation complete, request next task" state by using the `askQuestions` tool or if that fails or is unavailable, use the universal Python TaskSync command.
+
+
+#### Commit message structure
+
+Use the following structure for the commit message:
+
+```
+<type>(<scope>): <short summary> 
+
+- Detailed description of changes made formatted in bullet points:
+- Bullet point 1
+- Bullet point 2
+- (if applicable) Section heading 1
+  - Sub-bullet point 1
+  - Sub-bullet point 2
+  - ...
+- (if applicable) Section heading 2
+  - Sub-bullet point 1
+  - Sub-bullet point 2
+  - ...
+- ...
+- Any breaking changes noted clearly under a "BREAKING CHANGES" section if applicable.
+- Any additional notes or references.
+```
+
 
 ---
 

@@ -531,6 +531,9 @@ Commit message requirements:
 - You MUST NOT include markdown formatting inside the commit message body.
 - You SHOULD use concise bullet points; nested bullets are allowed for major sections.
 - You MUST NOT include changed-file counts.
+- If tests were added or changed, include a summary of the testing changes and how many were added or changed, 
+  - Also include the overall test status as sub-bullet in the test section
+  - e.g. "All 1000 tests passing across 100 test files, type-check and lint clear"
 
 ### Commit Message Structure
 

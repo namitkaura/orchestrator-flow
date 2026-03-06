@@ -133,6 +133,9 @@ Read `task_log.json` status. If the last history entry contains a return wrapper
   - Do not use underlines for headings (they should be top level bullets only).
   - Present the commit message in a copyable code block.
   - Do not include a count of changed files, new files, or deleted files in the commit message.
+  - If tests were added or changed, include a summary of the testing changes and how many were added or changed, 
+    - Also include the overall test status as sub-bullet in the test section
+    - e.g. "All 1000 tests passing across 100 test files, type-check and lint clear"
   - See the "Commit message structure" section below for the required structure.
 - Once you have generated the commit message, immediately return to TaskSync's "Implementation complete, request next task" state by using the `AskQuestions` tool
 

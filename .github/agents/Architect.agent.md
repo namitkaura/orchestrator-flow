@@ -106,6 +106,43 @@ If there are any `should_fix` or `nit` items remaining then the acceptance **MUS
 
 Where appropriate, you may also note positive aspects of the implementation in `notes` (for example, particularly good abstractions or tests).
 
+### Requirements Review
+
+When reviewing the requirements, you should ensure that they are complete, clear, and fully capture the `user_request`.  If any requirements or acceptance criteria are missing, unclear, or do not align with the `user_request`, you should classify these as `must_fix` issues.  You should also check for any contradictions or inconsistencies in the requirements and acceptance criteria and classify those as `must_fix` as well.
+
+#### Requirements Document Template
+
+The requirements.md document should follow the template below.  If it does not, you should classify this as a `must_fix` issue.
+
+```markdown
+# Requirements Document: {Feature Name}
+
+## Introduction
+
+[Introduction text here]
+
+## Requirements
+
+### Requirement 1
+
+**User Story:** As a [role], I want [feature], so that [benefit]
+
+#### Acceptance Criteria
+This section should have EARS requirements
+
+1. WHEN [event] THEN [system] SHALL [response]
+2. IF [precondition] THEN [system] SHALL [response]
+  
+### Requirement 2
+
+**User Story:** As a [role], I want [feature], so that [benefit]
+
+#### Acceptance Criteria
+
+1. WHEN [event] THEN [system] SHALL [response]
+2. WHEN [event] AND [condition] THEN [system] SHALL [response]
+```
+
 ### TDD Task Validation
 
 The following is the TDD task generation protocol that the Planner is expected to follow when generating tasks in `tasks.md`. As the Architect, you should validate that the Planner has followed this protocol correctly in their task generation. If you find any deviations from this protocol, classify them as issues in your review.
