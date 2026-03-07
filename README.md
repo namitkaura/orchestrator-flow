@@ -4,12 +4,12 @@ This repository documents an orchestrator workflow that supports **GitHub Copilo
 
 The repository contains platform-specific agent and skill artifacts, while preserving one shared workflow contract across all supported platforms:
 
-| Platform | Repository-internal artifact location | Notes |
-|---|---|---|
-| GitHub Copilot | `.github/agents` | VS Code custom agent contracts (`*.agent.md`) |
-| Claude Code | `.claude/agents` | Claude agent contracts |
-| Codex | `.codex/skills/orchestrator-flow/references` | Codex orchestrator skill reference contracts |
-| Cursor | `.cursor/agents` | Cursor agent contracts |
+| Platform | Repository-internal artifact location | Notes | Status |
+|---|---|---|---|
+| GitHub Copilot | `.github/agents` | VS Code custom agent contracts (`*.agent.md`) | Works the best and is the most consistent and stable |
+| Claude Code | `.claude/agents` | Claude agent contracts | Works fairly well though not quite as consistent or as robust as the GitHub Copilot version |
+| Codex | `.codex/skills/orchestrator-flow/references` | Codex orchestrator skill reference contracts - Works but doesn't use sub-agents and is inconsistent  | All work is run as a skill in the main agent which switches roles - work in progress |
+| Cursor | `.cursor/agents` | Cursor agent contracts | Works but not perfect, uses a lot of tokens - work in progress |
 
 These platform-specific paths represent implementation-location differences only; they do not change the base workflow contract.
 
