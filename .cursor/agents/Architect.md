@@ -179,7 +179,7 @@ If the Planner is updating an existing spec (revising), the Planner MUST append 
 
 **Rules:**
 1.  Create only **ONE** revision entry per session (use the same Revision Date for all files - note a session is a continuous period of work on the spec and there can be multiple sessions in one day).
-2.  If a file was NOT modified, you must **NOT** add a revision history entry for that file.  Only add revision history entries for files that were modified.
+2.  If a file was NOT modified, you must **NOT** add a revision history entry for that file.  Only add revision history entries for files that were modified. It is ok if the revision numbers beteween the three documents are not the same since they may be revised in different sessions or with different frequencies, etc.  The important thing is that the revision history accurately reflects the changes made to each document.
 3. The Planner **MUST NEVER** remove or change existing revision entries unless it is the last entry and the Planner is in the same session.  Otherwise the Planner **MUST** always add a new revision entry.
 
 ## Final Constraints

@@ -354,7 +354,7 @@ The revision history is meant as an audit log and to help resumption of of the s
 
 ### Revision History Template
 
-You **MUST** follow this template closely when creating the Revision History section for any spec document revisions.  You should add a new revision entry to the Revision History section for each revision of the spec documents, only if changes were made to that document.  If no changes were made to a particular document during a revision, you should NOT add a revision entry for that document.
+You **MUST** follow this template closely when creating the Revision History section for any spec document revisions.  You should add a new revision entry to the Revision History section for each revision of the spec documents, only if changes were made to that document.  If no changes were made to a particular document during a revision, you should NOT add a revision entry for that document. It is ok if the revision numbers beteween the three documents are not the same since they may be revised in different sessions or with different frequencies, etc.  The important thing is that the revision history accurately reflects the changes made to each document.
 
 The template for the Revision History section is as follows:
 

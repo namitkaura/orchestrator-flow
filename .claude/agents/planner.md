@@ -333,14 +333,14 @@ When revising existing specs (due to user changes or Architect feedback):
 Maintain a revision history section at the end of **each** spec document when updating (not on initial creation).
 
 - One revision entry per session covering all changes in that session (note there can be multiple sessions in one day).
-- Even if no changes were made to a document, add an entry noting that.
+- Only add revision entries for documents that were modified. If a document wasn't changed, don't add an entry for it.
 - Never alter previous revision history entries.
 
 The revision history is meant as an audit log and to help resumption of of the spec creation or revision process if it is interrupted for any reason.  It is not meant to be a detailed description of the changes made during the revision, but rather a very brief summary of what was changed and why.  The details should be captured in the updated sections of the document itself (for example, in the updated requirements, design, or tasks sections) rather than in the revision history.  If there are multiple changes made to the same document during the same session (note a session is a continuous period of work on the spec and there can be multiple sessions in one day), they should all be captured in the same Revision History entry for that document.  Prefer short and sweet summaries in the revision history rather than detailed descriptions, since the details should be in the updated sections of the document itself.  In other words make the revision history entry as small and concise as possible while still being sufficient as an audit log of what was changed and why for this revision.
 
 **Template:**
 
-You **MUST** follow this template closely when creating the Revision History section for any spec document revisions.  You should add a new revision entry to the Revision History section for each revision of the spec documents, only if changes were made to that document.  If no changes were made to a particular document during a revision, you should NOT add a revision entry for that document.
+You **MUST** follow this template closely when creating the Revision History section for any spec document revisions.  You should add a new revision entry to the Revision History section for each revision of the spec documents, only if changes were made to that document.  If no changes were made to a particular document during a revision, you should NOT add a revision entry for that document. It is ok if the revision numbers beteween the three documents are not the same since they may be revised in different sessions or with different frequencies, etc.  The important thing is that the revision history accurately reflects the changes made to each document.
 
 The template for the Revision History section is as follows:
 
