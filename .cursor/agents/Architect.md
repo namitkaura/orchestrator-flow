@@ -142,7 +142,7 @@ This section provides a detailed mapping of all X acceptance criteria to impleme
 
 Note the `_Requirements: X.X_` references the specific requirements and acceptance criteria from the requirements document that each task addresses.
 
-Task list can have sub-sections such as Frontend, Backend, Testing, Documentation, etc., but should avoid excessive hierarchy.
+Task list should have sub-sections (if warranted) such as Frontend, Backend, Testing, Documentation, that describes a grouping of related tasks, etc., but should avoid excessive hierarchy.
 
 Tasks must always be whole numbered task and never have a suffix task number (e.g. 1a, 1b, 1c, etc.).  Same with section numbers.
 

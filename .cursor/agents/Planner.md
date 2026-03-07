@@ -137,6 +137,7 @@ Start here only if scaffolding, dependencies, or global types are needed before 
 **Format:**
 Use `- [ ] N. **[Type]** Task Name` with sub-bullets for steps and `_Requirements: X.Y_` at the end. [EdgeCase-Red] and [EdgeCase-Green] tasks use `_Requirements: N/A — hardening existing behavior_` instead.
 
+After the tasks section, add a requirements coverage verification section to map the requirements to the tasks (follow the template exactly as described in the `#### Example Format` section below)
 
 #### Example Format
 
@@ -221,7 +222,7 @@ This section provides a detailed mapping of all X acceptance criteria to impleme
 
 Note the `_Requirements: X.X_` references the specific requirements and acceptance criteria from the requirements document that each task addresses.
 
-Task list can have sub-sections such as Frontend, Backend, Testing, Documentation, etc., but should avoid excessive hierarchy.
+Task list should have sub-sections (if warranted) such as Frontend, Backend, Testing, Documentation, that describes a grouping of related tasks, etc., but should avoid excessive hierarchy.
 
 
 **Execution:**
@@ -255,6 +256,8 @@ If you are updating an existing spec (revising), you MUST append a Revision Hist
 The revision history is meant as an audit log and to help resumption of of the spec creation or revision process if it is interrupted for any reason.  It is not meant to be a detailed description of the changes made during the revision, but rather a very brief summary of what was changed and why.  The details should be captured in the updated sections of the document itself (for example, in the updated requirements, design, or tasks sections) rather than in the revision history.  If there are multiple changes made to the same document during the same session, they should all be captured in the same Revision History entry for that document.  Prefer short and sweet summaries in the revision history rather than detailed descriptions, since the details should be in the updated sections of the document itself.  In other words make the revision history entry as small and concise as possible while still being sufficient as an audit log of what was changed and why for this revision.
 
 **Template:**
+
+You **MUST** follow this template closely when creating the Revision History section for any spec document revisions.  You should add a new revision entry to the Revision History section for each revision of the spec documents, only if changes were made to that document.  If no changes were made to a particular document during a revision, you should NOT add a revision entry for that document.
 
 The template for the Revision History section is as follows:
 

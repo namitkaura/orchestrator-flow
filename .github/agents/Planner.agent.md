@@ -258,7 +258,7 @@ The tasks document should be based on the design document, so ensure it exists f
 Convert the feature design into a series of prompts for an AI code-generation agent that will implement each step in a test-driven manner. Prioritize best practices, incremental progress, and early testing, ensuring no big jumps in complexity at any stage. Make sure that each prompt builds on the previous prompts, and ends with wiring things together. There should be no hanging or orphaned code that isn't integrated into a previous step. Focus ONLY on tasks that involve writing, modifying, or testing code, or updating documentation. There should also be steps to update the appropriate documentation files of the project. Ensure that as much as possible the testing is automated through the creation of unit or integration tests that should be run by the agent to verify the changes.  However if there are manual test steps needed, create a detailed test plan (`manual-test-plan.md` in the same folder as the `tasks.md` file) as the final task that can be executed by the user after implementation is complete.  
 ```
 - The model MUST format the implementation plan as a numbered checkbox list with a maximum of two levels of hierarchy:
-- Top-level items (like epics) should be used only when needed
+- Top-level items (like epics) should be used as when needed
 - Each item must be a checkbox
 - Simple structure is preferred
 - The model MUST ensure each task item includes:
@@ -297,7 +297,7 @@ Convert the feature design into a series of prompts for an AI code-generation ag
   - Business process changes or organizational changes
   - Marketing or communication activities
   - Any task that cannot be completed through writing, modifying, testing code, or documentation updates
-- After the tasks section, add a coverage section to map the requirements to the tasks
+- After the tasks section, add a requirements coverage verification section to map the requirements to the tasks (follow the template exactly as described in the `#### Example Format` section below)
 - After updating the tasks document, the model MUST ask the user "Do the tasks look good?" using the `askQuestions` tool or if that fails or is unavailable, a universal Python command `python -c "question = input('Do the tasks look good? ')"` 
 - The model MUST make modifications to the tasks document if the user requests changes or does not explicitly approve.
 - The model MUST ask for explicit approval after every iteration of edits to the tasks document using the `askQuestions` tool or if that fails or is unavailable, a universal Python command `python -c "question = input('Do the tasks look good? ')"` 
@@ -337,6 +337,8 @@ Start here only if scaffolding, dependencies, or global types are needed before 
 
 **Format:**
 Use `- [ ] N. **[Type]** Task Name` with sub-bullets for steps and `_Requirements: X.Y_` at the end. [EdgeCase-Red] and [EdgeCase-Green] tasks use `_Requirements: N/A — hardening existing behavior_` instead.
+
+
 
 
 #### Example Format
@@ -422,7 +424,7 @@ This section provides a detailed mapping of all X acceptance criteria to impleme
 
 Note the `_Requirements: X.X_` references the specific requirements and acceptance criteria from the requirements document that each task addresses.
 
-Task list can have sub-sections such as Frontend, Backend, Testing, Documentation, etc., but should avoid excessive hierarchy.
+Task list should have sub-sections (if warranted) such as Frontend, Backend, Testing, Documentation, that describes a grouping of related tasks, etc., but should avoid excessive hierarchy.
 
 
 ## Orchestrator Integration (Orchestrator Mode)
@@ -437,7 +439,7 @@ When operating in **Orchestrator Mode** (triggered by the Orchestrator agent inc
   - `requirements_ref`: the path to `.docs/specs/{feature}/requirements.md`.
   - `design_ref`: the path to `.docs/specs/{feature}/design.md`.
   - `tasks_ref`: the path to `.docs/specs/{feature}/tasks.md`.
-  - `notes`: A brief note summarizing the completion of the spec creation workflow include potentially any resolution of previous spec review comments if applicable.
+  - `notes`: A brief note summarizing the completion of the spec creation workflow including potentially any resolution of previous spec review comments if applicable.
   - `user_request`: Contains two fields:
         - `original_request`: The original feature proposal (or relative path to proposal file) or any user requested changes that need to be addressed.
         - `additional_context`: Any additional context or clarifications provided by the user during the spec creation/revision process or any additional requested changes.
@@ -477,6 +479,10 @@ When updating existing spec documents, you MUST maintain a clear revision histor
 **VERY IMPORTANT** The revision history entries MUST never be changed (except to combine them if multiple entries were mistakenly created during the same session). Once created these are immutable audit records of what was changed and why.  Additionally you must **NEVER** alter previous revision history entries even if they contain out of date information as this is expected since they are an audit record.  Instead, subsequent revisions will have their own revision history entries that may indicate that certain information in previous revision history entries is now out of date.  Even if the Architect feedback requests that you change previous revision history entries, you MUST NOT do this and instead explain to the Architect that revision history entries are immutable audit records and that any changes needed due to Architect feedback should be captured in a new revision history entry for this revision rather than changing previous entries.  The only exception is structural changes such as fixing an incorrect date or revision number or reording out of order entries that were inserted in the wrong place.
 
 The revision history is meant as an audit log and to help resumption of of the spec creation or revision process if it is interrupted for any reason.  It is not meant to be a detailed description of the changes made during the revision, but rather a very brief summary of what was changed and why.  The details should be captured in the updated sections of the document itself (for example, in the updated requirements, design, or tasks sections) rather than in the revision history.  If there are multiple changes made to the same document during the same session, they should all be captured in the same Revision History entry for that document.  Prefer short and sweet summaries in the revision history rather than detailed descriptions, since the details should be in the updated sections of the document itself.  In other words make the revision history entry as small and concise as possible while still being sufficient as an audit log of what was changed and why for this revision.
+
+#### Revision History Template
+
+You **MUST** follow this template closely when creating the Revision History section for any spec document revisions.  You should add a new revision entry to the Revision History section for each revision of the spec documents, only if changes were made to that document.  If no changes were made to a particular document during a revision, you should NOT add a revision entry for that document.
 
 The template for the Revision History section is as follows:
 
