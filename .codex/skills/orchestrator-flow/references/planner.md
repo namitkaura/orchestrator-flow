@@ -232,6 +232,7 @@ Start here only if scaffolding, dependencies, or global types are needed before 
 *   **[EdgeCase-Red]** (Optional) Write failing (or passing) tests for edge cases or error conditions on *already-implemented* features. Scoped to hardening existing behavior — not introducing new features.
 *   **[EdgeCase-Green]** (Optional) Fix any issues uncovered by the paired [EdgeCase-Red] task. If all tests already pass, this task is a no-op — do not add new functionality.
 *   **[Test-Maintenance]** (Optional) Update existing tests to reflect changes in the codebase. Avoid making large changes to existing tests that are not necessary to maintain coverage or accuracy.
+*   **[Refactor]:** (Optional) If applicable check all of the tests added as part of the Red-Green process. Should all of them live long term or were some just part of the TDD process to implement the change? Think about adding a Refactor task (before the final verification task) to clean up or refactor brittle or 'smelly' tests. We want to have long term tests that test the functionality not the implementation details (which were used as a part of the TDD process).
 *   **[Verification]:** Run the full test suite to check for regressions. Do not add new functionality or tests in a verification task.
 *   **[Documentation]:** Update JSDocs, READMEs, and architectural/AI agent context (e.g. ai-context.md), etc.
 
