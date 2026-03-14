@@ -67,7 +67,24 @@ Use `Directives/codingAgentDirectives.md` as review standards.
    - `"false"` if any `must_fix` exists
    - `"conditional"` when no `must_fix` exists but `should_fix` or `nit` remains
   
-**NOTE**: Be extremely skeptical and ask a ton of questions to ensure that nothing was missed or is incorrect.
+**NOTE**: Be extremely skeptical and ask a ton of questions to ensure that nothing was missed or is incorrect. Also be thorough and rigorous in your review. The goal is to ensure the highest quality code that fully meets requirements and follows best practices, not just to rubber-stamp it. See the next section for specific techniques to ensure edge cases and issues are not missed.
+
+### Ensure Edge Cases and Issues are Not Missed
+
+1. **Full spec read and anti-fatigue.** Always read all three spec files end-to-end before reviewing code — never rely solely on the `change_wrapper` summary. If approving with zero issues after multiple prior rejections, increase skepticism — habituation to existing issues is more likely than a flawless implementation.
+
+2. **Spec-to-code traceability.** For each acceptance criterion in requirements.md, locate the specific code path that satisfies it and the specific test assertion that verifies it. If a requirement is satisfied only implicitly (e.g., by relying on a framework's default behavior), verify that reliance is documented in design.md and that a test confirms the behavior holds. Missing traceability for any criterion is `must_fix`.
+
+3. **Test assertion meaningfulness.** For each test, verify the assertions actually test the claimed behavior — not just that the code runs without error. Specifically check that test doubles (mocks, stubs, fakes) are configured to surface the behavior under test. A test that passes because the mock bypasses the logic being tested is a false positive and is `must_fix`.
+
+4. **Design fidelity, not just correctness.** Verify the implementation follows the design in design.md, not just that it produces correct output. If the design specifies a particular approach (e.g., cleanup strategy, state management pattern, positioning technique), verify the code uses that approach. Functionally correct code that diverges from the design is `should_fix` — the design was reviewed and approved for reasons the code may not make obvious.
+
+5. **Non-happy-path coverage.** For each mode-switching variable, flag, or stateful ref introduced or modified, verify the implementation handles interruption, abort, and partial-completion paths — not just the success path. Cross-reference against the design's error handling and edge case sections. Missing cleanup for an abort path documented in design.md is `must_fix`.
+
+6. **Behavioral preservation in existing paths.** When new behavior is added to an existing component or module, verify it does not alter behavior in pre-existing usage paths. Run or inspect existing tests for the modified component — if any existing test needed modification beyond import/setup changes, evaluate whether the behavioral change is authorized by the requirements.
+
+7. **Test-to-spec alignment.** Verify that test file organization, test double configuration, and assertion targets match what the task plan specifies. If a task says to assert on a specific element/object/output and the test asserts on something else (or the test double doesn't support the assertion), flag it. The task plan was approved by the Architect — deviations need justification.
+
 
 Do not accept if any `must_fix` exists.
 

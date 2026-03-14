@@ -106,6 +106,23 @@ If there are any `should_fix` or `nit` items remaining then the acceptance **MUS
 
 Where appropriate, you may also note positive aspects of the implementation in `notes` (for example, particularly good abstractions or tests).
 
+Be thorough, rigorous, and skeptical in your review. The goal is to ensure the highest quality spec that fully meets requirements and follows best practices, not just to rubber-stamp it. See the next section for specific techniques to ensure edge cases and issues are not missed.
+
+### Ensure Edge Cases and Issues are Not Missed
+
+1. **Cross-document consistency pass.** For each new or modified API surface in design.md, verify requirements.md explicitly authorizes it. For each SHALL requirement, verify a non-EdgeCase Red-Green pair exists in tasks.md (EdgeCase classification requires documented justification in design.md). For each new side effect or behavioral addition, verify it does not activate in pre-existing usage paths governed by "preserve existing behavior" requirements.
+
+2. **Validate test plans against test code.** When the task plan references test files, read the test doubles/mocks and existing assertions. Verify the test infrastructure actually supports the planned assertions — do not assume task plan test descriptions are executable as written.
+
+3. **Trace non-happy-path state transitions.** For any mode-switching state introduced or modified, enumerate every event that sets it and every event that clears it. For each "set" event, ask: "What if this operation is interrupted, aborted, or only partially completes?" Verify stale state in one mode cannot cause incorrect behavior after transitioning to a different mode.
+
+4. **Propagate intent changes.** When a requirement's intent changes during revision, search all three spec files for references to the old intent.
+
+5. **Full-document read every cycle.** Always read all three spec files end-to-end — never review only the diff. If approving with zero issues after multiple prior rejections, increase skepticism — habituation to existing issues is more likely than a perfect spec.
+
+6. **Requirement-testability audit.** For any requirement asserting external runtime behavior (assistive technology output, visual rendering, third-party responses), verify the test plan can actually validate it. If only manually verifiable, the manual test plan must include explicit steps. If untestable, recommend narrowing the requirement.
+
+
 ### Requirements Review
 
 When reviewing the requirements, you should ensure that they are complete, clear, and fully capture the `user_request`.  If any requirements or acceptance criteria are missing, unclear, or do not align with the `user_request`, you should classify these as `must_fix` issues.  You should also check for any contradictions or inconsistencies in the requirements and acceptance criteria and classify those as `must_fix` as well.

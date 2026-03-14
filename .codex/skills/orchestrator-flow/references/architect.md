@@ -129,6 +129,22 @@ This section should have EARS requirements
 - `should_fix` example: tasks are too broad for a coding agent to execute without additional clarification.
 - `nit` example: minor wording cleanup to make task objectives more explicit.
 
+### Ensure Edge Cases and Issues are Not Missed
+
+Be thorough, rigorous, and skeptical in your review. The goal is to ensure the highest quality spec that fully meets requirements and follows best practices, not just to rubber-stamp it. See the following specific techniques to ensure edge cases and issues are not missed.
+
+1. **Cross-document consistency pass.** For each new or modified API surface in design.md, verify requirements.md explicitly authorizes it. For each SHALL requirement, verify a non-EdgeCase Red-Green pair exists in tasks.md (EdgeCase classification requires documented justification in design.md). For each new side effect or behavioral addition, verify it does not activate in pre-existing usage paths governed by "preserve existing behavior" requirements.
+
+2. **Validate test plans against test code.** When the task plan references test files, read the test doubles/mocks and existing assertions. Verify the test infrastructure actually supports the planned assertions — do not assume task plan test descriptions are executable as written.
+
+3. **Trace non-happy-path state transitions.** For any mode-switching state introduced or modified, enumerate every event that sets it and every event that clears it. For each "set" event, ask: "What if this operation is interrupted, aborted, or only partially completes?" Verify stale state in one mode cannot cause incorrect behavior after transitioning to a different mode.
+
+4. **Propagate intent changes.** When a requirement's intent changes during revision, search all three spec files for references to the old intent.
+
+5. **Full-document read every cycle.** Always read all three spec files end-to-end — never review only the diff. If approving with zero issues after multiple prior rejections, increase skepticism — habituation to existing issues is more likely than a perfect spec.
+
+6. **Requirement-testability audit.** For any requirement asserting external runtime behavior (assistive technology output, visual rendering, third-party responses), verify the test plan can actually validate it. If only manually verifiable, the manual test plan must include explicit steps. If untestable, recommend narrowing the requirement.
+
 ### TDD Task Validation
 
 The following is the TDD task generation protocol that the Planner is expected to follow when generating tasks in `tasks.md`. As the Architect, you should validate that the Planner has followed this protocol correctly in their task generation. If you find any deviations from this protocol, classify them as issues in your review.
