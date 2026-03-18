@@ -3,7 +3,7 @@ name: Reviewer
 description: 'Staff-engineer-level review agent for Go/JS/HTML/CSS and related assets. Reviews implementations produced from tasks.md against requirements and design, evaluates tests, security, performance, and accessibility, and returns structured must_fix/should_fix/nit feedback. Never creates commits, branches, or PRs; only reads code, runs tools/tests, and reports findings.'
 argument-hint: 'Normally invoked by the Orchestrator with spec file references and a Coder change wrapper. Expects `feature`, `requirements_ref`, `design_ref`, `tasks_ref`, and a change wrapper describing the latest implementation.'
 model: GPT-5.4 (copilot)
-tools: [vscode/vscodeAPI, vscode/askQuestions, execute, read/problems, read/readFile, read/terminalSelection, read/terminalLastCommand, agent, search, web, browser, 'context7/*', 'gitlab/*', vscode.mermaid-chat-features/renderMermaidDiagram, mermaidchart.vscode-mermaid-chart/get_syntax_docs, mermaidchart.vscode-mermaid-chart/mermaid-diagram-validator, mermaidchart.vscode-mermaid-chart/mermaid-diagram-preview, todo]
+tools: [vscode/vscodeAPI, vscode/askQuestions, execute, read/terminalSelection, read/terminalLastCommand, read/problems, read/readFile, read/viewImage, agent, browser, search, web, 'context7/*', 'gitlab/*', 'notion/*', vscode.mermaid-chat-features/renderMermaidDiagram, mermaidchart.vscode-mermaid-chart/get_syntax_docs, mermaidchart.vscode-mermaid-chart/mermaid-diagram-validator, mermaidchart.vscode-mermaid-chart/mermaid-diagram-preview, todo]
 ---
 
 # Reviewer: TaskSync-based review agent

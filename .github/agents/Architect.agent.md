@@ -3,7 +3,7 @@ name: Architect
 description: 'Senior level principal-engineer-level architect. Reviews specs and bug fix plans to check against requirements or bug reports.  Carefully examines design, analysis, and implementation plans and reports findings.'
 argument-hint: 'Normally invoked by the Orchestrator with spec file references. Expects either {`spec_change_wrapper`} or (Reserved for future) {`fix-plan-change_wrapper`}.'
 model: GPT-5.4 (copilot)
-tools: [vscode/vscodeAPI, vscode/askQuestions, read/problems, read/readFile, read/terminalSelection, read/terminalLastCommand, agent, search, web, 'context7/*', 'gitlab/*', mermaidchart.vscode-mermaid-chart/get_syntax_docs, mermaidchart.vscode-mermaid-chart/mermaid-diagram-validator, mermaidchart.vscode-mermaid-chart/mermaid-diagram-preview, todo]
+tools: [vscode/vscodeAPI, vscode/askQuestions, read/terminalSelection, read/terminalLastCommand, read/problems, read/readFile, read/viewImage, agent, search, web, 'context7/*', 'gitlab/*', 'notion/*', mermaidchart.vscode-mermaid-chart/get_syntax_docs, mermaidchart.vscode-mermaid-chart/mermaid-diagram-validator, mermaidchart.vscode-mermaid-chart/mermaid-diagram-preview, todo]
 ---
 
 # Architect: TaskSync-based review agent

@@ -3,7 +3,7 @@ name: Coder
 description: 'Staff-engineer-level coding agent for Go/JS/HTML/CSS. Implements tasks from tasks.md based on requirements/design/tasks, and handles review feedback. Never creates commits, branches, or PRs; only edits workspace files and runs tests/tools.'
 argument-hint: 'Normally invoked by the Orchestrator with spec file references and optional review feedback Expects `feature`, `requirements_ref`, `design_ref`, `tasks_ref`, and optionally a prior review wrapper describing must_fix/should_fix/nit items.'
 model: [GPT-5.3-Codex (copilot), Claude Opus 4.6 (copilot), Claude Sonnet 4.6 (copilot)]
-tools: [vscode/getProjectSetupInfo, vscode/installExtension, vscode/newWorkspace, vscode/runCommand, vscode/vscodeAPI, vscode/extensions, vscode/askQuestions, execute, read, agent, edit, search, web, browser, 'context7/*', 'gitlab/*', vscode.mermaid-chat-features/renderMermaidDiagram, mermaidchart.vscode-mermaid-chart/get_syntax_docs, mermaidchart.vscode-mermaid-chart/mermaid-diagram-validator, mermaidchart.vscode-mermaid-chart/mermaid-diagram-preview, ms-azuretools.vscode-containers/containerToolsConfig, todo]
+tools: [vscode/extensions, vscode/getProjectSetupInfo, vscode/installExtension, vscode/newWorkspace, vscode/runCommand, vscode/vscodeAPI, vscode/askQuestions, execute, read, agent, browser, edit, search, web, 'context7/*', 'gitlab/*', 'notion/*', vscode.mermaid-chat-features/renderMermaidDiagram, mermaidchart.vscode-mermaid-chart/get_syntax_docs, mermaidchart.vscode-mermaid-chart/mermaid-diagram-validator, mermaidchart.vscode-mermaid-chart/mermaid-diagram-preview, ms-azuretools.vscode-containers/containerToolsConfig, todo]
 ---
 
 # Coder: TaskSync-based implementation agent
