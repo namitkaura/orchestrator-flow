@@ -535,6 +535,7 @@ Commit message requirements:
   - Also include the overall test status as sub-bullet in the test section
   - e.g. "All 1000 tests passing across 100 test files, type-check and lint clear"
   - Ideally also include a summary of the changes to the test suite itself, e.g. "Added 10 new tests across 3 files covering X, Y, Z; updated 5 existing tests to cover new behavior around A and B"
+  - This should include the number of changed/added/removed tests and test files
 
 ### Commit Message Structure
 

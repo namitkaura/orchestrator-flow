@@ -192,7 +192,7 @@ Convert the feature design into a series of prompts for an AI code-generation ag
   - Business process changes or organizational changes
   - Marketing or communication activities
   - Any task that cannot be completed through writing, modifying, testing code, or documentation updates
-- After the tasks section, add a requirements coverage verification section to map the requirements to the tasks (follow the template exactly as described in the `#### Example Format` section below)
+- After the tasks section, add a requirements coverage verification section to map the requirements to the tasks (follow the template exactly as described in the `#### Example Format` section below - DO NOT TRUCATE OR SUMMARIZE THIS TEMPLATE, INCLUDE IT IN FULL).
 - After creating/updating, ask: "Do the tasks look good?" (via AskUserQuestion).
 - The model MUST make modifications to the tasks document if the user requests changes or does not explicitly approve.
 - The model MUST NOT consider the workflow complete until receiving clear approval (such as "y", "yes", "approved", "looks good", etc.).
@@ -226,7 +226,7 @@ Start here only if scaffolding, dependencies, or global types are needed before 
 *   **[Test-Maintenance]** (Optional) Update existing tests to reflect changes in the codebase. Avoid making large changes to existing tests that are not necessary to maintain coverage or accuracy.
 *   **[Refactor]:** (Optional) If applicable check all of the tests added as part of the Red-Green process. Should all of them live long term or were some just part of the TDD process to implement the change? Think about adding a Refactor task (before the final verification task) to clean up or refactor brittle or 'smelly' tests. We want to have long term tests that test the functionality not the implementation details (which were used as a part of the TDD process).
 *   **[Verification]:** Run the full test suite to check for regressions. Do not add new functionality or tests in a verification task.
-*   **[Documentation]:** Update JSDocs, READMEs, and architectural/AI agent context (e.g. ai-context.md), etc.
+*   **[Documentation]:** Update JSDocs, READMEs, and architectural/AI agent context (e.g. AGENTS.md or any other technical/architectural documentation), etc.
 
 **Format:**
 Use `- [ ] N. **[Type]** Task Name` with sub-bullets for steps and `_Requirements: X.Y_` at the end. [EdgeCase-Red] and [EdgeCase-Green] tasks use `_Requirements: N/A — hardening existing behavior_` instead.

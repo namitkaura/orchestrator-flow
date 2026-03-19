@@ -7,7 +7,7 @@ I want to add a new feature spec.  Do not read any files listed after this point
 ## Planner Prompt
 Read and follow all instructions and workflows from your custom agent file: `.github/agents/Planner.agent.md` You **MUST** follow these instruction precisely and cannot ignore or skip any of them.
 
-Read `README.md` and `.docs/ai-context.md` (if they exist) first to get project context.  Then follow your workflow to spec out a new feature:
+Read `README.md` and `AGENTS.md` (if they exist) first to get project context.  Then follow your workflow to spec out a new feature:
 
 [DEFINE_REQUIREMENTS]
 
@@ -26,7 +26,7 @@ I want to revise the spec based on issues noticed or clarified after implementat
 ## Planner Prompt
 Read and follow all instructions and workflows from your custom agent file: `.github/agents/Planner.agent.md` You **MUST** follow these instruction precisely and cannot ignore or skip any of them.
 
-Read `README.md` and `.docs/ai-context.md` (if they exist) first to get project context.  Then follow your workflow to revise the spec starting from the requirements phase.  You must update the `requirements.md` file then follow your workflow prompting for acceptance before moving on to updating the `design.md` file.  Then follow protocols to ask for acceptance before updating `tasks.md`. Then follow your workflow to get acceptance on the tasks before finalizing the updates to the spec. This is the same workflow as when creating a new spec but now applied to revising an existing spec.
+Read `README.md` and `AGENTS.md` (if they exist) first to get project context.  Then follow your workflow to revise the spec starting from the requirements phase.  You must update the `requirements.md` file then follow your workflow prompting for acceptance before moving on to updating the `design.md` file.  Then follow protocols to ask for acceptance before updating `tasks.md`. Then follow your workflow to get acceptance on the tasks before finalizing the updates to the spec. This is the same workflow as when creating a new spec but now applied to revising an existing spec.
 
 
 [DEFINE_UPDATES_TO_SPEC]
@@ -44,7 +44,7 @@ I found an issue with the implementation.  Do not read any files listed after th
 ## Coder Prompt
 Read and follow all instructions and workflows from your custom agent file: `.github/agents/Coder.agent.md` You **MUST** follow these instruction precisely and cannot ignore or skip any of them.
 
-Read `README.md` and `.docs/ai-context.md` (if they exist) first to get project context.  Then follow your workflow to address the reported issues.  You must read the `requirements.md`,`design.md`, and `tasks.md` files to understand the original requirements. Then follow your workflow completely to implement the necessary changes to fix the reported issues.  
+Read `README.md` and `AGENTS.md` (if they exist) first to get project context.  Then follow your workflow to address the reported issues.  You must read the `requirements.md`,`design.md`, and `tasks.md` files to understand the original requirements. Then follow your workflow completely to implement the necessary changes to fix the reported issues.  
 
 
 [DEFINE_ISSUE(S)_WITH_IMPLEMENTATION]
@@ -60,7 +60,7 @@ You must follow all directives and workflow precisely as defined in your custom 
 I found a bug.  Do not read any files listed after this point. This is the prompt to send to BugPlanner (in addition to any other information or instructions that you normally include):
 
 # BugPlanner Prompt
-Follow your complete workflow as defined in `.github/agents/BugPlanner.agent.md` (which you MUST read first) Then read `README.md` and `.docs/ai-context.md` (if they exist) to understand the context of this project. Then you need to follow your workflow and do a deep analysis of this problem. Think very hard about this and ultra think to do a deep analysis of the problem.  Imagine that solving this problem is life or death for you and if you can't come up with a solution you will be replaced by a different AI agent.
+Follow your complete workflow as defined in `.github/agents/BugPlanner.agent.md` (which you MUST read first) Then read `README.md` and `AGENTS.md` (if they exist) to understand the context of this project. Then you need to follow your workflow and do a deep analysis of this problem. Think very hard about this and ultra think to do a deep analysis of the problem.  Imagine that solving this problem is life or death for you and if you can't come up with a solution you will be replaced by a different AI agent.
 
 ### Bug Description
 [DEFINE_BUG]
