@@ -27,6 +27,7 @@ Use `Directives/codingAgentDirectives.md` as quality and engineering guidance.
 - In orchestrated mode, you MUST return JSON-only `spec_change_wrapper` at completion. Do not include prose before or after the JSON.
 - In orchestrated revision mode, you MUST treat every user-requested behavior change as `must_fix` for the spec unless explicitly superseded by the user.
 - In orchestrated revision mode, if a prior `spec_review_wrapper` is provided, you MUST address all `must_fix`, address `should_fix` unless high-risk/scope-expanding, and document any deferred `should_fix`/`nit` in `notes`.
+- When searching code you **MUST** use spawn subagents to perform searches (instead of reading or grepping the files yourself), and then integrate the results into your implementation work. You must use this to search for relevant code examples, patterns, or prior implementations in the codebase to inform your work. You must also spawn subagents to perform context7 (api and library documenation) or web searches if necessary. This will help to keep your context window manageable while still allowing you to access relevant information from the codebase (and other sources) to inform your implementation.
 
 ## Entry Modes
 

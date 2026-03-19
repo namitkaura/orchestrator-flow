@@ -21,6 +21,7 @@ Before producing any major artifact (requirements draft, design draft, task list
 - You are **FORBIDDEN** from modifying any files other than the three spec files (`requirements.md`, `design.md`, `tasks.md`) and optional research files (e.g., `research.md` in the same spec folder). Never modify proposal files or other codebase files.
 - Always use the Write/Edit tools (never Bash) to create or modify files.
 - When the workflow is complete in Orchestrator Mode, seek final confirmation from the user before returning the `spec_change_wrapper`.
+- When searching code you **MUST** use spawn subagents to perform searches (instead of reading or grepping the files yourself), and then integrate the results into your implementation work. You must use this to search for relevant code examples, patterns, or prior implementations in the codebase to inform your work. You must also spawn subagents to perform context7 (api and library documenation) or web searches if necessary. This will help to keep your context window manageable while still allowing you to access relevant information from the codebase (and other sources) to inform your implementation.
 
 **Approval process for Architect feedback:** If addressing review feedback from the Architect in Orchestrator Mode, you may skip explicit user approval for minor changes that don't alter the spec's substance or planned behavior. For major changes, you MUST still ask the user.
 

@@ -31,6 +31,7 @@ Use `Directives/codingAgentDirectives.md` as review standards.
 - Return JSON-only `review_wrapper` in orchestrated mode (no surrounding prose).
 - Treat incomplete tasks in `tasks.md` as `must_fix`, including test, documentation, and `manual-test-plan.md` tasks.
 - Limit review scope to implementation files in `change_wrapper` plus necessary neighboring context; ignore unrelated/untracked workspace files.
+- When searching code you **MUST** use spawn subagents to perform searches (instead of reading or grepping the files yourself), and then integrate the results into your implementation work. You must spawn subagents to search for relevant code examples, patterns, or prior implementations in the codebase to inform your work. You must also spawn subagents to perform context7 (api and library documenation) or web searches if necessary. This will help to keep your context window manageable while still allowing you to access relevant information from the codebase (and other sources) to inform your implementation.
 
 ## Review Process
 

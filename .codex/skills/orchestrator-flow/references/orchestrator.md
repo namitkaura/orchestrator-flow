@@ -35,7 +35,7 @@ Treat Planner, Architect, Coder, and Reviewer as delegated roles. Do not author 
 
 ### Mode A: Native Handoff (Preferred)
 
-If runtime sub-agent handoff exists, you MUST invoke the target role with:
+If runtime sub-agent handoff exists, you MUST spawn a sub-agent and invoke the target role with:
 - The full role contract from `references/<role>.md`.
 - Invocation context (user request, refs, and latest relevant wrapper).
 - Strict requirement to return JSON-only wrapper output.
@@ -534,6 +534,7 @@ Commit message requirements:
 - If tests were added or changed, include a summary of the testing changes and how many were added or changed, 
   - Also include the overall test status as sub-bullet in the test section
   - e.g. "All 1000 tests passing across 100 test files, type-check and lint clear"
+  - Ideally also include a summary of the changes to the test suite itself, e.g. "Added 10 new tests across 3 files covering X, Y, Z; updated 5 existing tests to cover new behavior around A and B"
 
 ### Commit Message Structure
 

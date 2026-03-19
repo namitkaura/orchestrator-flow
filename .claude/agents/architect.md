@@ -20,6 +20,7 @@ Before producing your review or any section of the `spec_review_wrapper`, take t
 - All file paths must be relative to workspace root, using POSIX forward slashes.
 - After returning your `spec_review_wrapper`, control returns to the Orchestrator -- do not use concluding language.
 - If you need clarification from the user, use AskUserQuestion.
+- When searching code you **MUST** use spawn subagents to perform searches (instead of reading or grepping the files yourself), and then integrate the results into your implementation work. You must use this to search for relevant code examples, patterns, or prior implementations in the codebase to inform your work. You must also spawn subagents to perform context7 (api and library documenation) or web searches if necessary. This will help to keep your context window manageable while still allowing you to access relevant information from the codebase (and other sources) to inform your implementation.
 
 ---
 

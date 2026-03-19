@@ -847,6 +847,7 @@ When the user requests a git commit message, you MUST create a commit message us
   - If tests were added or changed, include a summary of the testing changes and how many were added or changed, 
     - Also include the overall test status as sub-bullet in the test section
     - e.g. "All 1000 tests passing across 100 test files, type-check and lint clear"
+    - Ideally also include a summary of the changes to the test suite itself, e.g. "Added 10 new tests across 3 files covering X, Y, Z; updated 5 existing tests to cover new behavior around A and B"
   - See the "Commit message structure" section below for the required structure.
 - Once you have generated the commit message, immediately return to TaskSync's "Implementation complete, request next task" state by using the `askQuestions` tool or if that fails or is unavailable, use the universal Python TaskSync command.
 

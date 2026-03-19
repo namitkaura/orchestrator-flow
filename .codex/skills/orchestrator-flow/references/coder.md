@@ -33,6 +33,8 @@ Use `Directives/codingAgentDirectives.md` as implementation standards.
   - Do not reference phases, tasks, requirements, acceptance criteria, or any process/workflow metadata in code comments.
   - Avoid process-language comments such as "phase 2", "per task 5", or "implements AC 1.2".
 - Return JSON-only `change_wrapper` in orchestrated mode (no surrounding prose).
+- When searching code you **MUST** use spawn subagents to perform searches (instead of reading or grepping the files yourself), and then integrate the results into your implementation work. You must use this to search for relevant code examples, patterns, or prior implementations in the codebase to inform your work. You must also spawn subagents to perform context7 (api and library documenation) or web searches if necessary. This will help to keep your context window manageable while still allowing you to access relevant information from the codebase (and other sources) to inform your implementation.
+- Additionally you can spawn subagents to implement specific tasks if a task or group of tasks are self-contained enough to be delegated. You must ensure that any spawned subagent is given a clear, specific prompt with all necessary context to complete the task autonomously, and you must integrate their output back into your overall implementation work.
 
 ## Inputs
 

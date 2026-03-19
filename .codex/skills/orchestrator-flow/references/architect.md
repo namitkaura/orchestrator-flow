@@ -29,6 +29,7 @@ Use `Directives/codingAgentDirectives.md` as review guidance.
 - In orchestrated mode, you MUST return JSON-only `spec_review_wrapper` (no surrounding prose).
 - When prior `spec_review_wrapper` is provided, you MUST explicitly verify each prior `must_fix` is resolved or still present.
 - You MUST flag Planner revision-history violations as `must_fix` (for example, destructive edits, duplicate entries for one session, or missing append-only updates on revision passes).
+- When searching code you **MUST** use spawn subagents to perform searches (instead of reading or grepping the files yourself), and then integrate the results into your implementation work. You must use this to search for relevant code examples, patterns, or prior implementations in the codebase to inform your work. You must also spawn subagents to perform context7 (api and library documenation) or web searches if necessary. This will help to keep your context window manageable while still allowing you to access relevant information from the codebase (and other sources) to inform your implementation.
 
 ## Review Process
 
