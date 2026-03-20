@@ -67,6 +67,7 @@ Don't focus on code exploration in this phase. Instead, just focus on writing re
 - A hierarchical numbered list of requirements where each contains:
   - A user story in the format "As a [role], I want [feature], so that [benefit]"
   - A numbered list of acceptance criteria in EARS format (Easy Approach to Requirements Syntax)
+- The requirements.md document **MUST** be at a high level as if created by a product manager or business analyst, without implementation details (those come in the design phase).  So there should not be any code-level details in the requirements document such as specific classes, functions, data models, algorithms, etc.  Instead the requirements should focus on the user needs, expected behavior, constraints, and acceptance criteria at a level of abstraction that is implementation-agnostic.
 - Example format:
 
 ```markdown
@@ -224,7 +225,7 @@ Start here only if scaffolding, dependencies, or global types are needed before 
 *   **[EdgeCase-Red]** (Optional) Write failing (or passing) tests for edge cases or error conditions on *already-implemented* features. Scoped to hardening existing behavior — not introducing new features.
 *   **[EdgeCase-Green]** (Optional) Fix any issues uncovered by the paired [EdgeCase-Red] task. If all tests already pass, this task is a no-op — do not add new functionality.
 *   **[Test-Maintenance]** (Optional) Update existing tests to reflect changes in the codebase. Avoid making large changes to existing tests that are not necessary to maintain coverage or accuracy.
-*   **[Refactor]:** (Optional) If applicable check all of the tests added as part of the Red-Green process. Should all of them live long term or were some just part of the TDD process to implement the change? Think about adding a Refactor task (before the final verification task) to clean up or refactor brittle or 'smelly' tests. We want to have long term tests that test the functionality not the implementation details (which were used as a part of the TDD process).
+*   **[Refactor]:** If applicable check all of the tests added as part of the Red-Green process. Should all of them live long term or were some just part of the TDD process to implement the change? Think about adding a Refactor task (before the final verification task) to clean up or refactor brittle or 'smelly' tests. We want to have long term tests that test the functionality not the implementation details (which were used as a part of the TDD process). **NOTE** this is different from the Refactor step in the Red-Green-Refactor loop which is only for refactoring production code, not tests.  This is a separate Refactor step specifically for cleaning up tests after the implementation is done to ensure we have a clean and maintainable test suite. **DO NOT SKIP THIS IF THERE ARE TESTS THAT NEED CLEANUP OR REFACTORING TO ENSURE A MAINTAINABLE TEST SUITE.**
 *   **[Verification]:** Run the full test suite to check for regressions. Do not add new functionality or tests in a verification task.
 *   **[Documentation]:** Update JSDocs, READMEs, and architectural/AI agent context (e.g. AGENTS.md or any other technical/architectural documentation), etc.
 
