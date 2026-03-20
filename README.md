@@ -9,7 +9,7 @@ The repository contains platform-specific agent and skill artifacts, while prese
 | GitHub Copilot | `.github/agents` | VS Code custom agent contracts (`*.agent.md`) | Works the best and is the most consistent and stable |
 | Claude Code | `.claude/agents` | Claude agent contracts | Works fairly well though not quite as consistent or as robust as the GitHub Copilot version |
 | Codex | `.codex/skills/orchestrator-flow/references` | Codex orchestrator skill reference contracts - Works but doesn't use sub-agents and is inconsistent  | All work is run as a skill in the main agent which switches roles - work in progress |
-| Cursor | `.cursor/agents` | Cursor agent contracts | Works but not perfect, uses a lot of tokens - work in progress |
+| Cursor | `.cursor/agents` (`planner`, `architect`, `coder`, `reviewer`) + `.cursor/rules/Orchestrator.mdc` | Orchestrator uses the **Task** tool; rule applies under `.docs/specs/**` or via **`/cursor-orchestrate`** (not Claude `/orchestrate`) | `task_log.json` schema matches GitHub; models set per agent YAML |
 
 These platform-specific paths represent implementation-location differences only; they do not change the base workflow contract.
 
