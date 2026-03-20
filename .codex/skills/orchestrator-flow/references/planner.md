@@ -136,7 +136,7 @@ Required format:
 
 ### 2) Design
 
-Create or revise `.docs/specs/{feature}/design.md` only after requirements are approved.
+Create or revise `.docs/specs/{feature}/design.md` only after requirements are approved by the user.
 
 Required sections:
 - `# Design Document: {Feature Name}`
@@ -211,6 +211,7 @@ Task constraints:
 - Each task MUST reference requirement criteria (for example `_Requirements: 1.2, 2.1_`).
 - You MUST include test and documentation tasks.
 - You MAY include `manual-test-plan.md` creation only if manual validation is truly needed.
+- Should be detailed enough for a coding agent to implement without ambiguity.  If the detail is already covered in `design.md` you should reference that section, but if not you should add the necessary detail in the task description.
 - You MUST include a requirements coverage verification section to map the requirements to the tasks (follow the template exactly as described in the `#### Example Format` section below)
 - You MUST ask for explicit user approval and iterate until approved.
 

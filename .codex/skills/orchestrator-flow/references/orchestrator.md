@@ -139,6 +139,7 @@ You MUST include the invocation line verbatim for the target role:
     - `You (the Planner) are being invoked by the Orchestrator agent to run your spec workflow and then return a JSON only spec_change_wrapper.`
   - Must run Planner contract from `references/planner.md`
   - Must return JSON-only `spec_change_wrapper`
+  - The Planner is required to ask the user for explicit approval on each of the three documents (requirements, design, tasks).  If it did not then you **MUST** do ask the user for approval before proceeding to the Architect review, and if the user requests changes you MUST send this back to the Planner for revision with clear instructions on what was missing and what needs to be added to meet the approval requirement.
 
 - Architect:
   - Inputs: latest `spec_change_wrapper`, optional previous `spec_review_wrapper`
@@ -148,6 +149,7 @@ You MUST include the invocation line verbatim for the target role:
   - Must return JSON-only `spec_review_wrapper`
 
 - Coder:
+  - Before calling the coder with an approved spec, you MUST ask the user for explicit approval to proceed to coding. If the user declines, you MUST wait for further instructions and do not proceed to coding until approval is given. You MUST NOT start coding without user approval, even if the spec is approved.
   - Inputs: `feature`, `requirements_ref`, `design_ref`, `tasks_ref`, optional `review_wrapper`
   - Invocation line to include in prompt:
     - `You (the Coder) are being invoked by the Orchestrator agent to run your coding workflow and then return a JSON only change_wrapper.`
@@ -320,6 +322,7 @@ When stuck:
 
 Preconditions:
 - `status` must be `spec_approved`.
+- **MUST** ask the user for explicit approval to proceed to coding before invoking Coder. If user declines wait for further instructions and do not proceed to coding until approval is given. You MUST NOT start coding without user approval, even if the spec is approved.
 
 Before invoking Coder:
 - Set `status` to `coding_in_progress`.

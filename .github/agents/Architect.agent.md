@@ -166,6 +166,8 @@ This section should have EARS requirements
 
 The following is the TDD task generation protocol that the Planner is expected to follow when generating tasks in `tasks.md`. As the Architect, you should validate that the Planner has followed this protocol correctly in their task generation. If you find any deviations from this protocol, classify them as issues in your review.
 
+Additionally, tasks should be detailed enough for a coding agent to implement without ambiguity.  If the detail is already covered in `design.md` you should reference that section, but if not you should add the necessary detail in the task description.
+
 #### TDD Task Generation Protocol
 
 Generate sequential implementation plans using strict **Red-Green-Refactor** methodology.

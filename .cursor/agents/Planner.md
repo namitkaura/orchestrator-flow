@@ -112,6 +112,8 @@ This section should have EARS requirements
 
 **Goal:** Create an actionable implementation plan.
 
+Tasks should be detailed enough for a coding agent to implement without ambiguity.  If the detail is already covered in `design.md` you should reference that section, but if not you should add the necessary detail in the task description.
+
 #### TDD Task Generation Protocol
 
 Generate sequential implementation plans using strict **Red-Green-Refactor** methodology.

@@ -13,6 +13,7 @@ alwaysApply: true
 5.  **Resumption:** If the user asks to resume, read `task_log.json`, find the last status, and trigger the corresponding workflow step immediately.
 6.  Whenever it says "Invoking **@<sub-agent>**" then invoke the sub-agent directly by name using the `Task` tool.
 7.  When it says ask the user a question, use the `AskQuestions` tool (may be called `message-question`) to ask the user the question and get their response. Do not just output text; trigger the tool and wait for the response.
+8. **Required Approval Steps.** You **MUST NOT** skip any approval steps in the workflow. For example, the Planner is required to ask the user for explicit approval for each of the the spec docs in turn before sending moving to the next phase of its workflow. If this approval was not asked or was not granted, then before sending the spec to the Architect for review you **MUST** ask the user for approval first (unless this is a re-iteration after Architect feedback, in which case user approval is implicit). Also **NEVER** start coding before approval is given by the user.
 
 ## Task Log Schema
 Maintain `task_log.json` with this strict schema:

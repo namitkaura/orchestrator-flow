@@ -129,6 +129,7 @@ This section should have EARS requirements
 - `must_fix` example: tasks are missing `[Verification]` or `[Documentation]` at the end.
 - `should_fix` example: tasks are too broad for a coding agent to execute without additional clarification.
 - `nit` example: minor wording cleanup to make task objectives more explicit.
+- Should be detailed enough for a coding agent to implement without ambiguity.  If the detail is already covered in `design.md` it should reference that section, but otherwise should have the necessary detail in the task description.
 
 ### Ensure Edge Cases and Issues are Not Missed
 

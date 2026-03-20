@@ -82,6 +82,7 @@ Be thorough, rigorous, and skeptical in your review. The goal is to ensure the h
 
 7. **High-level abstraction requirement.** The requirements.md document **MUST** be at a high level as if created by a product manager or business analyst, without implementation details (those come in the design phase).  So there should not be any code-level details in the requirements document such as specific classes, functions, data models, algorithms, etc.  Instead the requirements should focus on the user needs, expected behavior, constraints, and acceptance criteria at a level of abstraction that is implementation-agnostic.
 
+8. **Level of detail in tasks.** Tasks should be detailed enough for a coding agent to implement without ambiguity.  If the detail is already covered in `design.md` it should reference that section, but if not the task should have the necessary detail in the task description.
 
 ### TDD Task Validation
 
