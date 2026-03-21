@@ -76,16 +76,19 @@ Use `Directives/codingAgentDirectives.md` as review standards.
 
 2. **Spec-to-code traceability.** For each acceptance criterion in requirements.md, locate the specific code path that satisfies it and the specific test assertion that verifies it. If a requirement is satisfied only implicitly (e.g., by relying on a framework's default behavior), verify that reliance is documented in design.md and that a test confirms the behavior holds. Missing traceability for any criterion is `must_fix`.
 
-3. **Test assertion meaningfulness.** For each test, verify the assertions actually test the claimed behavior — not just that the code runs without error. Specifically check that test doubles (mocks, stubs, fakes) are configured to surface the behavior under test. A test that passes because the mock bypasses the logic being tested is a false positive and is `must_fix`.
+3. **Test assertion meaningfulness.** For each test, verify the assertions actually test the claimed behavior — not just that the code runs without error. Specifically check that test doubles (mocks, stubs, fakes) are configured to surface the behavior under test. A test that passes because the mock bypasses the logic being tested is a false positive and is `must_fix`. Additionally, verify that every test assertion targets a single, deterministic expected outcome. Tests that pass for multiple possible values are `must_fix` — they cannot prove the implementation chose the right behavior.
 
-4. **Design fidelity, not just correctness.** Verify the implementation follows the design in design.md, not just that it produces correct output. If the design specifies a particular approach (e.g., cleanup strategy, state management pattern, positioning technique), verify the code uses that approach. Functionally correct code that diverges from the design is `should_fix` — the design was reviewed and approved for reasons the code may not make obvious.
+4. **Design fidelity, not just correctness.** Verify the implementation follows the design in `design.md`, not just that it produces correct output. If the design specifies a particular approach (e.g., cleanup strategy, state management pattern, positioning technique), verify the code uses that approach. Functionally correct code that diverges from the design is `should_fix` — the design was reviewed and approved for reasons the code may not make obvious. Specifically verify that all property/parameter names, function signatures, parameter names, and type interfaces in the code match what `design.md` specifies. e.g. If the design specifies an interface with a field named content but the implementation uses tooltipContent, that is a must_fix even if the code otherwise works — the design was approved and any deviation must be explicitly justified.
 
-5. **Non-happy-path coverage.** For each mode-switching variable, flag, or stateful ref introduced or modified, verify the implementation handles interruption, abort, and partial-completion paths — not just the success path. Cross-reference against the design's error handling and edge case sections. Missing cleanup for an abort path documented in design.md is `must_fix`.
+5. **Non-happy-path coverage.** For each mode-switching variable, flag, or stateful ref introduced or modified, verify the implementation handles interruption, abort, and partial-completion paths — not just the success path. Cross-reference against the design's error handling and edge case sections. Missing cleanup for an abort path documented in `design.md` is `must_fix`.
 
 6. **Behavioral preservation in existing paths.** When new behavior is added to an existing component or module, verify it does not alter behavior in pre-existing usage paths. Run or inspect existing tests for the modified component — if any existing test needed modification beyond import/setup changes, evaluate whether the behavioral change is authorized by the requirements.
 
 7. **Test-to-spec alignment.** Verify that test file organization, test double configuration, and assertion targets match what the task plan specifies. If a task says to assert on a specific element/object/output and the test asserts on something else (or the test double doesn't support the assertion), flag it. The task plan was approved by the Architect — deviations need justification.
 
+8. **Boundary analysis for computed values in code.** For every formula, calculation, or derived value in the implementation, verify the code handles boundary/degenerate inputs (zero, negative, empty string, maximum length, missing/absent values for optional fields). If the design specifies boundary behavior (e.g., clamping to zero), verify the code matches. If the design is silent on a boundary the code can reach, classify as `should_fix`.
+
+9. **Optional field propagation.** When code accesses an optional or nullable field, trace its value through all downstream consumers (function calls, property/parameter passing, string interpolation, URL construction). Verify every consumer handles the missing/null/empty case. If a function applies a default/fallback for a missing value but passes it to a consumer that doesn't handle the fallback value, classify as `must_fix`.
 
 Do not accept if any `must_fix` exists.
 
@@ -237,7 +240,9 @@ Output must satisfy `references/wrappers/review_wrapper.schema.json`.
 
 When re-reviewing:
 1. Verify previously reported issues were addressed or justified.
-2. Detect regressions or new issues.
-3. Reconfirm task completion and coverage.
-4. Keep unresolved prior `must_fix` findings in `must_fix` until fully resolved.
-5. Re-assess prior `should_fix` and `nit` items and verify deferral rationales remain valid.
+2. Re-execute ALL checks in the "Ensure Edge Cases and Issues are Not Missed" section from scratch — do not perform a delta-only review. Treat the code as if reviewing it for the first time, except that you additionally verify previous issues are resolved.
+3. Detect regressions or new issues.
+4. If approving with zero issues after multiple prior rejections, increase skepticism.
+5. Reconfirm task completion and coverage.
+6. Keep unresolved prior `must_fix` findings in `must_fix` until fully resolved.
+7. Re-assess prior `should_fix` and `nit` items and verify deferral rationales remain valid.

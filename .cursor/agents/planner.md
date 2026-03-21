@@ -324,6 +324,8 @@ Generate sequential implementation plans using strict **Red-Green-Refactor** met
 **1. [Scaffolding] (Optional)**
 Start here only if scaffolding, dependencies, or global types are needed before testing.
 
+**Scaffolding constraint:** A [Scaffolding] task MUST NOT modify existing function behavior, add new parameters to existing functions, or change existing API contracts. It may only create new files with stubs/throws, add type signatures, create directory structure, or add dependencies. If a task modifies existing code behavior (even "small" changes like adding a parameter or changing a split pattern), it MUST be a [Red]/[Green] pair, not [Scaffolding]. Classify violations as `must_fix`.
+
 **2. Red-Green-Refactor Loop (Repeat for every logical step)**
 *   **[Red] Test:** Write a failing test (unit or integration) ensuring the logic/feature is missing.
     *   *Constraint:* For "wiring" or "prop passing," you **MUST** write a [Red] integration test asserting the parent passes the data before the [Green] task.

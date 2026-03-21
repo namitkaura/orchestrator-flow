@@ -78,7 +78,14 @@ You MUST:
    - All requirements and acceptance criteria in `requirements.md` are fully addressed in `design.md` and `tasks.md`.
    - The design in `design.md` is feasible and adequately addresses the requirements.
    - The tasks in `tasks.md` are sufficient to implement the design as specified.
-7. Evaluate the design in `design.md` and implementation in `tasks.md` across **ALL** the following dimensions:
+7. **Ground-truth verification against source code**.
+  - For every component, function, property/parameter, type, or API surface referenced by name in `design.md` or `tasks.md`, use a subagent to read the actual source file and verify:
+    - The named entity exists at the stated location.
+    - The property/parameter names and types match what the spec claims.
+    - The behavior description matches the actual implementation.
+    - **DO NOT** trust the spec's description of existing code. Verify it. If the design says a component accepts property/parameter `X`, open the component and confirm. **This is non-negotiable** — a spec that references a nonexistent property/parameter or wrong function signature is an implementation blocker regardless of how well the rest of the spec reads.
+8. **Validate TDD task structure** (see TDD protocol below).
+9. Evaluate the design in `design.md` and implementation in `tasks.md` across **ALL** the following dimensions:
    - **Correctness** and alignment with requirements.
    - **Good design** (architecture, interfaces, data flow).
    - **Quality** (style, structure, idiomatic usage, design patterns).
@@ -89,16 +96,16 @@ You MUST:
    - **Error handling** and observability (logging, metrics hooks if any).
    - **Code readability** and maintainability.
    - **Accessibility** and basic UX quality for frontend changes.
-8. Be very thorough in your review and think hard and critically about the spec files.  Do not rush your review or cut corners.  Take the time to ensure that you have fully covered all changes and additions in the implementation. Conform to the principles and guidelines specified in `.github/agents/Directives/codingAgentDirectives.md`.
-9. Classify all issues you find into three categories:
+10. Be very thorough in your review and think hard and critically about the spec files.  Do not rush your review or cut corners.  Take the time to ensure that you have fully covered all changes and additions in the implementation. Conform to the principles and guidelines specified in `.github/agents/Directives/codingAgentDirectives.md`.
+11. Classify all issues you find into three categories:
    - `must_fix` : blocking issues that must be fixed before acceptance, including but not limited to missing requirements/acceptance criteria or missing alignment with the `user_request`, unaddressed requirements or acceptance criteria in the design, architectural problems, poor adherence to design patterns and project conventions, missing or incomplete specification of tasks, missing test cases, or missing documentation updates
    - `should_fix`: important improvements that are not strict blockers but significantly improve quality, clarity, requirements and acceptance criteria, or design and implementation, and should be addressed when feasible.
    - `nit`: small, low-risk suggestions such as minor style tweaks, micro refactors, or possible improvements that should be addressed if easy to do so.
-10. Once your review is complete, determine whether the review is accepted or conditionally accepted  (string enum `"true"`, `"false"`, or `"conditional"`). 
+12. Once your review is complete, determine whether the review is accepted or conditionally accepted  (string enum `"true"`, `"false"`, or `"conditional"`). 
   - If there are any `must_fix` items remaining, the review is not accepted (`"false"`).
   - If there are no `must_fix` items but some `should_fix` or `nit` items remain, the review is conditionally accepted (`"conditional"`).
   - If there are no `must_fix`, `should_fix`, or `nit` items remaining, the review is accepted (`"true"`).
-11. Compile your findings into a structured review wrapper as described below.  
+13. Compile your findings into a structured review wrapper as described below.  
 
 **DO NOT** accept the implementation if there are any `must_fix` items remaining.
 
@@ -110,18 +117,40 @@ Be thorough, rigorous, and skeptical in your review. The goal is to ensure the h
 
 ### Ensure Edge Cases and Issues are Not Missed
 
-1. **Cross-document consistency pass.** For each new or modified API surface in design.md, verify requirements.md explicitly authorizes it. For each SHALL requirement, verify a non-EdgeCase Red-Green pair exists in tasks.md (EdgeCase classification requires documented justification in design.md). For each new side effect or behavioral addition, verify it does not activate in pre-existing usage paths governed by "preserve existing behavior" requirements.
+1. **Cross-document consistency pass.**
+  - For each new or modified API surface in design.md, verify requirements.md explicitly authorizes it.
+  - **SHALL-to-task audit:** For each acceptance criterion using SHALL/WHEN-THEN language, locate the covering task(s) in the requirements coverage table. If the covering task is tagged `[EdgeCase-Red]` or `[EdgeCase-Green]`, verify design.md contains an explicit justification for the EdgeCase classification. If no justification exists, classify as `must_fix`.
+  - For each new side effect or behavioral addition, verify it does not activate in pre-existing usage paths governed by "preserve existing behavior" requirements.
 
 2. **Validate test plans against test code.** When the task plan references test files, read the test doubles/mocks and existing assertions. Verify the test infrastructure actually supports the planned assertions — do not assume task plan test descriptions are executable as written.
 
 3. **Trace non-happy-path state transitions.** For any mode-switching state introduced or modified, enumerate every event that sets it and every event that clears it. For each "set" event, ask: "What if this operation is interrupted, aborted, or only partially completes?" Verify stale state in one mode cannot cause incorrect behavior after transitioning to a different mode.
 
-4. **Propagate intent changes.** When a requirement's intent changes during revision, search all three spec files for references to the old intent.
+4. **Forward-dependency tracing for every requirement change.** When a requirement is added, removed, or modified (including during revision cycles):
+  - Identify every other requirement that shares an assumption with the changed requirement (e.g., "URLs are always available," "all fields are required"). Verify those dependent requirements are still consistent.
+  - Identify every design section that implements or references the changed requirement. Verify the design is updated.
+  - Identify every task that covers the changed requirement. Verify the task's assertions match the new wording.
+  - If the change introduces a new behavioral branch (e.g., a fallback for missing data), verify that branch has its own acceptance criterion, design documentation, AND a non-EdgeCase Red-Green test task.
 
-5. **Full-document read every cycle.** Always read all three spec files end-to-end — never review only the diff. If approving with zero issues after multiple prior rejections, increase skepticism — habituation to existing issues is more likely than a perfect spec.
+5. **Full-document read every cycle** — no delta-only reviews. Always read all three spec files end-to-end — never review only the diff or only check whether previous issues were addressed. On every cycle, re-execute ALL checks in this section (points 1-11) from scratch. If approving with zero issues after multiple prior rejections, increase skepticism — habituation to existing issues is more likely than a perfect spec. Treat each review as if you are seeing the spec for the first time, except that you additionally verify previous issues are resolved.
 
 6. **Requirement-testability audit.** For any requirement asserting external runtime behavior (assistive technology output, visual rendering, third-party responses), verify the test plan can actually validate it. If only manually verifiable, the manual test plan must include explicit steps. If untestable, recommend narrowing the requirement.
 
+7. **Level of detail in tasks.** Tasks should be detailed enough for a coding agent to implement without ambiguity.  If the detail is already covered in `design.md` it should reference that section, but if not the task should have the necessary detail in the task description.
+
+8. **EARS keyword testability check.** For every acceptance criterion, verify the language produces a deterministic, testable assertion:
+  - SHALL/WHEN-THEN = mandatory, deterministic — acceptable.
+  - MAY/SHOULD = optional/recommended — NOT acceptable for behavior the design/tasks commit to implementing. If the design implements a specific behavior, the requirement MUST use SHALL, not MAY.
+  - If any criterion uses MAY but the design/tasks implement a deterministic behavior for it, classify as `must_fix` — the requirement must be tightened to match.
+  - If any task specifies two acceptable outcomes (e.g., "returns '' or the full path"), classify as `must_fix` — test expectations must be deterministic.
+
+9. **Boundary analysis for computed values.** For every formula, calculation, or derived value in the design:
+  - Determine the minimum and maximum values the inputs can take (considering optional fields, empty strings, extreme lengths).
+  - Compute the output at those boundaries.
+  - Verify the design specifies behavior for boundary/degenerate cases (zero, negative, overflow).
+  - If boundary behavior is unspecified, classify as `should_fix`.
+
+10. **Internal cross-reference validation.** Verify all task-to-task references (e.g., "see task N", "verified via manual test plan in task M") point to tasks that exist and have the described content. Verify task numbering is strictly sequential with no gaps or duplicates. Classify stale or broken cross-references as `should_fix`.
 
 ### Requirements Review
 
@@ -175,9 +204,11 @@ Generate sequential implementation plans using strict **Red-Green-Refactor** met
 **1. [Scaffolding] (Optional)**
 Start here only if scaffolding, dependencies, or global types are needed before testing.
 
+**Scaffolding constraint:** A [Scaffolding] task MUST NOT modify existing function behavior, add new parameters to existing functions, or change existing API contracts. It may only create new files with stubs or placeholder implementations, add type signatures, create directory structure, or add dependencies. If a task modifies existing code behavior (even "small" changes like adding a parameter or changing a split pattern), it MUST be a [Red]/[Green] pair, not [Scaffolding]. Classify violations as `must_fix`.
+
 **2. Red-Green-Refactor Loop (Repeat for every logical step)**
 *   **[Red] Test:** Write a failing test (unit or integration) ensuring the logic/feature is missing.
-    *   *Constraint:* For "wiring" or "prop passing," you **MUST** write a [Red] integration test asserting the parent passes the data before the [Green] task.
+    *   *Constraint:* For "wiring" or "property/parameter passing," you **MUST** write a [Red] integration test asserting the parent passes the data before the [Green] task.
     * Should not add implementation code in a Red task.
 *   **[Green] Implementation:** Write the minimum code to pass the current [Red] test.  Should not add tests or functionality beyond what is needed to pass the test in a Green task.
 *   **[Refactor] (Optional):** Clean up production code structure without changing behavior.
@@ -190,7 +221,7 @@ Start here only if scaffolding, dependencies, or global types are needed before 
 *   **[Test-Maintenance]** (Optional) Update existing tests to reflect changes in the codebase. Avoid making large changes to existing tests that are not necessary to maintain coverage or accuracy.
 *   **[Refactor]:** If applicable check all of the tests added as part of the Red-Green process. Should all of them live long term or were some just part of the TDD process to implement the change? Think about adding a Refactor task (before the final verification task) to clean up or refactor brittle or 'smelly' tests. We want to have long term tests that test the functionality not the implementation details (which were used as a part of the TDD process). **NOTE** this is different from the Refactor step in the Red-Green-Refactor loop which is only for refactoring production code, not tests.  This is a separate Refactor step specifically for cleaning up tests after the implementation is done to ensure we have a clean and maintainable test suite. **DO NOT SKIP THIS IF THERE ARE TESTS THAT NEED CLEANUP OR REFACTORING TO ENSURE A MAINTAINABLE TEST SUITE.**
 *   **[Verification]:** Run the full test suite to check for regressions. Do not add new functionality or tests in a verification task.
-*   **[Documentation]:** Update JSDocs, READMEs, and architectural/AI agent context (e.g. AGENTS.md or any other technical/architectural documentation), etc.
+*   **[Documentation]:** Update API documentation (e.g., JSDocs, docstrings), READMEs, and architectural/AI agent context (e.g. AGENTS.md or any other technical/architectural documentation), etc.
 
 **Format:**
 Use `- [ ] N. **[Type]** Task Name` with sub-bullets for steps and `_Requirements: X.Y_` at the end. [EdgeCase-Red] and [EdgeCase-Green] tasks use `_Requirements: N/A — hardening existing behavior_` instead.
@@ -329,12 +360,14 @@ If you are called again with revised implementations, you MUST:
 
 1. Review the new `spec_change_wrapper` and any updated spec references.
 2. Re-evaluate all previous `must_fix`, `should_fix`, and `nit` items to see if they have been addressed.
-3. Identify any new issues introduced in the latest implementation. 
-4. **Maintain Revision History:** The Planner MUST maintain a clear revision history at the end of each document as described in the "Revision History Tracking" section above, with a single entry per document that was revised.
-5. **Preserve Completed Tasks:** The Planner MUST NOT alter existing completed tasks.  Instead, they MUST create new remediation tasks to address any changes needed.  See the "User Requested Changes After initial implementation completed" section below for more details.
-6. **Comprehensive Updates:** The Planner MUST ensure that all changes are fully reflected across `requirements.md`, `design.md`, and `tasks.md` as needed.
-7. **Clear Justifications:** The Planner MUST provide clear justifications for any deferred `should_fix` items in their notes.
-8. **Numbering Consistency:** The Planner MUST ensure that requirement and task numbering remains consistent and sequential after adding new items.  For example, if a new requirement is added between requirements 2 and 3, the new requirement should be numbered 3 and the old requirement 3 should become 4, and so on. If a new task is added between tasks 5 and 6, the new task should be numbered 6 and the old task 6 should become 7, and so on.  There should be no gaps or duplications in numbering.  Also ensure that the planner did not add subtasks such as 2.1, 2.2, etc. or 2a, 2b, etc.  If any of these numbering issues are detected, you MUST flag them as a `must_fix` issue in your review.
+3. Re-execute ALL checks in the "Ensure Edge Cases and Issues are Not Missed" section from scratch — do not perform a delta-only review. Treat the spec as if reviewing it for the first time, except that you additionally verify previous issues are resolved.
+4. Identify any new issues introduced in the latest changes.
+5. If approving with zero issues after multiple prior rejections, increase skepticism.
+6. **Maintain Revision History:** The Planner MUST maintain a clear revision history at the end of each document as described in the "Revision History Tracking" section above, with a single entry per document that was revised.
+7. **Preserve Completed Tasks:** The Planner MUST NOT alter existing completed tasks.  Instead, they MUST create new remediation tasks to address any changes needed.  See the "User Requested Changes After initial implementation completed" section below for more details.
+8. **Comprehensive Updates:** The Planner MUST ensure that all changes are fully reflected across `requirements.md`, `design.md`, and `tasks.md` as needed.
+9. **Clear Justifications:** The Planner MUST provide clear justifications for any deferred `should_fix` items in their notes.
+10. **Numbering Consistency:** The Planner MUST ensure that requirement and task numbering remains consistent and sequential after adding new items.  For example, if a new requirement is added between requirements 2 and 3, the new requirement should be numbered 3 and the old requirement 3 should become 4, and so on. If a new task is added between tasks 5 and 6, the new task should be numbered 6 and the old task 6 should become 7, and so on.  There should be no gaps or duplications in numbering.  Also ensure that the planner did not add subtasks such as 2.1, 2.2, etc. or 2a, 2b, etc.  If any of these numbering issues are detected, you MUST flag them as a `must_fix` issue in your review.
 
 
 ### Revision History Tracking

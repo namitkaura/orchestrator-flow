@@ -42,7 +42,13 @@ If invoked directly by a user (not via Orchestrator), you may have partial input
    - All requirements/acceptance criteria in `requirements.md` are addressed in `design.md` and `tasks.md`.
    - Design in `design.md` is feasible and adequately addresses requirements.
    - Tasks in `tasks.md` are sufficient to implement the design.
-5. **Evaluate across ALL dimensions:**
+5. **Ground-truth verification against source code**. 
+  - For every component, function, property/parameter, type, or API surface referenced by name in `design.md` or `tasks.md`, use a subagent to read the actual source file and verify:
+    - The named entity exists at the stated location.
+    - The property/parameter names and types match what the spec claims.
+    - The behavior description matches the actual implementation.
+    - **DO NOT** trust the spec's description of existing code. Verify it. If the design says a component accepts property/parameter `X`, open the component and confirm. **This is non-negotiable** — a spec that references a nonexistent property/parameter or wrong function signature is an implementation blocker regardless of how well the rest of the spec reads.
+6. **Evaluate across ALL dimensions:**
    - Correctness and alignment with requirements.
    - Good design (architecture, interfaces, data flow).
    - Quality (style, structure, design patterns).
@@ -52,12 +58,12 @@ If invoked directly by a user (not via Orchestrator), you may have partial input
    - Error handling and observability.
    - Code readability and maintainability.
    - Accessibility and UX for frontend changes.
-6. **Validate TDD task structure** (see TDD protocol below).
-7. **Classify issues** into three categories:
+7. **Validate TDD task structure** (see TDD protocol below).
+8. **Classify issues** into three categories:
    - `must_fix`: Blocking issues -- missing requirements/acceptance criteria, unaddressed requirements in design, architectural problems, poor design pattern adherence, missing/incomplete tasks, missing test cases, missing documentation tasks.
    - `should_fix`: Important but non-blocking improvements to quality, clarity, or alignment.
    - `nit`: Small, low-risk suggestions (minor style, micro refactors).
-8. **Determine acceptance:**
+9. **Determine acceptance:**
    - `"true"`: No issues remain.
    - `"false"`: `must_fix` items remain.
    - `"conditional"`: No `must_fix` items but `should_fix` or `nit` items remain.
@@ -68,21 +74,42 @@ Be thorough, rigorous, and skeptical in your review. The goal is to ensure the h
 
 ### Ensure Edge Cases and Issues are Not Missed
 
-1. **Cross-document consistency pass.** For each new or modified API surface in design.md, verify requirements.md explicitly authorizes it. For each SHALL requirement, verify a non-EdgeCase Red-Green pair exists in tasks.md (EdgeCase classification requires documented justification in design.md). For each new side effect or behavioral addition, verify it does not activate in pre-existing usage paths governed by "preserve existing behavior" requirements.
+1. **Cross-document consistency pass.**
+  - For each new or modified API surface in design.md, verify requirements.md explicitly authorizes it.
+  - **SHALL-to-task audit:** For each acceptance criterion using SHALL/WHEN-THEN language, locate the covering task(s) in the requirements coverage table. If the covering task is tagged `[EdgeCase-Red]` or `[EdgeCase-Green]`, verify design.md contains an explicit justification for the EdgeCase classification. If no justification exists, classify as `must_fix`.
+  - For each new side effect or behavioral addition, verify it does not activate in pre-existing usage paths governed by "preserve existing behavior" requirements.
 
 2. **Validate test plans against test code.** When the task plan references test files, read the test doubles/mocks and existing assertions. Verify the test infrastructure actually supports the planned assertions — do not assume task plan test descriptions are executable as written.
 
 3. **Trace non-happy-path state transitions.** For any mode-switching state introduced or modified, enumerate every event that sets it and every event that clears it. For each "set" event, ask: "What if this operation is interrupted, aborted, or only partially completes?" Verify stale state in one mode cannot cause incorrect behavior after transitioning to a different mode.
 
-4. **Propagate intent changes.** When a requirement's intent changes during revision, search all three spec files for references to the old intent.
+4. **Forward-dependency tracing for every requirement change.** When a requirement is added, removed, or modified (including during revision cycles):
+  - Identify every other requirement that shares an assumption with the changed requirement (e.g., "URLs are always available," "all fields are required"). Verify those dependent requirements are still consistent.
+  - Identify every design section that implements or references the changed requirement. Verify the design is updated.
+  - Identify every task that covers the changed requirement. Verify the task's assertions match the new wording.
+  - If the change introduces a new behavioral branch (e.g., a fallback for missing data), verify that branch has its own acceptance criterion, design documentation, AND a non-EdgeCase Red-Green test task.
 
-5. **Full-document read every cycle.** Always read all three spec files end-to-end — never review only the diff. If approving with zero issues after multiple prior rejections, increase skepticism — habituation to existing issues is more likely than a perfect spec.
+5. **Full-document read every cycle** — no delta-only reviews. Always read all three spec files end-to-end — never review only the diff or only check whether previous issues were addressed. On every cycle, re-execute ALL checks in this section (points 1-11) from scratch. If approving with zero issues after multiple prior rejections, increase skepticism — habituation to existing issues is more likely than a perfect spec. Treat each review as if you are seeing the spec for the first time, except that you additionally verify previous issues are resolved.
 
 6. **Requirement-testability audit.** For any requirement asserting external runtime behavior (assistive technology output, visual rendering, third-party responses), verify the test plan can actually validate it. If only manually verifiable, the manual test plan must include explicit steps. If untestable, recommend narrowing the requirement.
 
 7. **High-level abstraction requirement.** The requirements.md document **MUST** be at a high level as if created by a product manager or business analyst, without implementation details (those come in the design phase).  So there should not be any code-level details in the requirements document such as specific classes, functions, data models, algorithms, etc.  Instead the requirements should focus on the user needs, expected behavior, constraints, and acceptance criteria at a level of abstraction that is implementation-agnostic.
 
 8. **Level of detail in tasks.** Tasks should be detailed enough for a coding agent to implement without ambiguity.  If the detail is already covered in `design.md` it should reference that section, but if not the task should have the necessary detail in the task description.
+
+9. **EARS keyword testability check.** For every acceptance criterion, verify the language produces a deterministic, testable assertion:
+  - SHALL/WHEN-THEN = mandatory, deterministic — acceptable.
+  - MAY/SHOULD = optional/recommended — NOT acceptable for behavior the design/tasks commit to implementing. If the design implements a specific behavior, the requirement MUST use SHALL, not MAY.
+  - If any criterion uses MAY but the design/tasks implement a deterministic behavior for it, classify as `must_fix` — the requirement must be tightened to match.
+  - If any task specifies two acceptable outcomes (e.g., "returns '' or the full path"), classify as `must_fix` — test expectations must be deterministic.
+
+10. **Boundary analysis for computed values.** For every formula, calculation, or derived value in the design:
+  - Determine the minimum and maximum values the inputs can take (considering optional fields, empty strings, extreme lengths).
+  - Compute the output at those boundaries.
+  - Verify the design specifies behavior for boundary/degenerate cases (zero, negative, overflow).
+  - If boundary behavior is unspecified, classify as `should_fix`.
+
+11. **Internal cross-reference validation.** Verify all task-to-task references (e.g., "see task N", "verified via manual test plan in task M") point to tasks that exist and have the described content. Verify task numbering is strictly sequential with no gaps or duplicates. Classify stale or broken cross-references as `should_fix`.
 
 ### TDD Task Validation
 
@@ -95,9 +122,11 @@ Generate sequential implementation plans using strict **Red-Green-Refactor** met
 **1. [Scaffolding] (Optional)**
 Start here only if scaffolding, dependencies, or global types are needed before testing.
 
+**Scaffolding constraint:** A [Scaffolding] task MUST NOT modify existing function behavior, add new parameters to existing functions, or change existing API contracts. It may only create new files with stubs or placeholder implementations, add type signatures, create directory structure, or add dependencies. If a task modifies existing code behavior (even "small" changes like adding a parameter or changing a split pattern), it MUST be a [Red]/[Green] pair, not [Scaffolding]. Classify violations as `must_fix`.
+
 **2. Red-Green-Refactor Loop (Repeat for every logical step)**
 *   **[Red] Test:** Write a failing test (unit or integration) ensuring the logic/feature is missing.
-    *   *Constraint:* For "wiring" or "prop passing," you **MUST** write a [Red] integration test asserting the parent passes the data before the [Green] task.
+    *   *Constraint:* For "wiring" or "property/parameter passing," you **MUST** write a [Red] integration test asserting the parent passes the data before the [Green] task.
     * Should not add implementation code in a Red task.
 *   **[Green] Implementation:** Write the minimum code to pass the current [Red] test.  Should not add tests or functionality beyond what is needed to pass the test in a Green task.
 *   **[Refactor] (Optional):** Clean up production code structure without changing behavior.
@@ -110,7 +139,7 @@ Start here only if scaffolding, dependencies, or global types are needed before 
 *   **[Test-Maintenance]** (Optional) Update existing tests to reflect changes in the codebase. Avoid making large changes to existing tests that are not necessary to maintain coverage or accuracy
 *   **[Refactor]:** If applicable check all of the tests added as part of the Red-Green process. Should all of them live long term or were some just part of the TDD process to implement the change? Think about adding a Refactor task (before the final verification task) to clean up or refactor brittle or 'smelly' tests. We want to have long term tests that test the functionality not the implementation details (which were used as a part of the TDD process). **NOTE** this is different from the Refactor step in the Red-Green-Refactor loop which is only for refactoring production code, not tests.  This is a separate Refactor step specifically for cleaning up tests after the implementation is done to ensure we have a clean and maintainable test suite. **DO NOT SKIP THIS IF THERE ARE TESTS THAT NEED CLEANUP OR REFACTORING TO ENSURE A MAINTAINABLE TEST SUITE.**
 *   **[Verification]:** Run the full test suite to check for regressions. Do not add new functionality or tests in a verification task.
-*   **[Documentation]:** Update JSDocs, READMEs, and architectural/AI agent context (e.g. AGENTS.md or any other technical/architectural documentation), etc.
+*   **[Documentation]:** Update API documentation (e.g., JSDocs, docstrings), READMEs, and architectural/AI agent context (e.g. AGENTS.md or any other technical/architectural documentation), etc.
 
 **Format:**
 Use `- [ ] N. **[Type]** Task Name` with sub-bullets for steps and `_Requirements: X.Y_` at the end. [EdgeCase-Red] and [EdgeCase-Green] tasks use `_Requirements: N/A — hardening existing behavior_` instead.
