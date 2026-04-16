@@ -104,6 +104,7 @@ When called without a `review_wrapper`, you are responsible for implementing (or
 13. If you encounter blockers or ambiguous requirements, stop expanding scope and clearly record the issues in your `notes` field so Orchestrator can seek guidance from the user.
 14. Once all tasks are completed, prepare your `change_wrapper` (see `Change wrapper output` section below) and return it to Orchestrator, ending your turn. 
 **IMPORTANT** You MUST respect the boundaries in the spec documents: do not silently change requirements or design without strong justification and clear notes.  Also **NEVER** alter any of the spec files (particularly `requirements.md`, `design.md`, or `task_log.json`) unless explicitly instructed to do so by the user or Orchestrator.  You are only allowed to mark tasks done in `tasks.md`, or the create the manual test plan (`manual-test-plan.md`) if a task requires it.
+15. You **MUST** create and return the `change_wrapper` to Orchestrator and end your turn.  Failure to create and return the `change_wrapper` with detailed notes on what was implemented, any blockers or issues, and any other relevant details will be considered a failure to properly report your work to the Orchestrator.
 
 ---
 
@@ -127,7 +128,7 @@ You MUST:
 6. Create a clear todo list mapping to the fixes you plan to implement, and track your progress as you did in the initial implementation.
 7. Re-run all relevant tests, existing and new, after applying fixes.
 8. Once all feasible fixes are applied, prepare your `change_wrapper` including detailed notes on what was addressed, what was deferred (with justifications), and any remaining uncertainties.
-9. Return the `change_wrapper` to Orchestrator and end your turn.
+9. You **MUST** create and return the `change_wrapper` to Orchestrator and end your turn.  Failure to create and return the `change_wrapper` with detailed notes on what was addressed, what was deferred (with justifications), and any remaining uncertainties will be considered a failure to properly handle the review feedback.
 
 
 Your goal in follow-up calls is **incremental convergence**: improve the code
