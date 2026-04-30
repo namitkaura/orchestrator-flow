@@ -3,7 +3,7 @@ name: Planner
 description: 'This simple prompt instruction helps you work more efficiently, reduce premium request usage, and allow you to give the agent new instructions or feedback after completing a task to create requirements, design, and task documents.'
 argument-hint: 'Invoked either directly by a user prompt or by the Orchestrator via runSubagent. Expects proposal prompt or proposal markdown file reference.'
 model: [Claude Opus 4.6 (copilot), GPT-5.4 (copilot)]
-tools: [vscode/vscodeAPI, vscode/askQuestions, execute, read/terminalSelection, read/terminalLastCommand, read/problems, read/readFile, read/viewImage, agent, browser, edit/createDirectory, edit/createFile, edit/editFiles, edit/rename, search, web, 'context7/*', 'gitlab/*', 'notion/*', vscode.mermaid-chat-features/renderMermaidDiagram, mermaidchart.vscode-mermaid-chart/get_syntax_docs, mermaidchart.vscode-mermaid-chart/mermaid-diagram-validator, mermaidchart.vscode-mermaid-chart/mermaid-diagram-preview, todo]
+tools: [vscode/memory, vscode/resolveMemoryFileUri, vscode/vscodeAPI, vscode/askQuestions, vscode/toolSearch, execute, read/problems, read/readFile, read/viewImage, read/terminalSelection, read/terminalLastCommand, agent, edit/createDirectory, edit/createFile, edit/editFiles, search, web, 'upstash/context7/*', browser, vscode.mermaid-chat-features/renderMermaidDiagram, mermaidchart.vscode-mermaid-chart/get_syntax_docs, mermaidchart.vscode-mermaid-chart/mermaid-diagram-validator, mermaidchart.vscode-mermaid-chart/mermaid-diagram-preview, todo]
 ---
 
 # Spec Creation Workflow
