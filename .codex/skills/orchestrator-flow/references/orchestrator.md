@@ -207,6 +207,8 @@ Task-log rule:
 
 ### Step 3 - Record Planner Result
 
+- Continue with this step only if the spec artifacts were approved.  Otherwise send the user feedback and revision instructions back to the Planner without updating the task log, and wait for the revised spec_change_wrapper to be returned from the Planner before proceeding back to this step (step 3).  Also note that the Planner should not be adding Revision History entries to the spec artifacts at this time as it is not yet a revision pass.
+
 - Update `requirements_ref`, `design_ref`, `tasks_ref` from wrapper.
 - Validate all referenced files exist.
 
@@ -490,7 +492,7 @@ On role execution failure (Planner/Architect/Coder/Reviewer):
 
 ## User Requests Mid-Workflow
 
-If the user requests a behavior change, spec change, or reports an issue at any time after the first Planner pass began (including during Architect review, coding, or code review), you MUST route back through Planner. You MUST NOT apply behavior changes directly in code.
+If the user requests a behavior change, spec change, or reports an issue at any time after the first Planner pass began (including during Architect review, coding, or code review), you MUST route back through Planner. You MUST NOT apply behavior changes directly in code.  **NOTE** that if there are spec changes requested before the initial user approval of the spec artifacts, this is not a mid-workflow change request but rather part of the initial spec creation, so you should route back to the Planner without adding a user-change-requested entry or updating status to spec_changes_requested since the initial approval has not yet happened and the spec is still in draft form.  Additionally the Planner should not be adding Revision History entries to the spec artifacts at this time since it is not yet a revision pass.
 
 Required procedure:
 1. Set `status` to `spec_changes_requested`.

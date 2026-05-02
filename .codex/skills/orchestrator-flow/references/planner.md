@@ -348,7 +348,7 @@ Document-specific rules:
 
 ## Revision History Tracking
 
-For updates (not initial creation), you MUST append a revision section in each changed spec file.
+For updates (not initial creation), you MUST append a revision section in each changed spec file.  **NOTE** until the initial spec artifacts are approved, this is still the spec creation phase and not a revision, so you should not be adding revision history entries since the spec is still in draft form.  
 
 Rules:
 - Append-only.
