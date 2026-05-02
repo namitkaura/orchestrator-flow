@@ -140,6 +140,7 @@ You MUST include the invocation line verbatim for the target role:
   - Must run Planner contract from `references/planner.md`
   - Must return JSON-only `spec_change_wrapper`
   - The Planner is required to ask the user for explicit approval on each of the three documents (requirements, design, tasks).  If it did not then you **MUST** do ask the user for approval before proceeding to the Architect review, and if the user requests changes you MUST send this back to the Planner for revision with clear instructions on what was missing and what needs to be added to meet the approval requirement.
+  - **MUST** be run with at least High reasoning (preferably xHigh).
 
 - Architect:
   - Inputs: latest `spec_change_wrapper`, optional previous `spec_review_wrapper`
@@ -147,6 +148,7 @@ You MUST include the invocation line verbatim for the target role:
     - `You (the Architect) are being invoked by the Orchestrator agent to run your spec review workflow and then return a JSON only spec_review_wrapper.`
   - Must run Architect contract from `references/architect.md`
   - Must return JSON-only `spec_review_wrapper`
+  - **MUST** be run with xHigh reasoning.
 
 - Coder:
   - Before calling the coder with an approved spec, you MUST ask the user for explicit approval to proceed to coding. If the user declines, you MUST wait for further instructions and do not proceed to coding until approval is given. You MUST NOT start coding without user approval, even if the spec is approved.
@@ -155,6 +157,7 @@ You MUST include the invocation line verbatim for the target role:
     - `You (the Coder) are being invoked by the Orchestrator agent to run your coding workflow and then return a JSON only change_wrapper.`
   - Must run Coder contract from `references/coder.md`
   - Must return JSON-only `change_wrapper`
+  - **MUST** be run with at least High reasoning (preferably xHigh).
 
 - Reviewer:
   - Inputs: `feature`, spec refs, current `change_wrapper`, optional prior `review_wrapper`
@@ -162,6 +165,7 @@ You MUST include the invocation line verbatim for the target role:
     - `You (the Reviewer) are being invoked by the Orchestrator agent to run your code review workflow and then return a JSON only review_wrapper.`
   - Must run Reviewer contract from `references/reviewer.md`
   - Must return JSON-only `review_wrapper`
+  - **MUST** be run with xHigh reasoning.
 
 For Planner revision passes, use this variation:
 - `You (the Planner) are being invoked by the Orchestrator agent to run your spec revision workflow and then return a JSON only spec_change_wrapper.`
@@ -199,6 +203,7 @@ Invoke Planner with:
 - optional `requirements_ref`, `design_ref`, `tasks_ref`
 - optional `spec_review_wrapper` if revising
 - Include the Planner invocation line from `Role Invocation Templates` verbatim in the prompt.
+- Use at least High reasoning (preferably xHigh) for the Planner.
 
 Require JSON-only `spec_change_wrapper`.
 
@@ -239,7 +244,8 @@ Before invoking Architect:
   - `details`: review started
 
 Invoke Architect with latest `spec_change_wrapper` and prior `spec_review_wrapper` if iterating.
-- Include the Architect invocation line from `Role Invocation Templates` verbatim in the prompt.
+- Include the Architect invocation line from `Role Invocation Templates` verbatim in the prompt.`
+- Use xHigh reasoning for the Architect.
 
 ### Step 5 - Process Architect Result
 
@@ -336,6 +342,7 @@ Before invoking Coder:
 
 Invoke Coder with `feature`, spec refs, and no `review_wrapper` for initial pass.
 - Include the Coder invocation line from `Role Invocation Templates` verbatim in the prompt.
+- Use at least High reasoning (preferably xHigh) for the Coder.
 
 ### Step 9 - Record Coder Result
 
@@ -364,6 +371,7 @@ Before invoking Reviewer:
 
 Invoke Reviewer with spec refs, latest `change_wrapper`, and prior `review_wrapper` if iterating.
 - Include the Reviewer invocation line from `Role Invocation Templates` verbatim in the prompt.
+- Use xHigh reasoning for the Reviewer.`
 
 ### Step 11 - Process Reviewer Result
 
