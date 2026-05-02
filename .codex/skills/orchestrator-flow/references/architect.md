@@ -189,13 +189,15 @@ Generate sequential implementation plans using strict **Red-Green-Refactor** met
 **1. [Scaffolding] (Optional)**
 Start here only if scaffolding, dependencies, or global types are needed before testing.
 
-**Scaffolding constraint:** A [Scaffolding] task MUST NOT modify existing function behavior, add new parameters to existing functions, or change existing API contracts. It may only create new files with stubs or placeholder implementations, add type signatures, create directory structure, or add dependencies. If a task modifies existing code behavior (even "small" changes like adding a parameter or changing a split pattern), it MUST be a [Red]/[Green] pair, not [Scaffolding]. Classify violations as `must_fix`.
+**Scaffolding constraint:** A [Scaffolding] task MUST NOT modify existing function behavior, add new parameters to existing functions, or change existing API contracts. It may only create new files with stubs or placeholder implementations, add throws, add type signatures, create directory structure, or add dependencies. If a task modifies existing code behavior (even "small" changes like adding a parameter or changing a split pattern), it MUST be a [Red]/[Green] pair, not [Scaffolding]. Classify violations as `must_fix`.
 
 **2. Red-Green-Refactor Loop (Repeat for every logical step)**
-*   **[Red] Test:** Write a failing test (unit or integration) ensuring the logic/feature is missing.
-    *   *Constraint:* For "wiring" or "property/parameter passing," you **MUST** write a [Red] integration test asserting the parent passes the data before the [Green] task.
+*   **[Red] Test:** Write failing tests (unit or integration), or modify existing tests to ensure the logic/feature is missing.  
+    * *Constraint:* For "wiring" or "property/parameter passing," you **MUST** write a [Red] integration test asserting the parent passes the data before the [Green] task.
     * Should not add implementation code in a Red task.
+    * Must run the added/modified tests and confirm they fail before proceeding to the [Green] task.
 *   **[Green] Implementation:** Write the minimum code to pass the current [Red] test.  Should not add tests or functionality beyond what is needed to pass the test in a Green task.
+    * Must run the tests added in the preceding [Red] task and confirm they pass before proceeding to the next step. 
 *   **[Refactor] (Optional):** Clean up production code structure without changing behavior.
 
 **NOTE** there should be one [Red]-[Green] pair per logical step. If multiple tests are needed for a single feature, break them into separate tasks.  **DO NOT** create multiple [Red] or [Green] tasks in a row.  Instead reorganize into multiple (small) [Red]-[Green] pairs.
@@ -203,10 +205,10 @@ Start here only if scaffolding, dependencies, or global types are needed before 
 **3. Completion (Required)**
 *   **[EdgeCase-Red]** (Optional) Write failing (or passing) tests for edge cases or error conditions on *already-implemented* features. Scoped to hardening existing behavior — not introducing new features.
 *   **[EdgeCase-Green]** (Optional) Fix any issues uncovered by the paired [EdgeCase-Red] task. If all tests already pass, this task is a no-op — do not add new functionality.
-*   **[Test-Maintenance]** (Optional) Update existing tests to reflect changes in the codebase. Avoid making large changes to existing tests that are not necessary to maintain coverage or accuracy.
-*   **[Refactor]:** If applicable check all of the tests added as part of the Red-Green process. Should all of them live long term or were some just part of the TDD process to implement the change? Think about adding a Refactor task (before the final verification task) to clean up or refactor brittle or 'smelly' tests. We want to have long term tests that test the functionality not the implementation details (which were used as a part of the TDD process). **NOTE** this is different from the Refactor step in the Red-Green-Refactor loop which is only for refactoring production code, not tests.  This is a separate Refactor step specifically for cleaning up tests after the implementation is done to ensure we have a clean and maintainable test suite. **DO NOT SKIP THIS IF THERE ARE TESTS THAT NEED CLEANUP OR REFACTORING TO ENSURE A MAINTAINABLE TEST SUITE.**
+*   **[Test-Maintenance]** (Optional) Update existing tests to reflect changes in the codebase. Avoid making large changes to existing tests that are not necessary to maintain coverage or accuracy.  
+*   The final [Test-Maintenance] task is not optional and should be before the final [Verification] task. It should go through all tests added during the [Red-Green] cycles and check if they need any updates or cleanup to ensure they are maintainable and not brittle and test behaviour rather than implementation details (which were used as part of the TDD process).  Ask if all of the tests should live long term or if they were added as just part of the TDD process to implement the change? This is an important step to ensure we have a clean and maintainable test suite after the implementation is done.  Do not skip this step if there are tests that need cleanup or refactoring to ensure a maintainable test suite.  **DO NOT SKIP THIS IF THERE ARE TESTS THAT NEED CLEANUP OR REFACTORING TO ENSURE A MAINTAINABLE TEST SUITE.**
 *   **[Verification]:** Run the full test suite to check for regressions. Do not add new functionality or tests in a verification task.
-*   **[Documentation]:** Update API documentation (e.g., JSDocs, docstrings), READMEs, and architectural/AI agent context (e.g. AGENTS.md or any other technical/architectural documentation), etc.
+*   **[Documentation]:** Update API documentation (e.g., JSDocs, docstrings), READMEs, and architectural/AI agent context (e.g. AGENTS.md or any other technical/architectural documentation), etc.  If there is a documentation maintenance reference, then ensure you follow it and clearly detail all required documentation updates. Do not use vague language like "update documentation as needed" — be specific about which documents and sections need to be updated and what needs to be added or changed in those sections.
 
 **Format:**
 Use `- [ ] N. **[Type]** Task Name` with sub-bullets for steps and `_Requirements: X.Y_` at the end. [EdgeCase-Red] and [EdgeCase-Green] tasks use `_Requirements: N/A — hardening existing behavior_` instead.
