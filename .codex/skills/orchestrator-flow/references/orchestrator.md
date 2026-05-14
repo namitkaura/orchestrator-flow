@@ -31,21 +31,12 @@ Treat Planner, Architect, Coder, and Reviewer as delegated roles. Do not author 
 - All role outputs MUST be JSON-only wrappers with no surrounding prose.
 - For each history entry, you MUST include exactly one payload field: `details`, `spec_change_wrapper`, `spec_review_wrapper`, `change_wrapper`, or `review_wrapper`.
 
-## Delegation Modes
+## Delegation
 
-### Mode A: Native Handoff (Preferred)
-
-If runtime sub-agent handoff exists, you MUST spawn a sub-agent and invoke the target role with:
+You MUST spawn a sub-agent and invoke the target role with:
 - The full role contract from `references/<role>.md`.
 - Invocation context (user request, refs, and latest relevant wrapper).
 - Strict requirement to return JSON-only wrapper output.
-
-### Mode B: Virtual Role Pass (Fallback)
-
-If native handoff is unavailable:
-- You MUST execute the role contract in-place.
-- You MUST produce exactly the wrapper that role would return.
-- You MUST preserve role semantics in `task_log.json` (`actor` and `requestor`).
 
 ## Contracts and Validation
 
@@ -130,7 +121,7 @@ If a step needs two distinct transitions (for example, start + result), you MUST
 
 ## Role Invocation Templates
 
-Use these prompts as structure (regardless of native handoff or virtual fallback).
+Use these prompts as structure
 You MUST include the invocation line verbatim for the target role:
 
 - Planner:

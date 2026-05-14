@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Optional
 
 FEATURE_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
-FEATURE_DIR_RE = re.compile(r"^\.docs/specs/[a-z0-9]+(?:-[a-z0-9]+)*$")
+FEATURE_DIR_RE = re.compile(r"^\.docs/specs/[a-z0-9]+(?:[.-][a-z0-9]+)*$")
 REQUIREMENTS_REF_RE = re.compile(r"^\.docs/specs/.+/requirements\.md$")
 DESIGN_REF_RE = re.compile(r"^\.docs/specs/.+/design\.md$")
 TASKS_REF_RE = re.compile(r"^\.docs/specs/.+/tasks\.md$")

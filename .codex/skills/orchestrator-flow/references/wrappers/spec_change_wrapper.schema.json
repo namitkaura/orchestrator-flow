@@ -20,7 +20,7 @@
     },
     "feature_dir": {
       "type": "string",
-      "pattern": "^\\.docs/specs/[a-z0-9]+(?:-[a-z0-9]+)*$"
+      "pattern": "^\\.docs/specs/[a-z0-9]+(?:[.-][a-z0-9]+)*$"
     },
     "requirements_ref": {
       "type": "string",
