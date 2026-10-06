@@ -5,9 +5,34 @@
   "issue_details": {
     "must_fix": [],
     "should_fix": [],
-    "nit": []
+    "nit": [
+      {
+        "id": "C-0-1",
+        "file": "src/example.py",
+        "description": "Transient provider failures require a manual retry; there is no automatic background retry.",
+        "rationale": "Manual recovery meets the agreed Basic acceptance standard; automatic retry is optional hardening.",
+        "triggering_conditions": "The external provider temporarily rejects a request.",
+        "practical_consequences": "The local operator reruns the command for this small private deployment.",
+        "basis": "hardening_opportunity",
+        "source_refs": [
+          "design.md manual retry decision",
+          "src/example.py provider-error handling"
+        ],
+        "reconsideration_reason": null
+      }
+    ]
   },
-  "dispositions": [],
+  "dispositions": [
+    {
+      "finding_id": "C-0-1",
+      "decision": "accept_limitation",
+      "rationale": "Manual retry is adequate for the accepted local use; a background retry loop is not worthwhile.",
+      "authority": "policy",
+      "authority_ref": null,
+      "revisit_condition": "Revisit if the feature becomes unattended or serves consequential production users.",
+      "workaround": null
+    }
+  ],
   "reviewed_artifacts": {
     "requirements": {
       "ref": ".docs/specs/example/requirements.md",
@@ -25,7 +50,7 @@
   "reviewed_output_ref": null,
   "prior_review_ref": null,
   "review_kind": "initial",
-  "assurance_level": "standard",
+  "assurance_level": "basic",
   "review_disposition_policy": "spec_user_code_auto",
   "repair_class": null,
   "changed_surfaces": [

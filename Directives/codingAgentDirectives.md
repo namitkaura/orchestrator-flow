@@ -2,6 +2,8 @@
 
 This document defines universal coding principles that apply across all languages, followed by language‑specific guidelines for this project. It is designed to guide AI coding agents to produce clean, idiomatic, maintainable, secure, and testable code.
 
+Copy this file into a project and customize it for that project's languages, frameworks, tooling, and conventions. Keep the relevant language sections, remove those that do not apply, and maintain the project's copy independently.
+
 ---
 
 ## Universal Coding Principles (Apply to All Languages)

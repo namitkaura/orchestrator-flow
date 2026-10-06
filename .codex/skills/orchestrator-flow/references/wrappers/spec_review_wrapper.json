@@ -1,27 +1,59 @@
 {
-  "accepted": "conditional",
+  "context": null,
+  "notes": "Inspected current sources and applicable prior decisions.",
+  "accepted": "true",
   "issue_details": {
-    "must_fix": [
-      {
-        "file": ".docs/specs/kebab-case-feature/tasks.md",
-        "description": "A required acceptance criterion is not mapped to any implementation task.",
-        "rationale": "Unmapped criteria can cause incomplete implementation."
-      }
-    ],
-    "should_fix": [
-      {
-        "file": ".docs/specs/kebab-case-feature/design.md",
-        "description": "Error-handling strategy is under-specified for external API failures.",
-        "rationale": "Clear failure modes reduce production ambiguity."
-      }
-    ],
-    "nit": [
-      {
-        "file": ".docs/specs/kebab-case-feature/requirements.md",
-        "description": "Use consistent terminology for actor names.",
-        "rationale": "Improves readability and traceability."
-      }
-    ]
+    "must_fix": [],
+    "should_fix": [],
+    "nit": []
   },
-  "notes": "Spec is close, but required coverage gaps remain."
+  "dispositions": [],
+  "reviewed_artifacts": {
+    "requirements": {
+      "ref": ".docs/specs/example/requirements.md",
+      "version": 1
+    },
+    "design": {
+      "ref": ".docs/specs/example/design.md",
+      "version": 1
+    },
+    "tasks": {
+      "ref": ".docs/specs/example/tasks.md",
+      "version": 1
+    }
+  },
+  "reviewed_output_ref": null,
+  "prior_review_ref": null,
+  "review_kind": "initial",
+  "assurance_level": "standard",
+  "review_disposition_policy": "spec_user_code_auto",
+  "repair_class": null,
+  "changed_surfaces": [
+    "src/example.py"
+  ],
+  "review_scope": "full",
+  "scope_reason": "Cover the complete relevant work on the initial pass; verify affected contracts on repair.",
+  "meaningful_change": true,
+  "evidence": [
+    {
+      "sources": [
+        {
+          "ref": "src/example.py",
+          "context": "Feature baseline and current working changes inspected"
+        }
+      ],
+      "observations": [
+        "The implemented branch meets the approved acceptance criterion."
+      ],
+      "inferences": [],
+      "coverage_gaps": [],
+      "uncertainty": [],
+      "assumptions": [
+        "The approved deployment remains local."
+      ],
+      "freshness": "new",
+      "applicability_check": "Compared relevant source content and deployment assumptions with the prior inspection."
+    }
+  ],
+  "resolved_findings": []
 }

@@ -1,18 +1,23 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.com/schemas/review_wrapper.schema.json",
-  "title": "Review Wrapper",
+  "$id": "urn:orchestrator-flow:review-wrapper",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "accepted",
-    "issue_details",
-    "test_results",
-    "notes"
-  ],
   "properties": {
+    "context": {
+      "anyOf": [
+        {
+          "$ref": "urn:orchestrator-flow:common#/$defs/invocation"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "notes": {
+      "type": "string"
+    },
     "accepted": {
-      "type": "string",
       "enum": [
         "true",
         "false",
@@ -22,99 +27,161 @@
     "issue_details": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "must_fix",
-        "should_fix",
-        "nit"
-      ],
       "properties": {
         "must_fix": {
           "type": "array",
           "items": {
-            "$ref": "#/$defs/issue"
-          }
+            "$ref": "urn:orchestrator-flow:common#/$defs/finding"
+          },
+          "minItems": 0
         },
         "should_fix": {
           "type": "array",
           "items": {
-            "$ref": "#/$defs/issue"
-          }
+            "$ref": "urn:orchestrator-flow:common#/$defs/finding"
+          },
+          "minItems": 0
         },
         "nit": {
           "type": "array",
           "items": {
-            "$ref": "#/$defs/issue"
-          }
+            "$ref": "urn:orchestrator-flow:common#/$defs/finding"
+          },
+          "minItems": 0
         }
-      }
-    },
-    "test_results": {
-      "type": "object",
-      "additionalProperties": false,
+      },
       "required": [
-        "unit_tests",
-        "integration_tests"
-      ],
-      "properties": {
-        "unit_tests": {
-          "$ref": "#/$defs/test_result"
+        "must_fix",
+        "should_fix",
+        "nit"
+      ]
+    },
+    "dispositions": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:orchestrator-flow:common#/$defs/disposition"
+      },
+      "minItems": 0
+    },
+    "reviewed_artifacts": {
+      "$ref": "urn:orchestrator-flow:common#/$defs/artifacts"
+    },
+    "reviewed_output_ref": {
+      "anyOf": [
+        {
+          "$ref": "urn:orchestrator-flow:common#/$defs/reference"
         },
-        "integration_tests": {
-          "$ref": "#/$defs/test_result"
+        {
+          "type": "null"
         }
-      }
+      ]
     },
-    "notes": {
-      "type": "string",
-      "minLength": 1
-    }
-  },
-  "$defs": {
-    "issue": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "file",
-        "description",
-        "rationale"
-      ],
-      "properties": {
-        "file": {
-          "type": "string",
-          "minLength": 1
+    "prior_review_ref": {
+      "anyOf": [
+        {
+          "$ref": "urn:orchestrator-flow:common#/$defs/reference"
         },
-        "description": {
-          "type": "string",
-          "minLength": 1
-        },
-        "rationale": {
-          "type": "string",
-          "minLength": 1
+        {
+          "type": "null"
         }
-      }
+      ]
     },
-    "test_result": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "status",
-        "details"
-      ],
-      "properties": {
-        "status": {
-          "type": "string",
+    "review_kind": {
+      "enum": [
+        "initial",
+        "follow_up"
+      ]
+    },
+    "assurance_level": {
+      "$ref": "urn:orchestrator-flow:common#/$defs/assurance"
+    },
+    "review_disposition_policy": {
+      "$ref": "urn:orchestrator-flow:common#/$defs/policy"
+    },
+    "repair_class": {
+      "anyOf": [
+        {
           "enum": [
-            "pass",
-            "fail",
-            "not_run",
-            "skipped"
+            "editorial",
+            "test_documentation",
+            "bounded_correctness",
+            "architectural_systemic"
           ]
         },
-        "details": {
-          "type": "string",
-          "minLength": 1
+        {
+          "type": "null"
         }
-      }
+      ]
+    },
+    "changed_surfaces": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^(?!/)(?![A-Za-z]:)(?!.*\\\\)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
+      },
+      "minItems": 0
+    },
+    "review_scope": {
+      "enum": [
+        "focused",
+        "affected",
+        "full"
+      ]
+    },
+    "scope_reason": {
+      "type": "string",
+      "minLength": 1
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:orchestrator-flow:common#/$defs/evidence"
+      },
+      "minItems": 1
+    },
+    "resolved_findings": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 0
+    },
+    "test_results": {
+      "$ref": "urn:orchestrator-flow:common#/$defs/test_results"
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:orchestrator-flow:common#/$defs/check"
+      },
+      "minItems": 0
+    },
+    "meaningful_change": {
+      "type": "boolean"
     }
-  }
+  },
+  "required": [
+    "context",
+    "notes",
+    "accepted",
+    "issue_details",
+    "dispositions",
+    "reviewed_artifacts",
+    "reviewed_output_ref",
+    "prior_review_ref",
+    "review_kind",
+    "assurance_level",
+    "review_disposition_policy",
+    "repair_class",
+    "changed_surfaces",
+    "review_scope",
+    "scope_reason",
+    "evidence",
+    "resolved_findings",
+    "test_results",
+    "checks",
+    "meaningful_change"
+  ]
 }

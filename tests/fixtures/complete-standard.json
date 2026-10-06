@@ -1,0 +1,890 @@
+{
+  "feature": "example",
+  "feature_dir": ".docs/specs/example",
+  "workflow_version": "2.0.0",
+  "requirements_ref": ".docs/specs/example/requirements.md",
+  "design_ref": ".docs/specs/example/design.md",
+  "tasks_ref": ".docs/specs/example/tasks.md",
+  "task_log_ref": ".docs/specs/example/task_log.json",
+  "assurance_level": "standard",
+  "capability": {
+    "platform": "codex",
+    "roles": {
+      "planner": {
+        "model": "example-model",
+        "reasoning_effort": "high"
+      },
+      "architect": {
+        "model": "example-model",
+        "reasoning_effort": "high"
+      },
+      "coder": {
+        "model": "example-model",
+        "reasoning_effort": "high"
+      },
+      "reviewer": {
+        "model": "example-model",
+        "reasoning_effort": "high"
+      },
+      "helpers": {
+        "model": "example-model",
+        "reasoning_effort": "high"
+      }
+    },
+    "acknowledged_limitations": []
+  },
+  "review_disposition_policy": "spec_user_code_auto",
+  "branch_context": {
+    "feature_branch": "feature/example",
+    "integration_branch": "main",
+    "remote": "origin",
+    "baseline_commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "status": "implementation_complete",
+  "history": [
+    {
+      "id": "1",
+      "timestamp": "2026-09-30T12:00:00Z",
+      "event": "spec-creation-started",
+      "actor": "Planner",
+      "requestor": "User",
+      "status": "spec_in_progress",
+      "details": {
+        "request": "Support the agreed local input behavior.",
+        "references": [],
+        "earliest_artifact": "requirements",
+        "invocation": {
+          "trigger_event_id": "1",
+          "role": "Planner",
+          "attempt": 1,
+          "context_id": "planner-session",
+          "configuration_ref": "1"
+        },
+        "initial_configuration": {
+          "assurance_level": "standard",
+          "capability": {
+            "platform": "codex",
+            "roles": {
+              "planner": {
+                "model": "example-model",
+                "reasoning_effort": "high"
+              },
+              "architect": {
+                "model": "example-model",
+                "reasoning_effort": "high"
+              },
+              "coder": {
+                "model": "example-model",
+                "reasoning_effort": "high"
+              },
+              "reviewer": {
+                "model": "example-model",
+                "reasoning_effort": "high"
+              },
+              "helpers": {
+                "model": "example-model",
+                "reasoning_effort": "high"
+              }
+            },
+            "acknowledged_limitations": []
+          },
+          "review_disposition_policy": "spec_user_code_auto"
+        },
+        "branch_context": {
+          "feature_branch": "feature/example",
+          "integration_branch": "main",
+          "remote": "origin",
+          "baseline_commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "user_acceptance": "Use these assignments and assurance for this feature."
+      }
+    },
+    {
+      "id": "2",
+      "timestamp": "2026-09-30T12:00:00Z",
+      "event": "spec-updated",
+      "actor": "Planner",
+      "requestor": "User",
+      "status": "spec_in_progress",
+      "spec_change_wrapper": {
+        "context": {
+          "trigger_event_id": "1",
+          "role": "Planner",
+          "attempt": 1,
+          "context_id": "planner-session",
+          "configuration_ref": "1"
+        },
+        "notes": "No hidden decisions.",
+        "feature": "example",
+        "feature_dir": ".docs/specs/example",
+        "requirements_ref": ".docs/specs/example/requirements.md",
+        "design_ref": null,
+        "tasks_ref": null,
+        "user_request": {
+          "original_request": "Support the agreed local input behavior.",
+          "additional_context": ""
+        },
+        "output_kind": "incremental",
+        "artifacts": {
+          "requirements": {
+            "ref": ".docs/specs/example/requirements.md",
+            "version": 1
+          },
+          "design": null,
+          "tasks": null
+        },
+        "artifact_changes": [
+          {
+            "artifact": "requirements",
+            "previous_version": null,
+            "current_version": 1,
+            "change_kind": "material",
+            "summary": "Record the current approved behavior and its rationale.",
+            "rationale": "Make this artifact actionable for its downstream consumer.",
+            "approval_basis_ref": null
+          }
+        ],
+        "causes": [],
+        "decisions": [
+          "Manual retry is adequate for the accepted deployment."
+        ],
+        "constraints": [
+          "Preserve existing nonempty-input behavior."
+        ],
+        "downstream_impacts": [],
+        "dispositions": [],
+        "questions": [],
+        "research_updates": []
+      }
+    },
+    {
+      "id": "3",
+      "timestamp": "2026-09-30T12:00:00Z",
+      "event": "spec-artifact-approved",
+      "actor": "User",
+      "requestor": "Planner",
+      "status": "spec_in_progress",
+      "details": {
+        "artifact": "requirements",
+        "version": 1,
+        "output_ref": {
+          "event_id": "2",
+          "kind": "spec_change_wrapper"
+        },
+        "user_statement": "I approve this document version."
+      }
+    },
+    {
+      "id": "4",
+      "timestamp": "2026-09-30T12:00:00Z",
+      "event": "spec-updated",
+      "actor": "Planner",
+      "requestor": "User",
+      "status": "spec_in_progress",
+      "spec_change_wrapper": {
+        "context": {
+          "trigger_event_id": "1",
+          "role": "Planner",
+          "attempt": 1,
+          "context_id": "planner-session",
+          "configuration_ref": "1"
+        },
+        "notes": "No hidden decisions.",
+        "feature": "example",
+        "feature_dir": ".docs/specs/example",
+        "requirements_ref": ".docs/specs/example/requirements.md",
+        "design_ref": ".docs/specs/example/design.md",
+        "tasks_ref": null,
+        "user_request": {
+          "original_request": "Support the agreed local input behavior.",
+          "additional_context": ""
+        },
+        "output_kind": "incremental",
+        "artifacts": {
+          "requirements": {
+            "ref": ".docs/specs/example/requirements.md",
+            "version": 1
+          },
+          "design": {
+            "ref": ".docs/specs/example/design.md",
+            "version": 1
+          },
+          "tasks": null
+        },
+        "artifact_changes": [
+          {
+            "artifact": "design",
+            "previous_version": null,
+            "current_version": 1,
+            "change_kind": "material",
+            "summary": "Record the current approved behavior and its rationale.",
+            "rationale": "Make this artifact actionable for its downstream consumer.",
+            "approval_basis_ref": null
+          }
+        ],
+        "causes": [],
+        "decisions": [
+          "Manual retry is adequate for the accepted deployment."
+        ],
+        "constraints": [
+          "Preserve existing nonempty-input behavior."
+        ],
+        "downstream_impacts": [],
+        "dispositions": [],
+        "questions": [],
+        "research_updates": []
+      }
+    },
+    {
+      "id": "5",
+      "timestamp": "2026-09-30T12:00:00Z",
+      "event": "spec-artifact-approved",
+      "actor": "User",
+      "requestor": "Planner",
+      "status": "spec_in_progress",
+      "details": {
+        "artifact": "design",
+        "version": 1,
+        "output_ref": {
+          "event_id": "4",
+          "kind": "spec_change_wrapper"
+        },
+        "user_statement": "I approve this document version."
+      }
+    },
+    {
+      "id": "6",
+      "timestamp": "2026-09-30T12:00:00Z",
+      "event": "spec-updated",
+      "actor": "Planner",
+      "requestor": "User",
+      "status": "spec_in_progress",
+      "spec_change_wrapper": {
+        "context": {
+          "trigger_event_id": "1",
+          "role": "Planner",
+          "attempt": 1,
+          "context_id": "planner-session",
+          "configuration_ref": "1"
+        },
+        "notes": "No hidden decisions.",
+        "feature": "example",
+        "feature_dir": ".docs/specs/example",
+        "requirements_ref": ".docs/specs/example/requirements.md",
+        "design_ref": ".docs/specs/example/design.md",
+        "tasks_ref": ".docs/specs/example/tasks.md",
+        "user_request": {
+          "original_request": "Support the agreed local input behavior.",
+          "additional_context": ""
+        },
+        "output_kind": "incremental",
+        "artifacts": {
+          "requirements": {
+            "ref": ".docs/specs/example/requirements.md",
+            "version": 1
+          },
+          "design": {
+            "ref": ".docs/specs/example/design.md",
+            "version": 1
+          },
+          "tasks": {
+            "ref": ".docs/specs/example/tasks.md",
+            "version": 1
+          }
+        },
+        "artifact_changes": [
+          {
+            "artifact": "tasks",
+            "previous_version": null,
+            "current_version": 1,
+            "change_kind": "material",
+            "summary": "Record the current approved behavior and its rationale.",
+            "rationale": "Make this artifact actionable for its downstream consumer.",
+            "approval_basis_ref": null
+          }
+        ],
+        "causes": [],
+        "decisions": [
+          "Manual retry is adequate for the accepted deployment."
+        ],
+        "constraints": [
+          "Preserve existing nonempty-input behavior."
+        ],
+        "downstream_impacts": [],
+        "dispositions": [],
+        "questions": [],
+        "research_updates": []
+      }
+    },
+    {
+      "id": "7",
+      "timestamp": "2026-09-30T12:00:00Z",
+      "event": "spec-artifact-approved",
+      "actor": "User",
+      "requestor": "Planner",
+      "status": "spec_in_progress",
+      "details": {
+        "artifact": "tasks",
+        "version": 1,
+        "output_ref": {
+          "event_id": "6",
+          "kind": "spec_change_wrapper"
+        },
+        "user_statement": "I approve this document version."
+      }
+    },
+    {
+      "id": "8",
+      "timestamp": "2026-09-30T12:00:00Z",
+      "event": "spec-created",
+      "actor": "Planner",
+      "requestor": "User",
+      "status": "spec_created",
+      "spec_change_wrapper": {
+        "context": {
+          "trigger_event_id": "1",
+          "role": "Planner",
+          "attempt": 1,
+          "context_id": "planner-session",
+          "configuration_ref": "1"
+        },
+        "notes": "No hidden decisions.",
+        "feature": "example",
+        "feature_dir": ".docs/specs/example",
+        "requirements_ref": ".docs/specs/example/requirements.md",
+        "design_ref": ".docs/specs/example/design.md",
+        "tasks_ref": ".docs/specs/example/tasks.md",
+        "user_request": {
+          "original_request": "Support the agreed local input behavior.",
+          "additional_context": ""
+        },
+        "output_kind": "consolidated",
+        "artifacts": {
+          "requirements": {
+            "ref": ".docs/specs/example/requirements.md",
+            "version": 1
+          },
+          "design": {
+            "ref": ".docs/specs/example/design.md",
+            "version": 1
+          },
+          "tasks": {
+            "ref": ".docs/specs/example/tasks.md",
+            "version": 1
+          }
+        },
+        "artifact_changes": [],
+        "causes": [],
+        "decisions": [
+          "Manual retry is adequate for the accepted deployment."
+        ],
+        "constraints": [
+          "Preserve existing nonempty-input behavior."
+        ],
+        "downstream_impacts": [],
+        "dispositions": [],
+        "questions": [],
+        "research_updates": []
+      }
+    },
+    {
+      "id": "9",
+      "timestamp": "2026-09-30T12:00:00Z",
+      "event": "spec-review-started",
+      "actor": "Architect",
+      "requestor": "Planner",
+      "status": "spec_in_review",
+      "details": {
+        "source_ref": {
+          "event_id": "8",
+          "kind": "spec_change_wrapper"
+        },
+        "prior_review_ref": null,
+        "review_kind": "initial",
+        "invocation": {
+          "trigger_event_id": "9",
+          "role": "Architect",
+          "attempt": 1,
+          "context_id": "architect-session",
+          "configuration_ref": "1"
+        }
+      }
+    },
+    {
+      "id": "10",
+      "timestamp": "2026-09-30T12:00:00Z",
+      "event": "spec-reviewed",
+      "actor": "Architect",
+      "requestor": "Planner",
+      "status": "spec_approved",
+      "spec_review_wrapper": {
+        "context": {
+          "trigger_event_id": "9",
+          "role": "Architect",
+          "attempt": 1,
+          "context_id": "architect-session",
+          "configuration_ref": "1"
+        },
+        "notes": "Inspected current sources and applicable prior decisions.",
+        "accepted": "true",
+        "issue_details": {
+          "must_fix": [],
+          "should_fix": [],
+          "nit": []
+        },
+        "dispositions": [],
+        "reviewed_artifacts": {
+          "requirements": {
+            "ref": ".docs/specs/example/requirements.md",
+            "version": 1
+          },
+          "design": {
+            "ref": ".docs/specs/example/design.md",
+            "version": 1
+          },
+          "tasks": {
+            "ref": ".docs/specs/example/tasks.md",
+            "version": 1
+          }
+        },
+        "reviewed_output_ref": {
+          "event_id": "8",
+          "kind": "spec_change_wrapper"
+        },
+        "prior_review_ref": null,
+        "review_kind": "initial",
+        "assurance_level": "standard",
+        "review_disposition_policy": "spec_user_code_auto",
+        "repair_class": null,
+        "changed_surfaces": [
+          "src/example.py"
+        ],
+        "review_scope": "full",
+        "scope_reason": "Cover the complete relevant work on the initial pass; verify affected contracts on repair.",
+        "meaningful_change": true,
+        "evidence": [
+          {
+            "sources": [
+              {
+                "ref": "src/example.py",
+                "context": "Feature baseline and current working changes inspected"
+              }
+            ],
+            "observations": [
+              "The implemented branch meets the approved acceptance criterion."
+            ],
+            "inferences": [],
+            "coverage_gaps": [],
+            "uncertainty": [],
+            "assumptions": [
+              "The approved deployment remains local."
+            ],
+            "freshness": "new",
+            "applicability_check": "Compared relevant source content and deployment assumptions with the prior inspection."
+          }
+        ],
+        "resolved_findings": []
+      }
+    },
+    {
+      "id": "11",
+      "timestamp": "2026-09-30T12:00:00Z",
+      "event": "user-authorization-recorded",
+      "actor": "User",
+      "requestor": "User",
+      "status": "spec_approved",
+      "details": {
+        "kind": "coding",
+        "decision": "granted",
+        "operation": "implement-approved-spec",
+        "scope": "Current approved feature scope",
+        "references": [
+          {
+            "event_id": "10",
+            "kind": "spec_review"
+          }
+        ],
+        "limits": {
+          "max_attempts": null,
+          "additional_cycles": null,
+          "phase": null
+        },
+        "user_statement": "Proceed within these explicit limits.",
+        "failed_attempts": []
+      }
+    },
+    {
+      "id": "12",
+      "timestamp": "2026-09-30T12:00:00Z",
+      "event": "coding-started",
+      "actor": "Coder",
+      "requestor": "Planner",
+      "status": "coding_in_progress",
+      "details": {
+        "source_ref": {
+          "event_id": "8",
+          "kind": "spec_change_wrapper"
+        },
+        "authorization_ref": {
+          "event_id": "11",
+          "kind": "authorization"
+        },
+        "invocation": {
+          "trigger_event_id": "12",
+          "role": "Coder",
+          "attempt": 1,
+          "context_id": "coder-session",
+          "configuration_ref": "1"
+        }
+      }
+    },
+    {
+      "id": "13",
+      "timestamp": "2026-09-30T12:00:00Z",
+      "event": "coding-updated",
+      "actor": "Coder",
+      "requestor": "Planner",
+      "status": "coding_in_progress",
+      "change_wrapper": {
+        "context": {
+          "trigger_event_id": "12",
+          "role": "Coder",
+          "attempt": 1,
+          "context_id": "coder-session",
+          "configuration_ref": "1"
+        },
+        "notes": "No unrelated changes.",
+        "output_kind": "incremental",
+        "artifacts": {
+          "requirements": {
+            "ref": ".docs/specs/example/requirements.md",
+            "version": 1
+          },
+          "design": {
+            "ref": ".docs/specs/example/design.md",
+            "version": 1
+          },
+          "tasks": {
+            "ref": ".docs/specs/example/tasks.md",
+            "version": 2
+          }
+        },
+        "artifact_changes": [
+          {
+            "artifact": "tasks",
+            "previous_version": 1,
+            "current_version": 2,
+            "change_kind": "progress",
+            "summary": "Mark task 1 complete.",
+            "rationale": "The behavioral witness passed.",
+            "approval_basis_ref": {
+              "event_id": "7",
+              "kind": "approval"
+            }
+          }
+        ],
+        "changed_files": [
+          "src/example.py"
+        ],
+        "new_files": [
+          "tests/test_example.py"
+        ],
+        "deleted_files": [],
+        "cli_runs": [
+          "python -m unittest"
+        ],
+        "test_results": {
+          "unit_tests": {
+            "status": "pass",
+            "details": "The relevant behavioral checks passed."
+          },
+          "integration_tests": {
+            "status": "pass",
+            "details": "The relevant behavioral checks passed."
+          }
+        },
+        "checks": [
+          {
+            "name": "behavioral-tests",
+            "status": "pass",
+            "required": true,
+            "details": "Expected result and preservation witness passed.",
+            "disposition_ref": null
+          }
+        ],
+        "implementation_details": "Implemented and verified the approved input behavior.",
+        "task_progress": [
+          {
+            "task_id": "1",
+            "status": "completed",
+            "evidence": "Behavioral witness passes.",
+            "disposition_ref": null
+          }
+        ],
+        "blockers": [],
+        "dispositions": [],
+        "causes": [],
+        "cumulative_scope": [
+          "src/example.py",
+          "tests/test_example.py"
+        ],
+        "evidence": [
+          {
+            "sources": [
+              {
+                "ref": "src/example.py",
+                "context": "Feature baseline and current working changes inspected"
+              }
+            ],
+            "observations": [
+              "The implemented branch meets the approved acceptance criterion."
+            ],
+            "inferences": [],
+            "coverage_gaps": [],
+            "uncertainty": [],
+            "assumptions": [
+              "The approved deployment remains local."
+            ],
+            "freshness": "new",
+            "applicability_check": "Compared relevant source content and deployment assumptions with the prior inspection."
+          }
+        ]
+      }
+    },
+    {
+      "id": "14",
+      "timestamp": "2026-09-30T12:00:00Z",
+      "event": "coding-complete",
+      "actor": "Coder",
+      "requestor": "Planner",
+      "status": "coding_complete",
+      "change_wrapper": {
+        "context": {
+          "trigger_event_id": "12",
+          "role": "Coder",
+          "attempt": 1,
+          "context_id": "coder-session",
+          "configuration_ref": "1"
+        },
+        "notes": "No unrelated changes.",
+        "output_kind": "consolidated",
+        "artifacts": {
+          "requirements": {
+            "ref": ".docs/specs/example/requirements.md",
+            "version": 1
+          },
+          "design": {
+            "ref": ".docs/specs/example/design.md",
+            "version": 1
+          },
+          "tasks": {
+            "ref": ".docs/specs/example/tasks.md",
+            "version": 2
+          }
+        },
+        "artifact_changes": [],
+        "changed_files": [
+          "src/example.py"
+        ],
+        "new_files": [
+          "tests/test_example.py"
+        ],
+        "deleted_files": [],
+        "cli_runs": [
+          "python -m unittest"
+        ],
+        "test_results": {
+          "unit_tests": {
+            "status": "pass",
+            "details": "The relevant behavioral checks passed."
+          },
+          "integration_tests": {
+            "status": "pass",
+            "details": "The relevant behavioral checks passed."
+          }
+        },
+        "checks": [
+          {
+            "name": "behavioral-tests",
+            "status": "pass",
+            "required": true,
+            "details": "Expected result and preservation witness passed.",
+            "disposition_ref": null
+          }
+        ],
+        "implementation_details": "Implemented and verified the approved input behavior.",
+        "task_progress": [
+          {
+            "task_id": "1",
+            "status": "completed",
+            "evidence": "Behavioral witness passes.",
+            "disposition_ref": null
+          }
+        ],
+        "blockers": [],
+        "dispositions": [],
+        "causes": [],
+        "cumulative_scope": [
+          "src/example.py",
+          "tests/test_example.py"
+        ],
+        "evidence": [
+          {
+            "sources": [
+              {
+                "ref": "src/example.py",
+                "context": "Feature baseline and current working changes inspected"
+              }
+            ],
+            "observations": [
+              "The implemented branch meets the approved acceptance criterion."
+            ],
+            "inferences": [],
+            "coverage_gaps": [],
+            "uncertainty": [],
+            "assumptions": [
+              "The approved deployment remains local."
+            ],
+            "freshness": "new",
+            "applicability_check": "Compared relevant source content and deployment assumptions with the prior inspection."
+          }
+        ]
+      }
+    },
+    {
+      "id": "15",
+      "timestamp": "2026-09-30T12:00:00Z",
+      "event": "code-review-started",
+      "actor": "Reviewer",
+      "requestor": "Coder",
+      "status": "code_in_review",
+      "details": {
+        "source_ref": {
+          "event_id": "14",
+          "kind": "change_wrapper"
+        },
+        "prior_review_ref": null,
+        "review_kind": "initial",
+        "invocation": {
+          "trigger_event_id": "15",
+          "role": "Reviewer",
+          "attempt": 1,
+          "context_id": "reviewer-session",
+          "configuration_ref": "1"
+        }
+      }
+    },
+    {
+      "id": "16",
+      "timestamp": "2026-09-30T12:00:00Z",
+      "event": "code-reviewed",
+      "actor": "Reviewer",
+      "requestor": "Coder",
+      "status": "code_approved",
+      "review_wrapper": {
+        "context": {
+          "trigger_event_id": "15",
+          "role": "Reviewer",
+          "attempt": 1,
+          "context_id": "reviewer-session",
+          "configuration_ref": "1"
+        },
+        "notes": "Inspected current sources and applicable prior decisions.",
+        "accepted": "true",
+        "issue_details": {
+          "must_fix": [],
+          "should_fix": [],
+          "nit": []
+        },
+        "dispositions": [],
+        "reviewed_artifacts": {
+          "requirements": {
+            "ref": ".docs/specs/example/requirements.md",
+            "version": 1
+          },
+          "design": {
+            "ref": ".docs/specs/example/design.md",
+            "version": 1
+          },
+          "tasks": {
+            "ref": ".docs/specs/example/tasks.md",
+            "version": 2
+          }
+        },
+        "reviewed_output_ref": {
+          "event_id": "14",
+          "kind": "change_wrapper"
+        },
+        "prior_review_ref": null,
+        "review_kind": "initial",
+        "assurance_level": "standard",
+        "review_disposition_policy": "spec_user_code_auto",
+        "repair_class": null,
+        "changed_surfaces": [
+          "src/example.py"
+        ],
+        "review_scope": "full",
+        "scope_reason": "Cover the complete relevant work on the initial pass; verify affected contracts on repair.",
+        "meaningful_change": true,
+        "evidence": [
+          {
+            "sources": [
+              {
+                "ref": "src/example.py",
+                "context": "Feature baseline and current working changes inspected"
+              }
+            ],
+            "observations": [
+              "The implemented branch meets the approved acceptance criterion."
+            ],
+            "inferences": [],
+            "coverage_gaps": [],
+            "uncertainty": [],
+            "assumptions": [
+              "The approved deployment remains local."
+            ],
+            "freshness": "new",
+            "applicability_check": "Compared relevant source content and deployment assumptions with the prior inspection."
+          }
+        ],
+        "resolved_findings": [],
+        "test_results": {
+          "unit_tests": {
+            "status": "pass",
+            "details": "The relevant behavioral checks passed."
+          },
+          "integration_tests": {
+            "status": "pass",
+            "details": "The relevant behavioral checks passed."
+          }
+        },
+        "checks": [
+          {
+            "name": "behavioral-tests",
+            "status": "pass",
+            "required": true,
+            "details": "Expected result and preservation witness passed.",
+            "disposition_ref": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "17",
+      "timestamp": "2026-09-30T12:00:00Z",
+      "event": "implementation-complete",
+      "actor": "Orchestrator",
+      "requestor": "User",
+      "status": "implementation_complete",
+      "details": {
+        "review_ref": {
+          "event_id": "16",
+          "kind": "code_review"
+        },
+        "user_statement": "I accept this feature and its disclosed limitations.",
+        "known_issues": [],
+        "summary": "Delivered and verified the approved behavior."
+      }
+    }
+  ]
+}

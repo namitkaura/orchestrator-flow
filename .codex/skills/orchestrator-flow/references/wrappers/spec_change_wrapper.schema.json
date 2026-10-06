@@ -1,49 +1,70 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.com/schemas/spec_change_wrapper.schema.json",
-  "title": "Spec Change Wrapper",
+  "$id": "urn:orchestrator-flow:spec-change-wrapper",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "feature",
-    "feature_dir",
-    "requirements_ref",
-    "design_ref",
-    "tasks_ref",
-    "notes",
-    "user_request"
-  ],
   "properties": {
+    "context": {
+      "anyOf": [
+        {
+          "$ref": "urn:orchestrator-flow:common#/$defs/invocation"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "notes": {
+      "type": "string"
+    },
     "feature": {
       "type": "string",
       "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
     },
     "feature_dir": {
       "type": "string",
-      "pattern": "^\\.docs/specs/[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+      "minLength": 1,
+      "pattern": "^(?!/)(?![A-Za-z]:)(?!.*\\\\)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
     },
     "requirements_ref": {
-      "type": "string",
-      "pattern": "^\\.docs/specs/.+/requirements\\.md$"
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!/)(?![A-Za-z]:)(?!.*\\\\)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "design_ref": {
-      "type": "string",
-      "pattern": "^\\.docs/specs/.+/design\\.md$"
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!/)(?![A-Za-z]:)(?!.*\\\\)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "tasks_ref": {
-      "type": "string",
-      "pattern": "^\\.docs/specs/.+/tasks\\.md$"
-    },
-    "notes": {
-      "type": "string",
-      "minLength": 1
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!/)(?![A-Za-z]:)(?!.*\\\\)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "user_request": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "original_request"
-      ],
       "properties": {
         "original_request": {
           "type": "string",
@@ -52,7 +73,129 @@
         "additional_context": {
           "type": "string"
         }
-      }
+      },
+      "required": [
+        "original_request",
+        "additional_context"
+      ]
+    },
+    "output_kind": {
+      "enum": [
+        "incremental",
+        "consolidated"
+      ]
+    },
+    "artifacts": {
+      "$ref": "urn:orchestrator-flow:common#/$defs/artifacts"
+    },
+    "artifact_changes": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:orchestrator-flow:common#/$defs/artifact_change"
+      },
+      "minItems": 0
+    },
+    "causes": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:orchestrator-flow:common#/$defs/reference"
+      },
+      "minItems": 0
+    },
+    "decisions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 0
+    },
+    "constraints": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 0
+    },
+    "downstream_impacts": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 0
+    },
+    "dispositions": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:orchestrator-flow:common#/$defs/disposition"
+      },
+      "minItems": 0
+    },
+    "questions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 0
+    },
+    "research_updates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "ref": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^(?!/)(?![A-Za-z]:)(?!.*\\\\)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
+          },
+          "summary": {
+            "type": "string",
+            "minLength": 1
+          },
+          "rationale": {
+            "type": "string",
+            "minLength": 1
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "$ref": "urn:orchestrator-flow:common#/$defs/evidence"
+            },
+            "minItems": 1
+          }
+        },
+        "required": [
+          "ref",
+          "summary",
+          "rationale",
+          "evidence"
+        ]
+      },
+      "minItems": 0
     }
-  }
+  },
+  "required": [
+    "context",
+    "notes",
+    "feature",
+    "feature_dir",
+    "requirements_ref",
+    "design_ref",
+    "tasks_ref",
+    "user_request",
+    "output_kind",
+    "artifacts",
+    "artifact_changes",
+    "causes",
+    "decisions",
+    "constraints",
+    "downstream_impacts",
+    "dispositions",
+    "questions",
+    "research_updates"
+  ]
 }

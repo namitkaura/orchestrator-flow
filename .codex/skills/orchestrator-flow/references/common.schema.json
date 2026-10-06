@@ -1,0 +1,892 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:orchestrator-flow:common",
+  "$defs": {
+    "path": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?![A-Za-z]:)(?!.*\\\\)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[1-9][0-9]*$"
+    },
+    "assurance": {
+      "enum": [
+        "basic",
+        "standard",
+        "maximum"
+      ]
+    },
+    "policy": {
+      "enum": [
+        "spec_user_code_auto",
+        "all_user",
+        "within_scope_auto"
+      ]
+    },
+    "assignment": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "model": {
+          "type": "string",
+          "minLength": 1,
+          "not": { "const": "not_supported" }
+        },
+        "reasoning_effort": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "model",
+        "reasoning_effort"
+      ]
+    },
+    "roles": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "planner": {
+          "$ref": "urn:orchestrator-flow:common#/$defs/assignment"
+        },
+        "architect": {
+          "$ref": "urn:orchestrator-flow:common#/$defs/assignment"
+        },
+        "coder": {
+          "$ref": "urn:orchestrator-flow:common#/$defs/assignment"
+        },
+        "reviewer": {
+          "$ref": "urn:orchestrator-flow:common#/$defs/assignment"
+        },
+        "helpers": {
+          "$ref": "urn:orchestrator-flow:common#/$defs/assignment"
+        }
+      },
+      "required": [
+        "planner",
+        "architect",
+        "coder",
+        "reviewer",
+        "helpers"
+      ]
+    },
+    "capability": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "platform": {
+          "enum": [
+            "codex",
+            "claude-code",
+            "github-copilot",
+            "cursor"
+          ]
+        },
+        "roles": {
+          "$ref": "urn:orchestrator-flow:common#/$defs/roles"
+        },
+        "acknowledged_limitations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0
+        }
+      },
+      "required": [
+        "platform",
+        "roles",
+        "acknowledged_limitations"
+      ]
+    },
+    "configuration": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "assurance_level": {
+          "$ref": "urn:orchestrator-flow:common#/$defs/assurance"
+        },
+        "capability": {
+          "$ref": "urn:orchestrator-flow:common#/$defs/capability"
+        },
+        "review_disposition_policy": {
+          "$ref": "urn:orchestrator-flow:common#/$defs/policy"
+        }
+      },
+      "required": [
+        "assurance_level",
+        "capability",
+        "review_disposition_policy"
+      ]
+    },
+    "branch": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "feature_branch": {
+          "type": "string",
+          "minLength": 1
+        },
+        "integration_branch": {
+          "type": "string",
+          "minLength": 1
+        },
+        "remote": {
+          "type": "string",
+          "minLength": 1
+        },
+        "baseline_commit": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40,64}$"
+        }
+      },
+      "required": [
+        "feature_branch",
+        "integration_branch",
+        "remote",
+        "baseline_commit"
+      ]
+    },
+    "reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "event_id": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "kind": {
+          "enum": [
+            "event",
+            "spec_review",
+            "code_review",
+            "approval",
+            "authorization",
+            "override",
+            "spec_change_wrapper",
+            "spec_review_wrapper",
+            "change_wrapper",
+            "review_wrapper"
+          ]
+        }
+      },
+      "required": [
+        "event_id",
+        "kind"
+      ]
+    },
+    "invocation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "trigger_event_id": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "role": {
+          "enum": [
+            "Planner",
+            "Architect",
+            "Coder",
+            "Reviewer"
+          ]
+        },
+        "attempt": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "context_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "configuration_ref": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        }
+      },
+      "required": [
+        "trigger_event_id",
+        "role",
+        "attempt",
+        "context_id",
+        "configuration_ref"
+      ]
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "ref": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!/)(?![A-Za-z]:)(?!.*\\\\)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "ref",
+        "version"
+      ]
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "requirements": {
+          "anyOf": [
+            {
+              "$ref": "urn:orchestrator-flow:common#/$defs/artifact"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "design": {
+          "anyOf": [
+            {
+              "$ref": "urn:orchestrator-flow:common#/$defs/artifact"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "tasks": {
+          "anyOf": [
+            {
+              "$ref": "urn:orchestrator-flow:common#/$defs/artifact"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "requirements",
+        "design",
+        "tasks"
+      ]
+    },
+    "artifact_change": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "artifact": {
+          "enum": [
+            "requirements",
+            "design",
+            "tasks"
+          ]
+        },
+        "previous_version": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "current_version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "change_kind": {
+          "enum": [
+            "material",
+            "editorial",
+            "progress"
+          ]
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1
+        },
+        "approval_basis_ref": {
+          "anyOf": [
+            {
+              "$ref": "urn:orchestrator-flow:common#/$defs/reference"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "artifact",
+        "previous_version",
+        "current_version",
+        "change_kind",
+        "summary",
+        "rationale",
+        "approval_basis_ref"
+      ]
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "ref": {
+                "type": "string",
+                "minLength": 1
+              },
+              "context": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "ref",
+              "context"
+            ]
+          },
+          "minItems": 1
+        },
+        "observations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0
+        },
+        "inferences": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0
+        },
+        "coverage_gaps": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0
+        },
+        "uncertainty": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0
+        },
+        "assumptions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0
+        },
+        "freshness": {
+          "enum": [
+            "new",
+            "reused",
+            "revalidated",
+            "incomplete"
+          ]
+        },
+        "applicability_check": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "sources",
+        "observations",
+        "inferences",
+        "coverage_gaps",
+        "uncertainty",
+        "assumptions",
+        "freshness",
+        "applicability_check"
+      ]
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[SC]-[0-9]+-[1-9][0-9]*$"
+        },
+        "file": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!/)(?![A-Za-z]:)(?!.*\\\\)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1
+        },
+        "triggering_conditions": {
+          "type": "string",
+          "minLength": 1
+        },
+        "practical_consequences": {
+          "type": "string",
+          "minLength": 1
+        },
+        "basis": {
+          "enum": [
+            "demonstrated_defect",
+            "hardening_opportunity",
+            "preference"
+          ]
+        },
+        "source_refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        },
+        "reconsideration_reason": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "file",
+        "description",
+        "rationale",
+        "triggering_conditions",
+        "practical_consequences",
+        "basis",
+        "source_refs",
+        "reconsideration_reason"
+      ]
+    },
+    "disposition": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "finding_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "decision": {
+          "enum": [
+            "fix",
+            "defer",
+            "accept_limitation",
+            "reject",
+            "reconsider",
+            "clarify"
+          ]
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1
+        },
+        "authority": {
+          "enum": [
+            "user",
+            "policy"
+          ]
+        },
+        "authority_ref": {
+          "anyOf": [
+            {
+              "$ref": "urn:orchestrator-flow:common#/$defs/reference"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "revisit_condition": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "workaround": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "finding_id",
+        "decision",
+        "rationale",
+        "authority",
+        "authority_ref",
+        "revisit_condition",
+        "workaround"
+      ]
+    },
+    "test_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "enum": [
+            "pass",
+            "fail",
+            "not_run",
+            "skipped"
+          ]
+        },
+        "details": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "status",
+        "details"
+      ]
+    },
+    "test_results": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "unit_tests": {
+          "$ref": "urn:orchestrator-flow:common#/$defs/test_result"
+        },
+        "integration_tests": {
+          "$ref": "urn:orchestrator-flow:common#/$defs/test_result"
+        }
+      },
+      "required": [
+        "unit_tests",
+        "integration_tests"
+      ]
+    },
+    "check": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "enum": [
+            "pass",
+            "fail",
+            "not_run",
+            "skipped"
+          ]
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "details": {
+          "type": "string",
+          "minLength": 1
+        },
+        "disposition_ref": {
+          "anyOf": [
+            {
+              "$ref": "urn:orchestrator-flow:common#/$defs/reference"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "name",
+        "status",
+        "required",
+        "details",
+        "disposition_ref"
+      ]
+    },
+    "blocker": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "operation": {
+          "type": "string",
+          "minLength": 1
+        },
+        "task_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "attempts": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        },
+        "depends_on": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0
+        },
+        "independent_task_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0
+        },
+        "required_authorization": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "operation",
+        "task_ids",
+        "reason",
+        "attempts",
+        "evidence",
+        "depends_on",
+        "independent_task_ids",
+        "required_authorization"
+      ]
+    },
+    "task_progress": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "task_id": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "status": {
+          "enum": [
+            "pending",
+            "in_progress",
+            "completed",
+            "dispositioned"
+          ]
+        },
+        "evidence": {
+          "type": "string",
+          "minLength": 1
+        },
+        "disposition_ref": {
+          "anyOf": [
+            {
+              "$ref": "urn:orchestrator-flow:common#/$defs/reference"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "task_id",
+        "status",
+        "evidence",
+        "disposition_ref"
+      ]
+    },
+    "uncertain_attempt": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "attempt_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "Z$"
+        },
+        "attempted_commit": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40,64}$"
+        },
+        "event_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]*$"
+          },
+          "minItems": 1
+        },
+        "remote": {
+          "type": "string",
+          "minLength": 1
+        },
+        "feature_branch": {
+          "type": "string",
+          "minLength": 1
+        },
+        "authorization_event_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "observation": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "attempt_id",
+        "timestamp",
+        "attempted_commit",
+        "event_ids",
+        "remote",
+        "feature_branch",
+        "authorization_event_id",
+        "observation"
+      ]
+    },
+    "failure": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "attempt_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "Z$"
+        },
+        "attempted_commit": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40,64}$"
+        },
+        "event_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]*$"
+          },
+          "minItems": 1
+        },
+        "remote": {
+          "type": "string",
+          "minLength": 1
+        },
+        "feature_branch": {
+          "type": "string",
+          "minLength": 1
+        },
+        "authorization_event_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "exit_code": {
+          "type": "integer"
+        },
+        "error_summary": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "attempt_id",
+        "timestamp",
+        "attempted_commit",
+        "event_ids",
+        "remote",
+        "feature_branch",
+        "authorization_event_id",
+        "exit_code",
+        "error_summary"
+      ]
+    }
+  }
+}

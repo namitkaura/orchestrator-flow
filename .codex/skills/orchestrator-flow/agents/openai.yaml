@@ -1,6 +1,6 @@
 interface:
   display_name: "Orchestrator Flow"
-  short_description: "Run spec-to-code loops with structured review gates"
+  short_description: "Delegate feature work with assurance and durable approvals"
   default_prompt: "Use $orchestrator-flow to orchestrate Planner -> Architect -> Coder -> Reviewer loops for this feature proposal."
 
 policy:

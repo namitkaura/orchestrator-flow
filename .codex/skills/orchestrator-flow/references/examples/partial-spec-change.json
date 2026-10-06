@@ -4,28 +4,32 @@
   "feature": "example",
   "feature_dir": ".docs/specs/example",
   "requirements_ref": ".docs/specs/example/requirements.md",
-  "design_ref": ".docs/specs/example/design.md",
-  "tasks_ref": ".docs/specs/example/tasks.md",
+  "design_ref": null,
+  "tasks_ref": null,
   "user_request": {
     "original_request": "Support the agreed local input behavior.",
     "additional_context": ""
   },
-  "output_kind": "consolidated",
+  "output_kind": "incremental",
   "artifacts": {
     "requirements": {
       "ref": ".docs/specs/example/requirements.md",
       "version": 1
     },
-    "design": {
-      "ref": ".docs/specs/example/design.md",
-      "version": 1
-    },
-    "tasks": {
-      "ref": ".docs/specs/example/tasks.md",
-      "version": 1
-    }
+    "design": null,
+    "tasks": null
   },
-  "artifact_changes": [],
+  "artifact_changes": [
+    {
+      "artifact": "requirements",
+      "previous_version": null,
+      "current_version": 1,
+      "change_kind": "material",
+      "summary": "Record the current approved behavior and its rationale.",
+      "rationale": "Make this artifact actionable for its downstream consumer.",
+      "approval_basis_ref": null
+    }
+  ],
   "causes": [],
   "decisions": [
     "Manual retry is adequate for the accepted deployment."

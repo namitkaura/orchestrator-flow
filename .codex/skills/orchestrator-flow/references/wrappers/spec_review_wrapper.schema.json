@@ -1,17 +1,23 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.com/schemas/spec_review_wrapper.schema.json",
-  "title": "Spec Review Wrapper",
+  "$id": "urn:orchestrator-flow:spec-review-wrapper",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "accepted",
-    "issue_details",
-    "notes"
-  ],
   "properties": {
+    "context": {
+      "anyOf": [
+        {
+          "$ref": "urn:orchestrator-flow:common#/$defs/invocation"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "notes": {
+      "type": "string"
+    },
     "accepted": {
-      "type": "string",
       "enum": [
         "true",
         "false",
@@ -21,60 +27,149 @@
     "issue_details": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "must_fix",
-        "should_fix",
-        "nit"
-      ],
       "properties": {
         "must_fix": {
           "type": "array",
           "items": {
-            "$ref": "#/$defs/issue"
-          }
+            "$ref": "urn:orchestrator-flow:common#/$defs/finding"
+          },
+          "minItems": 0
         },
         "should_fix": {
           "type": "array",
           "items": {
-            "$ref": "#/$defs/issue"
-          }
+            "$ref": "urn:orchestrator-flow:common#/$defs/finding"
+          },
+          "minItems": 0
         },
         "nit": {
           "type": "array",
           "items": {
-            "$ref": "#/$defs/issue"
-          }
+            "$ref": "urn:orchestrator-flow:common#/$defs/finding"
+          },
+          "minItems": 0
         }
-      }
+      },
+      "required": [
+        "must_fix",
+        "should_fix",
+        "nit"
+      ]
     },
-    "notes": {
+    "dispositions": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:orchestrator-flow:common#/$defs/disposition"
+      },
+      "minItems": 0
+    },
+    "reviewed_artifacts": {
+      "$ref": "urn:orchestrator-flow:common#/$defs/artifacts"
+    },
+    "reviewed_output_ref": {
+      "anyOf": [
+        {
+          "$ref": "urn:orchestrator-flow:common#/$defs/reference"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "prior_review_ref": {
+      "anyOf": [
+        {
+          "$ref": "urn:orchestrator-flow:common#/$defs/reference"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "review_kind": {
+      "enum": [
+        "initial",
+        "follow_up"
+      ]
+    },
+    "assurance_level": {
+      "$ref": "urn:orchestrator-flow:common#/$defs/assurance"
+    },
+    "review_disposition_policy": {
+      "$ref": "urn:orchestrator-flow:common#/$defs/policy"
+    },
+    "repair_class": {
+      "anyOf": [
+        {
+          "enum": [
+            "editorial",
+            "test_documentation",
+            "bounded_correctness",
+            "architectural_systemic"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "changed_surfaces": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^(?!/)(?![A-Za-z]:)(?!.*\\\\)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
+      },
+      "minItems": 0
+    },
+    "review_scope": {
+      "enum": [
+        "focused",
+        "affected",
+        "full"
+      ]
+    },
+    "scope_reason": {
       "type": "string",
       "minLength": 1
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:orchestrator-flow:common#/$defs/evidence"
+      },
+      "minItems": 1
+    },
+    "resolved_findings": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 0
+    },
+    "meaningful_change": {
+      "type": "boolean"
     }
   },
-  "$defs": {
-    "issue": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "file",
-        "description",
-        "rationale"
-      ],
-      "properties": {
-        "file": {
-          "type": "string",
-          "minLength": 1
-        },
-        "description": {
-          "type": "string",
-          "minLength": 1
-        },
-        "rationale": {
-          "type": "string",
-          "minLength": 1
-        }
-      }
-    }
-  }
+  "required": [
+    "context",
+    "notes",
+    "accepted",
+    "issue_details",
+    "dispositions",
+    "reviewed_artifacts",
+    "reviewed_output_ref",
+    "prior_review_ref",
+    "review_kind",
+    "assurance_level",
+    "review_disposition_policy",
+    "repair_class",
+    "changed_surfaces",
+    "review_scope",
+    "scope_reason",
+    "evidence",
+    "resolved_findings",
+    "meaningful_change"
+  ]
 }

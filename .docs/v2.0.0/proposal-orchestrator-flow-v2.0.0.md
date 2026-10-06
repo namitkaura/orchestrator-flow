@@ -1,5 +1,7 @@
 # Proposal: v2.0.0 Orchestrator Flow Improvements and Refactoring
 
+This document preserves the original proposal. The implementation scope was subsequently narrowed to Codex; other platform updates are deferred. Current maintenance scope is recorded in [AGENTS.md](../../AGENTS.md), and the [v2.0.0 documentation index](README.md) links the implemented contract and test kit.
+
 ## Problem Statement
 
 ### The current workflow delivers strong results at a disproportionate cost for some projects
