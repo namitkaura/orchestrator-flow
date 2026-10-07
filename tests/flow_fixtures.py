@@ -45,6 +45,8 @@ class Flow:
         self.spec_requestor = "User"
         self.code_requestor = "Planner"
         self.handed_off = False
+        self.checkpoint_commit = "b" * 40
+        self.implementation_phases = []
         context = self.context("Planner", start=True)
         self.add("spec-creation-started", "Planner", "User", "spec_in_progress", details={
             "request": "Support the agreed local input behavior.", "references": [], "earliest_artifact": "requirements", "invocation": context,
@@ -80,7 +82,8 @@ class Flow:
                         "rationale": "Make this artifact actionable for its downstream consumer.",
                         "approval_basis_ref": reference(self.approvals[artifact], "approval") if change_kind != "material" and artifact in self.approvals else None}]
             self.produced[artifact] = self.next_id
-        wrapper = {"context": self.context("Planner"), "notes": "No hidden decisions.", "feature": self.log["feature"], "feature_dir": self.log["feature_dir"],
+        wrapper = {"context": self.context("Planner"), "checkpoint_commit": self.checkpoint_commit if any(self.artifacts.values()) else None,
+                   "implementation_phases": deepcopy(self.implementation_phases), "notes": "No hidden decisions.", "feature": self.log["feature"], "feature_dir": self.log["feature_dir"],
                    **{n + "_ref": v["ref"] if v else None for n, v in self.artifacts.items()}, "user_request": {"original_request": "Support the agreed local input behavior.", "additional_context": ""},
                    "output_kind": "consolidated" if consolidated else "incremental", "artifacts": deepcopy(self.artifacts), "artifact_changes": changes,
                    "causes": [], "decisions": ["Manual retry is adequate for the accepted deployment."], "constraints": ["Preserve existing nonempty-input behavior."],
@@ -112,7 +115,9 @@ class Flow:
     def review_output(self, phase, issues=None, accepted="true", resolved=None, dispositions=None, scope="full", repair_class="bounded_correctness", freshness="new"):
         role, requestor = ("Architect", "Planner") if phase == "spec" else ("Reviewer", "Coder")
         followup = phase in self.reviews
-        wrapper = {"context": self.context(role), "notes": "Inspected current sources and applicable prior decisions.", "accepted": accepted,
+        source = self.log["history"][int(self.outputs[phase]) - 1]
+        wrapper = {"context": self.context(role), "reviewed_commit": source["spec_change_wrapper" if phase == "spec" else "change_wrapper"]["checkpoint_commit"],
+                   "notes": "Inspected current sources and applicable prior decisions.", "accepted": accepted,
                    "issue_details": issues or {"must_fix": [], "should_fix": [], "nit": []}, "dispositions": dispositions or [],
                    "reviewed_artifacts": deepcopy(self.artifacts), "reviewed_output_ref": reference(self.outputs[phase], "spec_change_wrapper" if phase == "spec" else "change_wrapper"),
                    "prior_review_ref": reference(self.reviews[phase], phase + "_review") if followup else None,
@@ -160,10 +165,10 @@ class Flow:
         changes = []
         if progress:
             old = self.artifacts["tasks"]["version"]
-            self.artifacts["tasks"]["version"] += 1
-            changes = [{"artifact": "tasks", "previous_version": old, "current_version": old + 1, "change_kind": "progress", "summary": "Mark task 1 complete.",
+            changes = [{"artifact": "tasks", "previous_version": old, "current_version": old, "change_kind": "progress", "summary": "Mark task 1 complete.",
                         "rationale": "The behavioral witness passed.", "approval_basis_ref": reference(self.approvals["tasks"], "approval")}]
-        wrapper = {"context": self.context("Coder"), "notes": "No unrelated changes.", "output_kind": "consolidated" if consolidated else "incremental",
+        wrapper = {"context": self.context("Coder"), "checkpoint_commit": self.checkpoint_commit,
+                   "notes": "No unrelated changes.", "output_kind": "consolidated" if consolidated else "incremental",
                    "artifacts": deepcopy(self.artifacts), "artifact_changes": changes, "changed_files": ["src/example.py"], "new_files": ["tests/test_example.py"], "deleted_files": [],
                    "cli_runs": ["python -m unittest"], "test_results": self.test_results(), "checks": self.checks(), "implementation_details": "Implemented and verified the approved input behavior.",
                    "task_progress": [{"task_id": "1", "status": "completed", "evidence": "Behavioral witness passes.", "disposition_ref": None}],
@@ -201,7 +206,6 @@ def complete_flow(assurance="standard", policy="spec_user_code_auto", baseline="
     flow.review("spec")
     flow.authorize()
     flow.start_coding()
-    flow.code_output(consolidated=False, progress=True)
-    flow.code_output()
+    flow.code_output(progress=True)
     flow.review("code")
     return flow.complete()

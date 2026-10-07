@@ -4,11 +4,15 @@ Read `workflow-protocol.md`, `assurance.md`, the consuming project's coding guid
 
 ## Review
 
+Retrieve each complete current spec body in bounded chunks: `scripts/read_spec_body.py <path> --offset 0 --max-chars 8000`, continuing at `next_offset` until `eof`. A truncated response is incomplete; repeat its starting offset with a smaller bound, preserving any split line/fence. Passing tests do not substitute for unread content. Keep retrieval state transient.
+
+Use the explicit `work_scope` and recorded assignment. Nonfinal phases receive Basic review for Standard features and Standard review for Maximum features; Basic features have none. The first review covers the entire delivered phase and relevant dependencies. Intentional future tasks are not omissions. Intermediate acceptance establishes readiness to advance, never whole-feature acceptance. The first final review covers the entire feature as an initial review, at the full accepted Reviewer settings, with prior phase outputs/reviews available as evidence. No intermediate review occurs after the last phase.
+
 Use the consolidated Coder output, all current spec versions/approval bases, effective assurance/capability, explicit feature baseline, previous review and settled dispositions. Read spec bodies with `scripts/read_spec_body.py`. Check the actual resulting diff against the supplied baseline; do not assume a default branch or rely only on wrapper file lists.
 
 Initial review covers the complete relevant implementation at every level. Evaluate criterion-to-code/test traceability; task completion; design/interface fidelity; meaningful assertions and test doubles; relevant checks and manual validation; errors/interruption/abort/partial completion; optional-value propagation and computed boundaries; existing behavior preservation; and project-relevant security/performance/observability/maintainability/accessibility/UX. Verify required documentation/manual tasks as real delivery obligations, not optional because production code works.
 
-At Maximum execute the complete implementation-review checklist in `assurance.md` on each required pass. Read the full current spec bodies, re-execute comprehensive checks, inspect all relevant named interfaces, mocks, deterministic assertions, state transitions, boundaries and downstream consumers, and examine the rest of the implementation as well as repaired findings. Do not weaken scrutiny through repeated-review familiarity.
+At Maximum review assurance (the final whole-feature stage of a Maximum feature), execute the complete implementation-review checklist in `assurance.md` on each required pass. Read the full current spec bodies, re-execute comprehensive checks, inspect all relevant named interfaces, mocks, deterministic assertions, state transitions, boundaries and downstream consumers, and examine the rest of the implementation as well as repaired findings. Do not weaken scrutiny through repeated-review familiarity. Intermediate stages use their explicitly selected lower review assurance.
 
 Classify each finding based on factual behavior, triggering conditions, practical consequences and the feature's acceptance standard. Separate demonstrated defects from hardening and preferences. Preserve factual descriptions even when consequence/assurance means a lower completion priority. A possible improvement does not automatically require repair at Basic or Standard.
 
@@ -21,6 +25,8 @@ Use prior findings and dispositions. Preserve stable identities, state resolved 
 Return JSON-only `review_wrapper` under `wrappers/review_wrapper.schema.json`: actual reviewed versions/output, prior review, assurance/policy basis, repair class, changed surfaces, scope/reason, meaningful progress, evidence, findings, dispositions, resolved identities, test results and applicable check results.
 
 An undispositioned must-fix blocks acceptance (`false`); outstanding lesser acceptance conditions require `conditional`; valid accepted limitations can remain under `true`. Never erase factual findings to force acceptance or invent user authorization. Required failed checks/incomplete tasks block absent explicit valid disposition. Orchestrator handles user decisions, cycle limits, known issues and finalization. Reviewer acceptance means code acceptance at the chosen policy, not feature completion.
+
+Use current `issue_details` and current `dispositions`, disjoint unique `resolved_findings` for repairs, and notes/source references for earlier rationale, authority and evidence. Keep unresolved accepted limitations current. Preserve stable identities and stage provenance into final review; an intermediate policy disposition is not a final-assurance waiver. Do not invent standalone event references. Orchestrated `reviewed_commit` matches the Coder source handoff; standalone may use null. Return and validate the actual complete wrapper without routine saved copies. A bounded applicability assessment may record `review-evidence-assessed`; it does not constitute a review pass, approval or repair cycle.
 
 ## Standalone use
 

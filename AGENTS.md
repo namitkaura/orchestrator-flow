@@ -53,11 +53,15 @@ There is no package build or general application test suite in this repository. 
 - `python3 .codex/skills/orchestrator-flow/scripts/validate_orchestrator_artifacts.py review-wrapper <path>`
 - `python3 .codex/skills/orchestrator-flow/scripts/validate_orchestrator_artifacts.py repository-config <path>`
 - `python3 .codex/skills/orchestrator-flow/scripts/validate_orchestrator_artifacts.py resume-action <path-to-task_log.json> [--observations <path>]`
+- `python3 .codex/skills/orchestrator-flow/scripts/read_spec_body.py <path> --offset 0 --max-chars 8000`
+- `python3 .codex/skills/orchestrator-flow/scripts/checkpoint_state.py recent <path-to-task_log.json> --repo <consumer-root> [--limit 20] [--cursor <cursor>]`
 - `python3 -B -m unittest discover -s tests -v`
 
 Use `task-log --previous <previous-log>` to check append-only updates and `--workspace <consumer-root>` to verify current document metadata and consolidated task completion. `resume-action` and `checkpoint_state.py inspect` are read-only. The checkpoint helper's `attempt` and `failure` operations only record local Git-metadata evidence and never commit, push, or retry. Exercise Git recovery tests only in their temporary repositories/local bare remotes; these tests do not authorize Git workflow operations in this maintenance checkout.
 
-Resource tests verify the Codex skill's real relative links, local version/schema access from a foreign working directory, and preservation of link entries through a temporary Git push/clone. Tests that create symlinks report a skip when the test process lacks permission; the actual checkout's resource-link checks must still pass. Report such skips as validation limitations, never as support for text pointers. Check resource entries with `git ls-files --stage` when staging them; each must have mode `120000`. Windows clones require symlink privileges and `git clone --config core.symlinks=true`.
+Primary validator inputs accept `-` for stdin; candidate logs can use `task-log - --previous <authoritative-log>` without scratch snapshots. Observations accept stdin only when the primary log comes from a file. Workspace validation mechanically checks published artifact provenance, actual task-content preservation and scoped completion without returning document bodies. `checkpoint_state.py recent` returns paginated metadata and changed-file names/statuses only. Retain focused phase-workflow tests alongside the existing suite. The corrections proposal governs Codex artifact/log checkpoint ownership, cumulative Coder handoffs, helper execution, evidence applicability and exceptional phases; its selected changes supersede the original proposal. Repository maintenance still does not activate those consumer operations.
+
+Resource tests verify the actual checkout's real relative links, local version/schema access from a foreign working directory, and setup errors for missing or flattened VERSION resources. These resource checks must pass. Check resource entries with `git ls-files --stage` when staging them; each must have mode `120000`. Windows clones require symlink privileges and `git clone --config core.symlinks=true`.
 
 On Windows, use the equivalent `python` command when `python3` is unavailable. For JSON-only changes without a relevant workflow artifact, also verify parsing with the available JSON tooling.
 

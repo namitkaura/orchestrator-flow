@@ -67,18 +67,43 @@ def validate_shape(kind, value, bundle=BUNDLE):
     error = best_match(validator.iter_errors(value))
     if error is not None:
         location = ".".join(map(str, error.absolute_path)) or "$"
-        raise ValidationError(f"{kind} {location}: {error.message}")
+        message = error.message if error.validator in {"required", "additionalProperties"} else f"violates {error.validator} constraint"
+        raise ValidationError(f"{kind} {location}: {message[:300]}")
 
 
 def validate_capability(config):
     capability = config["capability"]
+    assignments = list(capability["roles"].values()) + list(capability.get("stage_assignments", {}).values())
     special = any(assignment["model"] == "platform_default" or
                   assignment["reasoning_effort"] in {"platform_default", "not_supported"}
-                  for assignment in capability["roles"].values())
+                  for assignment in assignments)
     require(not special or capability["acknowledged_limitations"],
             "Native defaults/unsupported effort require acknowledged_limitations in feature configuration")
-    require(all(a["model"] != "not_supported" for a in capability["roles"].values()),
+    require(all(a["model"] != "not_supported" for a in assignments),
             "Use platform_default for an acknowledged native model default, not not_supported")
+    intermediate = capability.get("stage_assignments", {}).get("intermediate_reviewer")
+    if intermediate:
+        full = capability["roles"]["reviewer"]
+        require(intermediate["model"] == full["model"], "Intermediate review retains the accepted Reviewer model")
+        effort = {"max": "high", "xhigh": "medium", "high": "low"}.get(full["reasoning_effort"])
+        require(intermediate["reasoning_effort"] == effort if effort else bool(capability["acknowledged_limitations"]),
+                "Intermediate effort must use the selected mapping or an explicitly accepted limitation for unmapped settings")
+
+
+def work_scope(value):
+    """The only implicit scope is the existing whole-feature operation."""
+    return value.get("work_scope", {"kind": "feature"})
+
+
+def validate_progress(value):
+    progress = {task["task_id"]: task for task in value["task_progress"]}
+    require(len(progress) == len(value["task_progress"]), "Duplicate task progress identity")
+    blocked = {task_id for blocker in value["blockers"] for task_id in blocker["task_ids"]}
+    independent = {task_id for blocker in value["blockers"] for task_id in blocker["independent_task_ids"]}
+    require((blocked | independent).issubset(progress), "Blocker reports must include progress for referenced tasks")
+    require(not blocked.intersection(independent), "A blocked task cannot also be independent work")
+    require(all(progress[task_id]["status"] in {"pending", "in_progress"} for task_id in independent),
+            "Independent work must still be pending or in progress")
 
 
 def all_findings(wrapper):
@@ -94,25 +119,41 @@ def validate_wrapper(kind, value):
     if kind == "spec-change-wrapper":
         for name, artifact in artifacts.items():
             require(value[name + "_ref"] == (artifact["ref"] if artifact else None), f"{name}_ref disagrees with artifact snapshot")
+        phases = value["implementation_phases"]
+        require(not phases or len(phases) >= 2, "Implementation phases require at least two phases")
+        require(len({p["id"] for p in phases}) == len(phases), "Duplicate phase identity")
+        tasks = [t for p in phases for t in p["task_ids"]]
+        require(len(set(tasks)) == len(tasks), "Tasks belong to exactly one phase")
+        require(tasks == sorted(tasks, key=int), "Phase tasks must follow approved execution order")
     changes = value.get("artifact_changes", [])
     require(len({c["artifact"] for c in changes}) == len(changes), "Duplicate artifact change")
     for change in changes:
         old = change["previous_version"] or 0
-        require(change["current_version"] == old + 1, "Content versions increase once per logical update")
-        require(artifacts[change["artifact"]] and artifacts[change["artifact"]]["version"] == old + 1,
+        if change["change_kind"] == "progress":
+            require(change["artifact"] == "tasks" and old > 0 and change["approval_basis_ref"] is not None,
+                    "Progress requires existing tasks and their approval basis")
+            require(change["current_version"] == old, "Task progress preserves its content version")
+        else:
+            require(change["current_version"] == old + 1, "Content versions increase once per logical update")
+        require(artifacts[change["artifact"]] and artifacts[change["artifact"]]["version"] == change["current_version"],
                 "Artifact snapshot disagrees with version change")
     if kind == "change-wrapper":
-        progress = {task["task_id"]: task for task in value["task_progress"]}
-        require(len(progress) == len(value["task_progress"]), "Duplicate task progress identity")
-        blocked = {task_id for blocker in value["blockers"] for task_id in blocker["task_ids"]}
-        independent = {task_id for blocker in value["blockers"] for task_id in blocker["independent_task_ids"]}
-        require((blocked | independent).issubset(progress), "Blocker reports must include progress for referenced tasks")
-        require(not blocked.intersection(independent), "A blocked task cannot also be independent work")
-        require(all(progress[task_id]["status"] in {"pending", "in_progress"} for task_id in independent),
-                "Independent work must still be pending or in progress")
+        validate_progress(value)
+    if value["context"] is not None:
+        if "checkpoint_commit" in value:
+            no_artifacts = kind == "spec-change-wrapper" and not any(artifacts.values()) and not value["research_updates"]
+            require(value["checkpoint_commit"] is not None or no_artifacts and value["output_kind"] == "incremental",
+                    "Artifact-bearing handoff requires its published checkpoint")
+        else:
+            require(value["reviewed_commit"] is not None, "Embedded review requires the artifact commit reviewed")
     if "issue_details" in value:
         findings = all_findings(value)
         require(len(findings) == sum(map(len, value["issue_details"].values())), "Duplicate finding ID")
+        resolved = value["resolved_findings"]
+        require(len(set(resolved)) == len(resolved) and not set(resolved).intersection(findings),
+                "Current and resolved finding identities must be unique and disjoint")
+        require(all(d["finding_id"] in findings for d in value["dispositions"]),
+                "Dispositions belong to current findings; preserve resolved decisions in notes/evidence")
         if value["context"] is not None or value["review_kind"] == "initial":
             require((value["review_kind"] == "initial") == (value["prior_review_ref"] is None), "Review kind/prior reference mismatch")
         if value["review_kind"] == "initial" or value["assurance_level"] == "maximum":

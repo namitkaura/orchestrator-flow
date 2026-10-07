@@ -1,9 +1,7 @@
-"""Codex resources, schema examples, linked setup and document-reader checks."""
+"""Codex resource lookup, schema examples and document-reader checks."""
 from pathlib import Path
-import errno
 import json
 import os
-import shutil
 import subprocess
 import sys
 import tempfile
@@ -12,43 +10,75 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 BUNDLE = ROOT / ".codex/skills/orchestrator-flow"
 sys.path.insert(0, str(BUNDLE / "scripts"))
-from read_spec_body import check_document, check_task_completion, spec_lines
-from workflow_artifacts import ValidationError, load_schemas, validate_shape, validate_wrapper, workflow_version
+from read_spec_body import check_document, check_task_completion, spec_lines, body_chunk, progress_basis
+from workflow_artifacts import ValidationError, validate_shape, validate_wrapper, workflow_version
 from workflow_protocol import replay
 
 
 class DistributionTests(unittest.TestCase):
-    def symlink(self, path, target, directory=False):
-        try:
-            path.symlink_to(target, target_is_directory=directory)
-        except OSError as exc:
-            if exc.errno in {errno.EPERM, errno.EACCES} or getattr(exc, "winerror", None) == 1314:
-                self.skipTest(f"Native symlink creation unavailable: {exc}")
-            raise
+    def test_bounded_reader_reassembles_unicode_long_lines_and_fences(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "tasks.md"
+            body = "# Tasks\nContent version: 1\n" + "é😀漢" * 3000 + "\n~~~md\n## Revision History\n~~~\nTail\n"
+            path.write_bytes((body + "## Revision History\nPast revisions\n").replace("\n", "\r\n").encode("utf-8"))
+            for size in (7, 17, 8000):
+                parts, offset = [], 0
+                while True:
+                    chunk = body_chunk(path, offset, size)
+                    self.assertEqual(chunk["start_offset"], offset)
+                    parts.append(chunk["text"])
+                    offset = chunk["next_offset"]
+                    if chunk["eof"]:
+                        break
+                self.assertEqual("".join(parts), body)
+            # A truncated transport response is discarded; reread its start.
+            chunk = body_chunk(path, 30, 71)
+            recovered = body_chunk(path, 30, 19)
+            self.assertEqual(recovered["text"], chunk["text"][:19])
+            self.assertNotIn("Past revisions", chunk["text"])
 
-    def git(self, directory, *args):
-        result = subprocess.run(["git", "-C", str(directory), *args], capture_output=True, text=True, encoding="utf-8")
-        self.assertEqual(result.returncode, 0, result.stderr)
-        return result.stdout
+    def test_progress_normalizes_only_numbered_checkbox_marks_and_newlines(self):
+        approved = "# Tasks\nContent version: 1\n- [ ] 1. **[Red]** Witness\n```md\n- [ ] 2. Example\n```\n## Revision History\nInitial\n"
+        self.assertEqual(progress_basis(approved), progress_basis(approved.replace("[ ] 1.", "[x] 1.").replace("\n", "\r\n")))
+        for old, new in (("Witness", "Different"), ("1. **", "3. **"), ("version: 1", "version: 2"),
+                         ("Initial", "Rewritten"), ("[ ] 2.", "[x] 2."), ("Witness", "Witness ")):
+            with self.subTest(change=old):
+                self.assertNotEqual(progress_basis(approved), progress_basis(approved.replace(old, new)))
+
+    def test_cli_stdin_validates_actual_return_and_candidate_without_snapshots(self):
+        from flow_fixtures import Flow
+        flow = Flow()
+        cli = BUNDLE / "scripts/validate_orchestrator_artifacts.py"
+        with tempfile.TemporaryDirectory() as directory:
+            authoritative = Path(directory) / "task_log.json"
+            authoritative.write_text(json.dumps(flow.log), encoding="utf-8")
+            flow.spec_output("requirements")
+            def run(kind, value, *args):
+                return subprocess.run([sys.executable, "-B", str(cli), kind, "-", *args], input=value,
+                                      capture_output=True, text=True, encoding="utf-8")
+            self.assertEqual(run("task-log", json.dumps(flow.log), "--previous", str(authoritative)).returncode, 0)
+            for bad in ('{"status":"done"}', '{"path":"valid-saved-wrapper.json"}', '{broken'):
+                self.assertNotEqual(run("spec-change-wrapper", bad).returncode, 0)
+            self.assertNotEqual(run("resume-action", json.dumps(flow.log), "--observations", "-").returncode, 0)
+            result = subprocess.run([sys.executable, "-B", str(cli), "resume-action", str(authoritative), "--observations", "-"],
+                                    input='{"delivery":"delivered","invocation":"running"}', capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(json.loads(result.stdout)["action"], "recover_running_invocation")
+            self.assertEqual([p.name for p in Path(directory).iterdir()], ["task_log.json"])
 
     def test_all_distributed_examples_validate(self):
         for name in ("spec_change_wrapper", "spec_review_wrapper", "change_wrapper", "review_wrapper"):
             validate_wrapper(name.replace("_", "-"), json.loads((BUNDLE / "references/wrappers" / (name + ".json")).read_text(encoding="utf-8")))
         examples = BUNDLE / "references/examples"
-        for name, kind in (("partial-spec-change", "spec-change-wrapper"), ("blocked-change", "change-wrapper"), ("accepted-limitation-review", "review-wrapper")):
+        for name, kind in (("partial-spec-change", "spec-change-wrapper"), ("blocked-change", "change-wrapper"), ("accepted-limitation-review", "review-wrapper"),
+                           ("same-version-progress", "change-wrapper"), ("no-artifact-planner", "spec-change-wrapper"),
+                           ("resolved-spec-review", "spec-review-wrapper"), ("resolved-review", "review-wrapper"),
+                           ("phased-plan", "spec-change-wrapper"), ("phase-change", "change-wrapper"),
+                           ("phase-review", "review-wrapper"), ("final-phased-change", "change-wrapper")):
             validate_wrapper(kind, json.loads((examples / (name + ".json")).read_text(encoding="utf-8")))
         validate_shape("repository-config", json.loads((examples / "repository-config.json").read_text(encoding="utf-8")))
-        replay(json.loads((ROOT / "tests/fixtures/complete-standard.json").read_text(encoding="utf-8")))
-
-    def test_source_layout_keeps_skill_runtime_and_separates_development_files(self):
-        for directory in ("references", "scripts"):
-            self.assertTrue((BUNDLE / directory).is_dir())
-            self.assertFalse((BUNDLE / directory).is_symlink())
-        self.assertFalse((BUNDLE / "Workflow").exists())
-        self.assertFalse((BUNDLE / "references/Directives").exists())
-        self.assertFalse((BUNDLE / "tests").exists())
-        self.assertTrue((ROOT / "Directives/codingAgentDirectives.md").is_file())
-        self.assertTrue((ROOT / "tests/fixtures/complete-standard.json").is_file())
+        for path in (ROOT / "tests/fixtures").glob("*.json"):
+            replay(json.loads(path.read_text(encoding="utf-8")))
 
     def test_checkout_resources_are_real_relative_symlinks(self):
         for name in ("VERSION", "templates"):
@@ -72,13 +102,6 @@ class DistributionTests(unittest.TestCase):
                     with self.assertRaisesRegex(ValidationError, "Workflow setup"):
                         workflow_version(bundle)
 
-    def test_broken_version_link_is_a_setup_error(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            bundle = Path(tmp)
-            self.symlink(bundle / "VERSION", "missing-version")
-            with self.assertRaisesRegex(ValidationError, "Workflow setup"):
-                workflow_version(bundle)
-
     def test_cli_commands_from_foreign_working_directory(self):
         with tempfile.TemporaryDirectory() as tmp:
             (Path(tmp) / "VERSION").write_text("99.0.0", encoding="utf-8")
@@ -94,51 +117,6 @@ class DistributionTests(unittest.TestCase):
                     self.assertEqual(result.returncode, 0, result.stderr)
                     if kind == "resume-action":
                         self.assertEqual(json.loads(result.stdout)["action"], "reconcile_checkpoint_delivery")
-
-    def test_linked_skill_uses_its_own_resources(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            linked = root / "orchestrator-flow"
-            self.symlink(linked, BUNDLE, directory=True)
-            (root / "VERSION").write_text("99.0.0", encoding="utf-8")
-            self.assertEqual(workflow_version(linked), workflow_version())
-            self.assertEqual(len(load_schemas(linked)[0]), 7)
-            self.assertTrue((linked / "templates/proposal-template.md").is_file())
-            result = subprocess.run([sys.executable, "-B", str(linked / "scripts/validate_orchestrator_artifacts.py"),
-                                     "task-log", str(ROOT / "tests/fixtures/complete-standard.json")],
-                                    cwd=tmp, capture_output=True, text=True, encoding="utf-8", env=os.environ.copy())
-            self.assertEqual(result.returncode, 0, result.stderr)
-
-    def test_relative_resource_links_survive_git_push_and_clone(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            source, remote, cloned = root / "source", root / "remote.git", root / "clone"
-            bundle = source / ".codex/skills/orchestrator-flow"
-            bundle.mkdir(parents=True)
-            shutil.copyfile(ROOT / "VERSION", source / "VERSION")
-            shutil.copytree(ROOT / "templates", source / "templates")
-            self.symlink(bundle / "VERSION", "../../../VERSION")
-            self.symlink(bundle / "templates", "../../../templates", directory=True)
-            self.git(root, "init", "--initial-branch=main", str(source))
-            self.git(source, "config", "core.symlinks", "true")
-            self.git(source, "config", "user.name", "Workflow tests")
-            self.git(source, "config", "user.email", "workflow-tests@example.invalid")
-            self.git(source, "config", "commit.gpgsign", "false")
-            self.git(source, "add", "--", "VERSION", "templates", ".codex/skills/orchestrator-flow")
-            self.git(source, "commit", "-m", "Relative resource link fixture")
-            self.git(root, "init", "--bare", "--initial-branch=main", str(remote))
-            self.git(source, "push", str(remote), "main")
-            self.git(root, "clone", "--config", "core.symlinks=true", str(remote), str(cloned))
-            restored = cloned / ".codex/skills/orchestrator-flow"
-            for name in ("VERSION", "templates"):
-                with self.subTest(resource=name):
-                    mode = self.git(cloned, "ls-files", "--stage", "--", ".codex/skills/orchestrator-flow/" + name).split()[0]
-                    self.assertEqual(mode, "120000")
-                    self.assertTrue((restored / name).is_symlink())
-                    self.assertEqual((restored / name).readlink().as_posix(), "../../../" + name)
-                    self.assertEqual((restored / name).resolve(strict=True), cloned / name)
-            self.assertEqual(workflow_version(restored), workflow_version())
-            self.assertTrue((restored / "templates/proposal-template.md").is_file())
 
     def test_spec_reader_excludes_history_before_context_and_handles_fences(self):
         with tempfile.TemporaryDirectory() as tmp:

@@ -4,6 +4,8 @@ Read `workflow-protocol.md`, `assurance.md`, the consuming project's coding guid
 
 ## Review
 
+Use bounded current-body retrieval: `scripts/read_spec_body.py <path> --offset 0 --max-chars 8000`. Continue at the returned `next_offset` until `eof`. If a response truncates, repeat its starting offset with a smaller limit, including any split line/fence. Do not infer unread content or advance by guessed line numbers. No persistent read-audit artifact is needed.
+
 Use the consolidated Planner output, artifact versions and approvals, effective configuration, baseline/source context, prior review and dispositions. Retrieve current document bodies with `scripts/read_spec_body.py`. Initial reviews cover all three complete current bodies and the complete relevant source context at every assurance level. Follow-up scope comes from repair impact and assurance, not from invocation count.
 
 Check coverage of user intent and deterministic acceptance criteria; requirements/design/task consistency; actual source interfaces; feasibility and testability; architecture and technical decisions; data/error/state/interruption semantics; preservation boundaries; relevant security/performance/observability/UX/accessibility; and sufficient concrete tasks/tests/documentation. Check required document outlines, versions, final Revision History and approval bases without needlessly loading the history. Check EARS, task numbering/references, requirement mapping, coverage table, scaffolding, Red/Green separation, source documentation, explicit final Test-Maintenance and Verification. Scale scrutiny and optional hardening using assurance without omitting mandatory artifacts or initial coverage.
@@ -21,6 +23,8 @@ Preserve finding IDs and governing user responses. Do not reopen settled decisio
 Return a JSON-only `spec_review_wrapper` using `wrappers/spec_review_wrapper.schema.json`. Record current reviewed versions/output, prior review, actual assurance/policy basis, repair class, changed surfaces, scope/reason, meaningful progress, evidence, findings, dispositions and resolutions. First review is full; Basic is normally focused on follow-up; Standard is impact-based; Maximum is comprehensive. A fresh comprehensive pass does not require a new agent/context.
 
 `false` means an unresolved must-fix acceptance condition remains. `conditional` means remaining decisions/conditions prevent acceptance. `true` is permitted with validly accepted limitations; it does not require erasing known issues. Orchestrator validates authority and handles user gates. Your acceptance never grants initial coding authority or final feature acceptance.
+
+For both standalone and orchestrated follow-ups, `issue_details` contains current findings including unresolved accepted limitations; `dispositions` applies only to those findings. Put repaired identities in disjoint, unique `resolved_findings`, and preserve actual earlier decisions, authority, rationale and repair evidence in notes/source references. Do not fabricate standalone task-log references or silently drop unresolved findings. Orchestrated output identifies `reviewed_commit` matching the Planner handoff; standalone may use null. Return the actual complete wrapper and validate directly without routine temporary files. Bounded evidence-applicability assessments use the protocol's `review-evidence-assessed` contract and do not confer higher assurance or new acceptance.
 
 ## Standalone use
 

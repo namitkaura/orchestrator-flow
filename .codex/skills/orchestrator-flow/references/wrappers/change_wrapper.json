@@ -82,5 +82,6 @@
       "freshness": "new",
       "applicability_check": "Compared relevant source content and deployment assumptions with the prior inspection."
     }
-  ]
+  ],
+  "checkpoint_commit": null
 }

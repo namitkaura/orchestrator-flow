@@ -61,6 +61,95 @@ def event_commits(repo, log_ref):
     return checkpoints
 
 
+def checkpoint_metadata(body):
+    """Interpret correspondence only; a commit message never grants authority."""
+    fields = {}
+    for key in ("Feature", "Checkpoint", "Role", "Invocation", "Phase", "Log", "Events"):
+        values = re.findall(r"^Orchestrator-" + key + r": (.+)$", body, re.M)
+        require(len(values) <= 1, f"Repeated Orchestrator-{key} trailer")
+        if values:
+            fields[key.lower()] = values[0]
+    return fields
+
+
+def workflow_checkpoints(repo, log):
+    """Account for every commit to be published from the recorded baseline."""
+    baseline = log["branch_context"]["baseline_commit"]
+    require(git(repo, "merge-base", "--is-ancestor", baseline, "HEAD", check=False).returncode == 0,
+            "Feature baseline is not an ancestor of HEAD")
+    raw = git(repo, "log", "--reverse", "--format=%H%x00%B%x00", baseline + "..HEAD").stdout.split("\0")
+    checkpoints = []
+    for offset in range(0, len(raw) - 1, 2):
+        commit, body = raw[offset].strip(), raw[offset + 1]
+        metadata = checkpoint_metadata(body)
+        require(metadata.get("feature") == log["feature"] and metadata.get("checkpoint") in {"artifacts", "log"}
+                and metadata.get("role") in {"Planner", "Coder", "Orchestrator"},
+                f"Unaccounted-for commit {commit}; do not include unrelated commits in checkpoint delivery")
+        paths = git(repo, "diff-tree", "--no-commit-id", "--name-only", "-r", commit).stdout.splitlines()
+        record = {"commit": commit, "checkpoint_kind": metadata["checkpoint"], "publishing_role": metadata["role"],
+                  "invocation": None, "phase_id": metadata.get("phase"), "event_ids": []}
+        if metadata["checkpoint"] == "log":
+            require(metadata["role"] == "Orchestrator" and metadata.get("log") == log["task_log_ref"] and
+                    re.fullmatch(r"[1-9]\d*-[1-9]\d*", metadata.get("events", "")), "Log checkpoint needs Orchestrator and its event range")
+            require(log["task_log_ref"] in paths, "Log checkpoint must change the authoritative task log")
+            first, last = map(int, metadata["events"].split("-"))
+            require(first <= last, "Reversed checkpoint event range")
+            record.update(first=first, last=last, event_ids=[str(i) for i in range(first, last + 1)])
+        else:
+            require("log" not in metadata and "events" not in metadata and log["task_log_ref"] not in paths,
+                    "Artifact checkpoints do not write the task log or carry event ranges")
+            require(paths, "Artifact checkpoint must contain changes; do not create empty handoff commits")
+        if metadata["role"] in {"Planner", "Coder"}:
+            match = re.fullmatch(r"([1-9]\d*)/(Planner|Coder)/([1-9]\d*)", metadata.get("invocation", ""))
+            require(match is not None and match[2] == metadata["role"], "Producer checkpoint needs trigger/role/attempt invocation")
+            # Use only history already committed when this artifact was made.
+            # Later retries/overrides cannot retroactively authorize its writer.
+            recorded = json.loads(git(repo, "show", commit + ":" + log["task_log_ref"]).stdout)["history"]
+            require(recorded == log["history"][:len(recorded)], "Artifact checkpoint contains a different workflow history")
+            entry = next((e for e in recorded if e["id"] == match[1]), None)
+            require(entry and entry["actor"] == match[2] and entry["event"] in {"spec-creation-started", "spec-revision-started", "coding-started", "coding-revision-started"}, "Checkpoint invocation is not a producer start")
+            context = {"trigger_event_id": match[1], "role": match[2], "attempt": int(match[3])}
+            failures = [e for e in recorded if e["event"] == "subagent-error" and e["details"]["invocation"]["trigger_event_id"] == match[1]]
+            require(context["attempt"] <= len(failures) + 1, "Checkpoint uses an unrecorded attempt")
+            record["invocation"] = context
+            scope = entry["details"].get("work_scope", {"kind": "feature"})
+            require(record["phase_id"] == scope.get("phase_id"), "Checkpoint phase disagrees with its publishing invocation")
+        else:
+            require("invocation" not in metadata and "phase" not in metadata, "Orchestrator does not invent delegated invocation trailers")
+        checkpoints.append(record)
+    return checkpoints
+
+
+def recent_history(repo, log, cursor=None, limit=20):
+    """Return bounded metadata and file statuses, never patches or file bodies."""
+    require(1 <= limit <= 100, "History batch must contain 1 through 100 commits")
+    head = git(repo, "rev-parse", "HEAD").stdout.strip()
+    offset = 0
+    if cursor:
+        match = re.fullmatch(r"([0-9a-f]{40,64}):(\d+)", cursor)
+        require(match is not None and match[1] == head, "History cursor is invalid or HEAD changed; reconcile from the beginning")
+        offset = int(match[2])
+    baseline = log["branch_context"]["baseline_commit"]
+    commits = git(repo, "rev-list", "--first-parent", f"--skip={offset}", f"--max-count={limit + 1}", baseline + ".." + head).stdout.splitlines()
+    items = []
+    for commit in commits[:limit]:
+        body = git(repo, "show", "-s", "--format=%B", commit).stdout.strip()
+        names = git(repo, "diff-tree", "--no-renames", "--no-commit-id", "--name-status", "-r", "-z", commit).stdout.split("\0")
+        changed = [{"status": names[i], "path": names[i + 1]} for i in range(0, len(names) - 1, 2)]
+        items.append({"commit": commit, "message": body, "checkpoint": checkpoint_metadata(body), "changed_files": changed})
+    dirty = git(repo, "status", "--porcelain=v1", "-z", "--untracked-files=all").stdout.split("\0")
+    return {"head": head, "commits": items, "working_tree": [s for s in dirty if s],
+            "next_cursor": f"{head}:{offset + limit}" if len(commits) > limit else None}
+
+
+def select_feature_branch(repo, feature, explicit=None):
+    """Resolve once; callers separately handle existing-branch/baseline conflicts."""
+    branch = explicit if explicit is not None else feature
+    require(git(repo, "check-ref-format", "--branch", branch, check=False).returncode == 0,
+            "Invalid intended feature branch; obtain direction rather than inventing another name")
+    return branch
+
+
 def committed_checkpoint(repo, log):
     checkpoints = event_commits(repo, log["task_log_ref"])
     covered = 0
@@ -69,6 +158,8 @@ def committed_checkpoint(repo, log):
         require(checkpoint["first"] == covered + 1, "Checkpoint ranges must be contiguous and nonduplicated")
         covered = checkpoint["last"]
         latest = checkpoint
+        stored = json.loads(git(repo, "show", checkpoint["commit"] + ":" + log["task_log_ref"]).stdout)
+        require(stored["history"] == log["history"][:covered], "Committed history differs from authoritative append-only history")
     require(covered <= len(log["history"]), "Git contains history absent from the working log")
     if covered != len(log["history"]):
         return None
@@ -86,9 +177,11 @@ def recovery_covers_attempt(details, attempt):
 
 
 def inspect_delivery(repo, log, remote_tip=None):
-    checkpoint = committed_checkpoint(repo, log)
-    if checkpoint is None:
+    log_checkpoint = committed_checkpoint(repo, log)
+    if log_checkpoint is None:
         return {"delivery": "uncommitted", "checkpoint": None}
+    checkpoints = workflow_checkpoints(repo, log)
+    checkpoint = checkpoints[-1]
     branch = log["branch_context"]
     uncertainty = None
     if remote_tip is None:
@@ -102,6 +195,8 @@ def inspect_delivery(repo, log, remote_tip=None):
             return {"delivery": "delivered", "checkpoint": checkpoint}
         if not present:
             uncertainty = "Remote ancestry is unavailable locally"
+        elif git(repo, "merge-base", "--is-ancestor", remote_tip, checkpoint["commit"], check=False).returncode != 0:
+            return {"delivery": "uncertain", "checkpoint": checkpoint, "reason": "Remote branch diverged; obtain direction without force-pushing"}
     journal = read_attempts(repo, log["feature"])
     authorizations = [e for e in log["history"] if e["event"] == "user-authorization-recorded"
                       and e["details"]["kind"] == "checkpoint_recovery"]
@@ -132,11 +227,12 @@ def inspect_delivery(repo, log, remote_tip=None):
 def record_push_attempt(repo, log, authorization_event_id=None):
     from workflow_protocol import replay
     replay(log)
-    checkpoint = committed_checkpoint(repo, log)
-    require(checkpoint is not None, "Commit the update and recovery authorization before attempting delivery")
+    require(committed_checkpoint(repo, log) is not None, "Commit the update and recovery authorization before attempting delivery")
+    checkpoint = workflow_checkpoints(repo, log)[-1]
     require(git(repo, "rev-parse", "HEAD").stdout.strip() == checkpoint["commit"],
             "The attempted HEAD must be the validated checkpoint, without later unrelated commits")
-    require(inspect_delivery(repo, log)["delivery"] != "delivered", "Checkpoint already delivered; do not repeat its push")
+    delivery = inspect_delivery(repo, log)
+    require(delivery["delivery"] != "delivered", "Checkpoint already delivered; do not repeat its push")
     branch = log["branch_context"]
     require(git(repo, "branch", "--show-current").stdout.strip() == branch["feature_branch"], "Wrong active feature branch")
     journal = read_attempts(repo, log["feature"])
@@ -156,9 +252,11 @@ def record_push_attempt(repo, log, authorization_event_id=None):
             tip = remote.stdout.split()[0] if remote.returncode == 0 and remote.stdout.strip() else ""
             require(tip and git(repo, "merge-base", "--is-ancestor", previous_commit, tip, check=False).returncode == 0,
                     "Previous delivery failed/is uncertain; obtain recovery direction")
+    require(delivery["delivery"] == "committed", "Delivery is failed/uncertain; obtain and commit recovery direction before retry")
     record = {"record": "started", "attempt_id": str(uuid.uuid4()), "timestamp": utc_now(),
               "attempted_commit": git(repo, "rev-parse", "HEAD").stdout.strip(),
-              "event_ids": [str(i) for i in range(checkpoint["first"], checkpoint["last"] + 1)],
+              "event_ids": checkpoint["event_ids"], "checkpoint_kind": checkpoint["checkpoint_kind"],
+              "publishing_role": checkpoint["publishing_role"], "invocation": checkpoint["invocation"], "phase_id": checkpoint["phase_id"],
               "remote": branch["remote"], "feature_branch": branch["feature_branch"],
               "authorization_event_id": authorization_event_id}
     append_attempt(repo, log["feature"], record)
@@ -178,10 +276,12 @@ def record_push_failure(repo, feature, attempt_id, exit_code, error_summary):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("inspect", "attempt", "failure"))
+    parser.add_argument("action", choices=("inspect", "recent", "attempt", "failure"))
     parser.add_argument("log", type=Path)
     parser.add_argument("--repo", type=Path, required=True)
     parser.add_argument("--authorization-event")
+    parser.add_argument("--cursor")
+    parser.add_argument("--limit", type=int, default=20)
     parser.add_argument("--attempt-id")
     parser.add_argument("--exit-code", type=int)
     parser.add_argument("--error-summary", help="Redacted summary; never credentials or raw authenticated URLs")
@@ -191,6 +291,8 @@ def main():
     replay(log)
     if args.action == "inspect":
         result = inspect_delivery(args.repo, log)
+    elif args.action == "recent":
+        result = recent_history(args.repo, log, args.cursor, args.limit)
     elif args.action == "attempt":
         result = record_push_attempt(args.repo, log, args.authorization_event)
     else:

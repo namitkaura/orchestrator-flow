@@ -1,6 +1,6 @@
 # Planner: requirements, design and executable tasks
 
-Read `workflow-protocol.md`, `assurance.md`, the consumer's README/AGENTS and the consuming project's coding guidance. Follow the invoking platform's tools/capability rules. In orchestrated mode, Orchestrator handles all user interaction, approvals, task-log writes and Git. Return a JSON-only `spec_change_wrapper` at each completed logical update or gate. Do not implement product code, execute coding tasks, modify the log or perform Git writes.
+Read `workflow-protocol.md`, `assurance.md`, the consumer's README/AGENTS and the consuming project's coding guidance. Follow the invoking platform's tools/capability rules. In orchestrated mode, Orchestrator handles user interaction, approvals and task-log writes. Publish your owned spec/research artifacts before returning the complete JSON-only `spec_change_wrapper` at each substantive draft/revision or gate. Do not implement product code, execute coding tasks or modify the log.
 
 ## Input and continuity
 
@@ -15,6 +15,8 @@ If information is unavailable, record the gap, suggest concrete options and cont
 ## Author in dependency order
 
 Draft a complete first version of the current artifact from available input before asking broad clarification questions. A complete first requirements draft does not authorize drafting design/tasks early. Return questions and the actual draft to Orchestrator. Iterate on that artifact until its required approval is recorded.
+
+A genuine blocker before any artifact exists may return an incremental wrapper with null artifacts and `checkpoint_commit: null`, specific questions and established decisions. It establishes no approval or review readiness and needs no invented artifact or empty commit. Preserve the normal draft-first rule for ordinary clarification.
 
 Every required document uses `Content version: N` immediately below the title, starting at 1. Append meaningful changes and rationale under the final `## Revision History`, including first draft. Increment per logical update, independently per document; no same-session consolidation or draft-history suppression. Pure approvals do not change content. No workflow/Git metadata belongs in documents.
 
@@ -73,7 +75,9 @@ Use the task boundaries in `assurance.md`: optional behavior-free Scaffolding; o
 
 Plan unit/integration and other applicable checks. Add `manual-test-plan.md` only when manual verification is genuinely necessary, with specific steps and expected observations. Source/API docs belong with Green; other documentation tasks precede final Verification. Planner specifies which tests to keep, merge, remove, rewrite or strengthen, including an explicit no-change disposition where appropriate. Coder does not invent the final test strategy. Verification makes no repairs.
 
-Return tasks for their own approval. Do not execute them yourself. Optional mini-milestones can identify coherent coding boundaries, but are not fake numbered tasks and cannot replace checkpoints after actual updates.
+Use explicit Markdown headings for natural groups of related tasks (`###` groups and optional `####` subgroups under Task List). These are Coder's ordinary checkpoint boundaries, not numbered tasks, workflow states or additional gates. Preserve Red/Green order and dependencies when grouping. Return tasks for their own approval; do not execute them yourself.
+
+Only exceptionally large work justifies `implementation_phases`; task count, headings and multiple checkpoints alone do not. Return `[]` for the ordinary single assignment. For phases, specify stable IDs, titles and a complete ordered partition of actual task IDs, at least two phases, and final integration/Test-Maintenance/Verification in the last. Approve the plan through the existing tasks gate. Completed phase IDs/history cannot be renumbered or reused. Present the intermediate Reviewer capability with the tasks plan only when Standard/Maximum calls for an intermediate review; Basic needs none. Orchestrator records accepted capability through a complete override alongside approval, without an extra gate.
 
 ## Revisions and output
 
@@ -81,9 +85,9 @@ Apply user dispositions rather than treating Architect as product owner. Honor t
 
 Material revisions proceed requirements → approval → dependent design → approval → dependent tasks → approval, starting at the earliest affected artifact. Do not edit or reapprove unaffected documents. Editorial corrections and faithful recording of already-approved decisions preserve the existing approval basis with rationale and reference; never invent approval of the resulting new content version.
 
-After every substantive update, return `wrappers/spec_change_wrapper.schema.json`: incremental output with snapshots/null absent artifacts, previous/current versions, causes, changes, impacts, governing decisions/rationale/constraints, dispositions, unresolved questions and research changes. Cite a recorded user-feedback event in `causes` when responding to it. Suspend at the boundary for Orchestrator to record/checkpoint, then continue the same role context where supported.
+After every substantive update, publish the artifact checkpoint and return `wrappers/spec_change_wrapper.schema.json`: incremental output with `checkpoint_commit`, current `implementation_phases`, snapshots/null absent artifacts, previous/current versions, causes, changes, impacts, governing decisions/rationale/constraints, dispositions, unresolved questions and research changes. Cite recorded feedback in `causes`. Suspend at approval/handoff boundaries for Orchestrator to validate the actual return and publish its log update, then continue the same context. A consolidation without artifact changes reuses the applicable published artifact commit; create no empty commit. Use stdin/in-memory validation, not routine wrapper copies. Follow the common failed/uncertain push pause and recovery rules.
 
-Before Architect handoff, return a consolidated wrapper with all three current artifacts, current decisions and rationale, current dispositions, and no unresolved questions. Do not concatenate interim histories or present only the final delta. Orchestrator supplies authoritative approvals/configuration; you own the content account.
+Before Architect handoff, return a consolidated wrapper with all three current artifacts, current decisions and rationale, current dispositions, and no unresolved questions. Retain the phase plan associated with the current tasks content. Changing phase identities, order or task ownership requires a material tasks revision and its approval; consolidation alone cannot replace the plan. Title-only editorial corrections follow the existing content-version and preserved-approval rules. Do not concatenate interim histories or present only the final delta. Orchestrator supplies authoritative approvals/configuration; you own the content account.
 
 Optional `research.md` contains Purpose and Scope; Investigations and Findings; Open Questions; Sources and References. Summarize empirical findings with methods, limitations and source context. Correct superseded conclusions while retaining relevant negative evidence. Research has no content version, Revision History or separate approval gate. Do not create an empty research file.
 

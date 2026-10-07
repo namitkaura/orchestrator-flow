@@ -13,7 +13,7 @@ This repository is the installation source. Maintaining its artifacts does not r
 | GitHub Copilot | Select **Orchestrator** in the custom-agent selector; [agents](.github/agents), [prompts](.github/prompts/prompts.md) | Existing custom agents; v2 deferred |
 | Cursor | `/cursor-orchestrate`, [rule](.cursor/rules/Orchestrator.mdc), [agents](.cursor/agents), [command](.cursor/commands/cursor-orchestrate.md) | Existing rule, command and agents; v2 deferred |
 
-In Codex v2, Orchestrator owns user interaction, configuration, `task_log.json`, `known-issues.md`, role handoffs and feature-branch checkpoints. Planner owns requirements, design, tasks and optional research. Coder owns approved implementation and task-completion accounting. Architect and Reviewer assess work read-only. Only Orchestrator coordinates Git writes; no agent performs the final squash merge.
+In Codex v2, Orchestrator owns user interaction, initialization, configuration, `task_log.json`, `known-issues.md`, log checkpoints and recovery coordination. Planner publishes requirements/design/tasks/research artifacts; Coder publishes its implementation/tests/docs and task-completion progress. Architect and Reviewer assess work read-only. Coder's helpers explore and execute tests without intentional edits or publication. Git ownership is serialized through the active producer and coherent yields; no agent performs the final squash merge.
 
 The Codex contracts are [workflow-protocol.md](.codex/skills/orchestrator-flow/references/workflow-protocol.md), [assurance.md](.codex/skills/orchestrator-flow/references/assurance.md), the five role references and the [schemas/examples](.codex/skills/orchestrator-flow/references). They live within the skill alongside its required runtime scripts. Other platforms retain their own substantive instructions and do not load this Codex implementation. The v2 runtime behavior and Codex setup instructions below apply to Codex; project coding guidance and reusable input templates apply to all four platforms.
 
@@ -107,7 +107,7 @@ model_reasoning_effort = "high"
 developer_instructions = """
 Follow the complete Planner, workflow-protocol, assurance and engineering
 contracts supplied by Orchestrator. Return bounded structured outputs;
-Orchestrator owns user gates, the task log and Git checkpoints.
+Orchestrator owns user gates and the task log; Planner publishes its artifacts.
 """
 ```
 
@@ -146,15 +146,21 @@ Feedback received while Planner is drafting stays in the current creation or rev
 
 Required documents have independent integer content versions from the first draft and a final Revision History. Every completed content update increments its document version, including separate updates in one session. Pure approvals do not change documents. Spec documents contain no duplicated workflow/Git metadata. Read current bodies with the streaming body reader; retrieve history explicitly when needed.
 
-`task_log.json` holds append-only events, effective configuration, requests, outputs, approvals, findings/dispositions and recovery authority. Incremental outputs preserve actual drafts/implementation updates; consolidated outputs provide the current full handoff. Optional research has fixed core sections but no content version or separate approval gate. Orchestrator maintains current unresolved deferred issues/accepted limitations in `known-issues.md` and removes fixed items from that current record.
+Task-checkbox progress preserves the tasks version, Revision History, producing Planner reference and approval. Coder changes only actual numbered completion marks; Planner owns wording, numbering, dependencies and editorial revisions. Bounded reader chunks use normalized character offsets, so truncated output can be reread without losing the end of a line. Initial review still covers every current spec body at all assurance levels.
+
+`task_log.json` holds append-only events, effective configuration, requests, actual outputs, approvals, findings/dispositions and recovery authority. Planner returns drafts and a consolidated handoff. Coder normally returns one cumulative wrapper per completed assignment/repair; ordinary artifact checkpoints need no wrapper or acknowledgement. Typed coordination reports preserve blockers without claiming completion. Required returns are complete actual JSON, never file pointers. Normal operation creates no scratch role artifacts; validate directly in memory or through stdin. Optional research has no content version or separate approval gate. Orchestrator maintains current deferred findings/accepted limitations in `known-issues.md`; resolved history remains in the log and review notes/evidence.
+
+Exceptionally large tasks plans may propose stable implementation phases through the existing tasks approval. Basic skips intermediate reviews; Standard uses Basic, and Maximum uses Standard, with one/two repair cycles per intermediate stage. Required intermediate capability retains the full Reviewer model with effort `max → high`, `xhigh → medium`, or `high → low`, recorded in feature configuration. Basic needs no unused assignment; unmapped/unsupported settings require explicit direction. Final review always uses full feature settings and its separate allowance. The last Coder integrates and reports the entire feature and owns all final repairs. Natural Markdown checkpoint groups alone do not justify phases.
+
+Assurance changes reuse all applicable accepted evidence: unchanged Maximum evidence remains sufficient after lowering and restoring assurance. Real content/source/assumption gaps require bounded assessment or review, scoped independently to specification, phase or final implementation. Applicability assessments grant neither higher assurance nor new acceptance; required Maximum review work remains comprehensive.
 
 All levels preserve Scaffolding boundaries, Red/Green separation, production-only Refactor, concrete Documentation, Planner-defined final Test-Maintenance and repair-free Verification. Coder may mark task progress, not redesign the plan. Architect approval is distinct from user authorization to begin coding. Reviewer approval is distinct from final feature acceptance.
 
 ## Checkpoints, interruptions and final merging
 
-Initialize a feature branch, integration target, remote and baseline explicitly, using the existing checkout unless a worktree was explicitly requested. Orchestrator commits and pushes every completed logical update, including draft/approval/configuration updates and deliberately Red work. Checkpoints record state; they do not grant approval or readiness to merge.
+Initialize the explicit user branch or otherwise the feature name, validating it with Git and recording integration target, remote and baseline. No automatic prefix or product version; conflicts need direction. Use the existing checkout unless a worktree was explicitly requested. Planner checkpoints substantive artifacts before handoff. Coder checkpoints approved natural task groups, meaningful partial work and completion. Orchestrator separately checkpoints every authoritative log update, approval, decision and review return. Deliberately Red work is described accurately. Checkpoints grant neither approval nor merge readiness.
 
-Commit trailers identify the log and contiguous event range. No task-log record stores its own checkpoint hash, and there is no `checkpoint-pushed` progression event. Resume reconciles history, local commits, remote delivery and native role evidence before repeating work.
+Every checkpoint has feature/kind/role trailers; producer artifacts also identify invocation and applicable phase. Only log commits carry the log path and contiguous event range. Wrappers identify already-published artifact commits; no event stores its containing log checkpoint's own hash. No ordinary checkpoint or success-receipt event is added. Resume reconciles metadata and names/statuses, paginating recent commits as needed, with remote delivery and actual native/user evidence. Orchestrator delegates content inspection and recovers existing producers before replacement. Coder reconstructs cumulative work against its original baseline, distinguishing recovered verification from newly run checks.
 
 On a failed push, preserve the local commit and failure evidence, globally pause work, and obtain direction. Before an authorized retry, commit the failure context and retry-authorization update. One push then delivers the outstanding checkpoint plus this update. Git proves successful delivery; do not create a success receipt or another commit/push. A failed retry is immediately preserved locally and requires new direction. The final checkpoint uses the same sequence, leaving no pending success receipt or extra approval.
 
@@ -191,12 +197,13 @@ python .codex/skills/orchestrator-flow/scripts/validate_orchestrator_artifacts.p
 python .codex/skills/orchestrator-flow/scripts/validate_orchestrator_artifacts.py change-wrapper <WRAPPER>
 python .codex/skills/orchestrator-flow/scripts/validate_orchestrator_artifacts.py review-wrapper <WRAPPER>
 python .codex/skills/orchestrator-flow/scripts/validate_orchestrator_artifacts.py resume-action <TASK_LOG> --observations <OBSERVATIONS_JSON>
-python .codex/skills/orchestrator-flow/scripts/read_spec_body.py <SPEC_DOCUMENT>
+python .codex/skills/orchestrator-flow/scripts/read_spec_body.py <SPEC_DOCUMENT> --offset 0 --max-chars 8000
 python .codex/skills/orchestrator-flow/scripts/checkpoint_state.py inspect <TASK_LOG> --repo <CONSUMER_ROOT>
+python .codex/skills/orchestrator-flow/scripts/checkpoint_state.py recent <TASK_LOG> --repo <CONSUMER_ROOT> --limit 20
 python -B -m unittest discover -s tests -v
 git diff --check
 ```
 
-For updates, `task-log --previous <PREVIOUS_LOG>` verifies the history prefix and immutable identity. The read-only resume command accepts observed `delivery` (`delivered`, `failed`, `uncommitted`, `committed`, `uncertain`) and, where relevant, `invocation` (`running`, `completed`, `paused`, `not_started`, `unknown`). Without evidence it requests reconciliation rather than assuming delivery/liveness. These observations do not execute or authorize actions.
+Primary validator input `-` reads actual JSON on stdin. For candidate updates, `task-log - --previous <AUTHORITATIVE_LOG>` verifies append-only history without creating snapshots. `--observations -` is allowed when the log is a file; stdin cannot be consumed twice. `--workspace` mechanically verifies Git provenance, publication, document versions, checkbox-only progress and task completion, returning concise diagnostics. The read-only resume command accepts delivery/liveness observations and actual unrecorded output/approval entries; it validates those entries before recommending recording. Results expose scope, phase readiness, counters and evidence gaps. Without evidence it requests reconciliation. These observations do not execute or authorize actions.
 
 The checkpoint helper additionally provides `attempt` (optional `--authorization-event`) and `failure` (`--attempt-id`, `--exit-code`, redacted `--error-summary`) to preserve local Git-metadata evidence. It never commits, pushes, retries or records success receipts. The focused suite uses temporary repositories/local bare remotes. Schema validation checks shape; replay/scenario tests check transitions, approvals, interruptions, recovery and linked resource access. Codex must still honor its native configuration and permissions.

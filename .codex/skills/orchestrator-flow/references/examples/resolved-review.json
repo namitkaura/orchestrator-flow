@@ -1,6 +1,7 @@
 {
   "context": null,
-  "notes": "Inspected current sources and applicable prior decisions.",
+  "reviewed_commit": null,
+  "notes": "Prior standalone report identified the empty-input defect. The user selected repair; the current source and behavioral witness confirm it is fixed. There are no current findings.",
   "accepted": "true",
   "issue_details": {
     "must_fix": [],
@@ -24,10 +25,10 @@
   },
   "reviewed_output_ref": null,
   "prior_review_ref": null,
-  "review_kind": "initial",
+  "review_kind": "follow_up",
   "assurance_level": "standard",
   "review_disposition_policy": "spec_user_code_auto",
-  "repair_class": null,
+  "repair_class": "bounded_correctness",
   "changed_surfaces": [
     "src/example.py"
   ],
@@ -55,6 +56,26 @@
       "applicability_check": "Compared relevant source content and deployment assumptions with the prior inspection."
     }
   ],
-  "resolved_findings": [],
-  "reviewed_commit": null
+  "resolved_findings": [
+    "C-0-1"
+  ],
+  "test_results": {
+    "unit_tests": {
+      "status": "pass",
+      "details": "The relevant behavioral checks passed."
+    },
+    "integration_tests": {
+      "status": "pass",
+      "details": "The relevant behavioral checks passed."
+    }
+  },
+  "checks": [
+    {
+      "name": "behavioral-tests",
+      "status": "pass",
+      "required": true,
+      "details": "Expected result and preservation witness passed.",
+      "disposition_ref": null
+    }
+  ]
 }

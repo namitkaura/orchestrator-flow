@@ -1,5 +1,31 @@
 {
-  "context": null,
+  "context": {
+    "trigger_event_id": "1",
+    "role": "Planner",
+    "attempt": 1,
+    "context_id": "planner-session",
+    "configuration_ref": "1"
+  },
+  "checkpoint_commit": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "implementation_phases": [
+    {
+      "id": "P1",
+      "title": "Foundations",
+      "task_ids": [
+        "1",
+        "2"
+      ]
+    },
+    {
+      "id": "P2",
+      "title": "Integration, Test-Maintenance and Verification",
+      "task_ids": [
+        "3",
+        "4",
+        "5"
+      ]
+    }
+  ],
   "notes": "No hidden decisions.",
   "feature": "example",
   "feature_dir": ".docs/specs/example",
@@ -36,7 +62,5 @@
   "downstream_impacts": [],
   "dispositions": [],
   "questions": [],
-  "research_updates": [],
-  "checkpoint_commit": null,
-  "implementation_phases": []
+  "research_updates": []
 }

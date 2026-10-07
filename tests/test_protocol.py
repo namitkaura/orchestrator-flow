@@ -24,7 +24,7 @@ class ProtocolTests(unittest.TestCase):
                     state = replay(flow.log)
                     self.assertEqual(state.status, "implementation_complete")
                     self.assertEqual(state.approvals["tasks"]["version"], 1)
-                    self.assertEqual(state.artifacts["tasks"]["version"], 2)
+                    self.assertEqual(state.artifacts["tasks"]["version"], 1)
                     self.assertEqual(resume_action(flow.log, {"delivery": "delivered"})["action"], "finish_final_checkpoint_then_squash_message")
 
     def test_delivered_prefixes_resume_at_expected_workflow_boundaries(self):
@@ -42,7 +42,6 @@ class ProtocolTests(unittest.TestCase):
             ("Architect acceptance", "obtain_coding_authorization"),
             ("coding authorization", "start_coder"),
             ("Coder invocation", "invoke_recorded_role"),
-            ("interim implementation", "continue_coder"),
             ("consolidated implementation", "start_reviewer_review"),
             ("Reviewer invocation", "invoke_recorded_role"),
             ("Reviewer acceptance", "obtain_final_user_acceptance"),
@@ -63,6 +62,90 @@ class ProtocolTests(unittest.TestCase):
         flow.log["history"] = [flow.log["history"][-1]]
         flow.log["history"][0]["id"] = "1"
         self.rejected(flow)
+
+    def test_no_artifact_planner_question_then_first_real_draft(self):
+        flow = Flow()
+        flow.spec_output()
+        flow.log["history"][-1]["spec_change_wrapper"]["questions"] = ["Which inaccessible project is the requested input for?"]
+        before = deepcopy(flow.log)
+        self.assertEqual(replay(before).next_action(), "obtain_planner_clarification")
+        self.assertFalse(replay(before).approvals)
+        self.assertIsNone(before["history"][-1]["spec_change_wrapper"]["checkpoint_commit"])
+        flow.spec_output("requirements")
+        self.assertEqual(replay(flow.log, previous=before).next_action(), "obtain_requirements_approval")
+        flow.log["history"][-1]["spec_change_wrapper"]["checkpoint_commit"] = None
+        self.rejected(flow, "published checkpoint")
+
+    def test_recovered_returns_and_approvals_validate_before_recording_once(self):
+        flow = Flow()
+        original = deepcopy(flow.log)
+        flow.spec_output("requirements")
+        output = deepcopy(flow.log["history"][-1])
+        observed = {"delivery": "delivered", "unrecorded_output": output}
+        self.assertEqual(resume_action(original, observed)["action"], "record_recovered_output")
+        self.assertEqual(len(original["history"]), 1)
+        with self.assertRaises(ValidationError):
+            resume_action(flow.log, observed)
+        before_approval = deepcopy(flow.log)
+        flow.approve("requirements")
+        approval = deepcopy(flow.log["history"][-1])
+        self.assertEqual(resume_action(before_approval, {"delivery": "delivered", "unrecorded_approval": approval})["action"], "record_recovered_approval")
+        with self.assertRaisesRegex(ValidationError, "actual role return"):
+            resume_action(before_approval, {"delivery": "delivered", "unrecorded_output": approval})
+        approval["details"]["version"] += 1
+        with self.assertRaises(ValidationError):
+            resume_action(before_approval, {"delivery": "delivered", "unrecorded_approval": approval})
+        for bad in ({"path": "saved-wrapper.json"}, {**output, "spec_change_wrapper": {"status": "done"}}):
+            with self.assertRaises(ValidationError):
+                resume_action(original, {"delivery": "delivered", "unrecorded_output": bad})
+
+    def test_progress_preserves_planner_provenance_and_does_not_mutate_input(self):
+        flow = Flow().finish_spec()
+        flow.review("spec")
+        flow.authorize()
+        flow.start_coding()
+        before = replay(flow.log)
+        for _ in range(2):
+            flow.code_output(consolidated=False, progress=True)
+        original = deepcopy(flow.log)
+        state = replay(flow.log)
+        self.assertEqual(flow.log, original)
+        self.assertEqual(state.produced, before.produced)
+        self.assertEqual(state.approvals, before.approvals)
+        self.assertEqual(state.artifacts, before.artifacts)
+        flow.log["history"][-1]["change_wrapper"]["artifact_changes"][0]["current_version"] += 1
+        self.rejected(flow, "preserves its content version")
+
+    def test_maximum_evidence_survives_lowering_and_restoring_both_stages(self):
+        flow = complete_flow("maximum")
+        flow.log["history"].pop()
+        flow.log["status"] = "code_approved"
+        for level in ("standard", "maximum"):
+            flow.override("/assurance_level", level)
+            self.assertEqual(replay(flow.log).assurance_gaps, set())
+        self.assertEqual(replay(flow.log).next_action(), "obtain_final_user_acceptance")
+
+    def test_return_cannot_claim_configuration_not_used_at_dispatch(self):
+        flow = Flow("basic").finish_spec()
+        flow.start_review("spec")
+        flow.override("/assurance_level", "maximum")
+        flow.contexts["Architect"]["configuration_ref"] = flow.config_ref
+        flow.review_output("spec")
+        self.rejected(flow, "original invocation configuration")
+
+    def test_coordination_preserves_assignment_without_fabricating_completion(self):
+        flow = Flow().finish_spec()
+        flow.review("spec")
+        flow.authorize()
+        flow.start_coding()
+        flow.add("coding-updated", "Coder", "Planner", "coding_in_progress", details={
+            "kind": "coordination", "invocation": flow.context("Coder"), "summary": "The approved offline work can continue.",
+            "task_progress": [], "blockers": [], "references": []})
+        result = resume_action(flow.log, {"delivery": "delivered", "invocation": "paused"})
+        self.assertEqual(result["action"], "continue_existing_role_context")
+        self.assertNotIn("code", replay(flow.log).outputs)
+        flow.code_output()
+        self.assertEqual(replay(flow.log).next_action(), "start_reviewer_review")
 
     def test_partial_artifacts_and_repeat_drafts(self):
         flow = Flow()
@@ -102,6 +185,11 @@ class ProtocolTests(unittest.TestCase):
     def test_overrides_preserve_phase_and_reject_false_previous(self):
         flow = Flow()
         flow.spec_output("requirements")
+        capability = {**deepcopy(flow.log["capability"]), "platform": "claude-code"}
+        flow.override("/capability", capability)
+        state = replay(flow.log)
+        self.assertEqual(state.config["capability"], capability)
+        self.assertEqual(state.config["assurance_level"], "standard")
         flow.override("/assurance_level", "basic")
         flow.override("/review_disposition_policy", "all_user")
         state = replay(flow.log)
@@ -238,6 +326,11 @@ class ProtocolTests(unittest.TestCase):
         self.assertEqual(resume_action(flow.log, {"delivery": "delivered", "invocation": "running"})["action"], "recover_running_invocation")
         self.assertEqual(resume_action(flow.log, {"delivery": "delivered", "invocation": "completed"})["action"], "record_recovered_output")
         self.assertEqual(resume_action(flow.log, {"delivery": "delivered", "invocation": "paused"})["action"], "continue_existing_role_context")
+        flow.finish_spec()
+        flow.review("spec")
+        flow.authorize()
+        flow.start_coding()
+        self.assertEqual(resume_action(flow.log, {"delivery": "delivered", "invocation": "completed"})["action"], "recover_cumulative_coder_output")
 
     def test_check_failure_cannot_be_hidden_by_completion(self):
         flow = Flow().finish_spec()

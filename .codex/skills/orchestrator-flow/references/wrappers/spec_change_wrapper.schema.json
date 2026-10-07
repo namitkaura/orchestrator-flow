@@ -176,6 +176,22 @@
         ]
       },
       "minItems": 0
+    },
+    "checkpoint_commit": {
+      "anyOf": [
+        {
+          "$ref": "urn:orchestrator-flow:common#/$defs/commit"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "implementation_phases": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:orchestrator-flow:common#/$defs/implementation_phase"
+      }
     }
   },
   "required": [
@@ -196,6 +212,8 @@
     "downstream_impacts",
     "dispositions",
     "questions",
-    "research_updates"
+    "research_updates",
+    "checkpoint_commit",
+    "implementation_phases"
   ]
 }

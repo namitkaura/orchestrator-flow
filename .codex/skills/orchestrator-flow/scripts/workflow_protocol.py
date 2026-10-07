@@ -5,14 +5,15 @@ from copy import deepcopy
 import re
 
 from workflow_artifacts import (ValidationError, all_findings, check_compatibility,
-                                require, validate_capability, validate_shape, validate_wrapper)
+                                require, validate_capability, validate_shape, validate_wrapper,
+                                validate_progress, work_scope)
 
 ARTIFACTS = ("requirements", "design", "tasks")
 LEVELS = {"basic": 0, "standard": 1, "maximum": 2}
 SETTLED = {"defer", "accept_limitation", "reject"}
 WRAPPERS = {"spec-created": "spec_change_wrapper", "spec-updated": "spec_change_wrapper",
             "spec-reviewed": "spec_review_wrapper", "coding-updated": "change_wrapper",
-            "coding-complete": "change_wrapper", "code-reviewed": "review_wrapper"}
+            "coding-complete": "change_wrapper", "coding-phase-complete": "change_wrapper", "code-reviewed": "review_wrapper"}
 REFERENCE_EVENTS = {
     "spec_review": {"spec-reviewed"}, "code_review": {"code-reviewed"},
     "approval": {"spec-artifact-approved"}, "authorization": {"user-authorization-recorded"},
@@ -86,6 +87,81 @@ class Replay:
         self.feedback_ref = None
         self.user_revision_pending = False
         self.review_returns = {}
+        self.review_return_scopes = {}
+        self.phases = []
+        self.plan_ref = None
+        self.current_scope = {"kind": "feature"}
+        self.phase_coders = {}
+        self.coder_assignments = {}
+        self.completed_phases = set()
+        self.assessments = []
+        self.accepted_reviews = set()
+
+    def stage(self, scope):
+        if scope["kind"] == "feature":
+            return "code"
+        current = next((p for p in self.phases if p["id"] == scope["phase_id"]), None)
+        require(current is not None, "Unknown phase identity")
+        if self.plan_ref != scope["plan_ref"]:
+            source = check_reference(scope["plan_ref"], self.entries).get("spec_change_wrapper", {})
+            recorded = next((p for p in source.get("implementation_phases", []) if p["id"] == scope["phase_id"]), None)
+            require(scope["plan_ref"]["kind"] == "spec_change_wrapper" and source.get("output_kind") == "consolidated"
+                    and recorded and recorded["task_ids"] == current["task_ids"],
+                    "Historical phase scope no longer matches the approved task ownership")
+        return "phase:" + scope["phase_id"]
+
+    @staticmethod
+    def family(stage):
+        return "spec" if stage == "spec" else "code"
+
+    def review_stage(self, reference):
+        review = check_reference(reference, self.entries)
+        require(review["event"] in {"spec-reviewed", "code-reviewed"}, "Reference must identify a review")
+        scope = work_scope(review.get("review_wrapper", {}))
+        return "spec" if review["event"] == "spec-reviewed" else "code" if scope["kind"] == "feature" else "phase:" + scope["phase_id"]
+
+    def level(self, stage, config=None):
+        level = (config or self.config)["assurance_level"]
+        return {"basic": None, "standard": "basic", "maximum": "standard"}[level] if stage.startswith("phase:") else level
+
+    def initialize_stage(self, stage):
+        self.cycles.setdefault(stage, 0)
+        self.extra_cycles.setdefault(stage, 0)
+        self.repair_pending.setdefault(stage, False)
+        self.review_runs.setdefault(stage, [])
+
+    def source_wrapper(self, stage):
+        return self.entries[self.outputs[stage]]["spec_change_wrapper" if stage == "spec" else "change_wrapper"]
+
+    def refresh_gaps(self):
+        """Derive sufficiency from all accepted applicable evidence, not overrides."""
+        gaps = set()
+        stages = set(self.reviews) | {"phase:" + p["id"] for p in self.phases[:-1] if p["id"] in self.completed_phases}
+        for stage in stages:
+            required = self.level(stage)
+            if required is None:
+                continue
+            source = self.source_wrapper(stage)
+            sufficient = False
+            for event_id in self.accepted_reviews:
+                entry = self.entries[event_id]
+                wrapper = entry.get("spec_review_wrapper", entry.get("review_wrapper"))
+                candidate_stage = self.review_stage({"event_id": event_id, "kind": "event"})
+                if candidate_stage != stage or LEVELS[wrapper["assurance_level"]] < LEVELS[required]:
+                    continue
+                applicable = wrapper["reviewed_commit"] == source["checkpoint_commit"] and wrapper["reviewed_artifacts"] == self.artifacts
+                for assessment in self.assessments:
+                    if assessment["review_ref"]["event_id"] == event_id and assessment["source_ref"]["event_id"] == self.outputs[stage]:
+                        applicable = assessment["conclusion"] == "applicable" and assessment["reviewed_artifacts"] == self.artifacts and assessment["current_commit"] == source["checkpoint_commit"]
+                sufficient |= applicable
+            if not sufficient:
+                gaps.add(stage)
+        self.assurance_gaps = gaps
+
+    def phase_ready(self, phase_id):
+        stage = "phase:" + phase_id
+        return phase_id in self.completed_phases and (self.level(stage) is None or
+            stage in self.reviews and stage not in self.assurance_gaps and self.result(stage) == "true")
 
     def pair(self, entry, actor, requestor):
         require(entry["actor"] == actor and entry["requestor"] == requestor,
@@ -141,6 +217,8 @@ class Replay:
             if failures:
                 require(context["configuration_ref"] == self.config_ref, "Retried work must use effective configuration")
                 require(self.role_recovery_gate(context) is None, f"Role retry gate: {self.role_recovery_gate(context)}")
+            else:
+                require(context["configuration_ref"] == start["configuration_ref"], "Returned work must retain its original invocation configuration")
         return context
 
     def all_approved(self):
@@ -148,6 +226,19 @@ class Replay:
 
     def apply_artifacts(self, wrapper, entry, coder=False):
         changes = {c["artifact"]: c for c in wrapper["artifact_changes"]}
+        if not coder and self.artifacts["tasks"]:
+            previous_plan = self.entries[self.produced["tasks"]]["spec_change_wrapper"]["implementation_phases"]
+            plan = wrapper["implementation_phases"]
+            if plan != previous_plan:
+                change = changes.get("tasks")
+                require(change and change["change_kind"] in {"material", "editorial"},
+                        "Changing the tasks phase plan requires a tasks content revision")
+                # Phase order, identities and task ownership govern review gates.
+                # A title-only editorial correction may preserve approval.
+                previous_partition = [(p["id"], p["task_ids"]) for p in previous_plan]
+                partition = [(p["id"], p["task_ids"]) for p in plan]
+                require(partition == previous_partition or change["change_kind"] == "material",
+                        "Changing the phase plan's task partition requires a material tasks revision")
         for name in ARTIFACTS:
             old, new = self.artifacts[name], wrapper["artifacts"][name]
             change = changes.get(name)
@@ -159,6 +250,7 @@ class Replay:
             require(change["previous_version"] == (old["version"] if old else None), "Stale previous content version")
             if coder:
                 require(name == "tasks" and change["change_kind"] == "progress", "Coder may only change task progress")
+                require(name in self.approvals, "Task progress requires an existing approval")
             else:
                 for upstream in ARTIFACTS[:ARTIFACTS.index(name)]:
                     require(upstream in self.approvals, f"Approve {upstream} before changing dependent {name}")
@@ -169,15 +261,16 @@ class Replay:
                 require(change["approval_basis_ref"] == {"event_id": self.approvals[name]["event_id"], "kind": "approval"},
                         "Nonmaterial update must cite its preserved approval basis")
             self.artifacts[name] = deepcopy(new)
-            self.produced[name] = entry["id"]
+            if change["change_kind"] != "progress":
+                self.produced[name] = entry["id"]
 
-    def disposition_allowed(self, finding_id, disposition):
+    def disposition_allowed(self, finding_id, disposition, stage=None, config=None):
         if disposition["decision"] not in SETTLED:
             return False
         finding = self.findings[finding_id]
         if disposition["authority"] == "user":
             return bool(disposition.get("recorded_user_event"))
-        return (finding["severity"] != "must_fix" and self.config["assurance_level"] != "maximum"
+        return (finding["severity"] != "must_fix" and self.level(stage or finding["phase"], config) != "maximum"
                 and disposition["decision"] in {"defer", "accept_limitation"})
 
     def apply_dispositions(self, values, entry, user=False):
@@ -210,18 +303,20 @@ class Replay:
                     require(disposition["decision"] == old["decision"], "Policy cannot replace the user's selected finding response")
             self.dispositions[finding_id] = disposition
 
-    def open_findings(self, phase):
-        return {fid: f for fid, f in self.findings.items() if f["phase"] == phase and not f.get("resolved")
-                and not self.disposition_allowed(fid, self.dispositions.get(fid, {"decision": "fix"}))}
+    def open_findings(self, phase, config=None):
+        return {fid: f for fid, f in self.findings.items() if (f["phase"] == phase or phase == "code" and f["phase"].startswith("phase:")) and not f.get("resolved")
+                and not self.disposition_allowed(fid, self.dispositions.get(fid, {"decision": "fix"}), phase, config)}
 
-    def result(self, phase):
-        findings = self.open_findings(phase)
+    def result(self, phase, config=None):
+        findings = self.open_findings(phase, config)
         if any(f["severity"] == "must_fix" for f in findings.values()):
             return "false"
         return "conditional" if findings else "true"
 
     def result_status(self, phase, accepted):
-        return phase + {"false": "_changes_requested", "conditional": "_conditionally_approved", "true": "_approved"}[accepted]
+        if phase.startswith("phase:") and accepted == "true":
+            return "coding_in_progress"
+        return self.family(phase) + {"false": "_changes_requested", "conditional": "_conditionally_approved", "true": "_approved"}[accepted]
 
     def stuck(self, phase):
         runs = self.review_runs[phase]
@@ -241,7 +336,10 @@ class Replay:
         if needs_user and not unresolved.issubset(self.review_decisions.get(review_id, set())):
             return "obtain_findings_disposition"
         limits = {"basic": 1, "standard": 2, "maximum": None}
-        limit = limits[self.config["assurance_level"]]
+        level = self.level(phase)
+        if level is None:
+            level = self.entries[self.reviews[phase]]["review_wrapper"]["assurance_level"]
+        limit = limits[level]
         if limit is not None and self.cycles[phase] >= limit + self.extra_cycles[phase]:
             return "obtain_repair_cycle_authorization"
         if self.stuck(phase) and not any(a["kind"] == "repair_cycle" and a["decision"] == "granted"
@@ -330,6 +428,16 @@ class Replay:
                 require(self.all_approved() and not wrapper["questions"], "Consolidation requires approvals and resolved questions")
                 require(event == ("spec-updated" if self.spec_handed_off else "spec-created"), "Wrong consolidated event for this cycle")
                 self.spec_handed_off = True
+                phases = wrapper["implementation_phases"]
+                for phase in self.phases:
+                    if phase["id"] in self.completed_phases:
+                        revised = next((p for p in phases if p["id"] == phase["id"]), None)
+                        require(revised and revised["task_ids"] == phase["task_ids"] and phases.index(revised) == self.phases.index(phase),
+                                "Completed phase identities and task ownership cannot be renumbered or reused")
+                self.phases = deepcopy(phases)
+                self.plan_ref = {"event_id": entry_id, "kind": "spec_change_wrapper"}
+                for phase in phases:
+                    self.initialize_stage("phase:" + phase["id"])
                 target = "spec_updated" if event == "spec-updated" else "spec_created"
             else:
                 require(event == "spec-updated", "Interim drafts use spec-updated")
@@ -345,39 +453,56 @@ class Replay:
             self.approvals[name] = {"event_id": entry_id, "version": details["version"], "output_ref": details["output_ref"]}
 
         elif event in {"spec-review-started", "code-review-started"}:
-            phase = event.split("-")[0]
-            role, requestor = ("Architect", "Planner") if phase == "spec" else ("Reviewer", "Coder")
+            family = event.split("-")[0]
+            phase = "spec" if family == "spec" else self.stage(work_scope(details))
+            role, requestor = ("Architect", "Planner") if family == "spec" else ("Reviewer", "Coder")
             self.pair(entry, role, requestor)
-            allowed = {"spec_created", "spec_updated"} if phase == "spec" else {"coding_complete"}
+            allowed = {"spec_created", "spec_updated"} if phase == "spec" else {"coding_complete"} if phase == "code" else {"coding_in_progress"}
+            if phase.startswith("phase:"):
+                require(self.level(phase) is not None, "Basic has no intermediate phase review")
+                require(work_scope(details)["phase_id"] != self.phases[-1]["id"], "Last phase goes directly to final review")
+                require(self.config["capability"].get("stage_assignments", {}).get("intermediate_reviewer"),
+                        "Resolve the intermediate Reviewer assignment before dispatch")
+            if phase != "spec":
+                require("spec" not in self.assurance_gaps, "Resolve specification assurance before dependent code review")
+            if phase == "code":
+                require(all(self.phase_ready(p["id"]) for p in self.phases[:-1]), "Resolve earlier phase readiness before final review")
             reconsidering = self.reviews.get(phase) and any(d["decision"] in {"reconsider", "clarify"} for fid, d in self.dispositions.items() if self.findings[fid]["phase"] == phase)
             catchup = phase in self.assurance_gaps and previous not in allowed
             require(previous in allowed or catchup or reconsidering, "Review has no completed handoff or reconsideration")
             require(self.inflight is None, "Recover/suspend existing role work before another review invocation")
             if catchup:
                 self.review_returns[phase] = previous
+                self.review_return_scopes[phase] = deepcopy(self.current_scope)
             source_kind = "spec_change_wrapper" if phase == "spec" else "change_wrapper"
             require(details["source_ref"] == {"event_id": self.outputs[phase], "kind": source_kind}, "Review must use latest consolidated output")
             source = self.entries[self.outputs[phase]][source_kind]
             require(source["output_kind"] == "consolidated", "Review cannot start from an interim output")
+            require(work_scope(details) == work_scope(source), "Review scope must match its completed source handoff")
             prior = self.reviews.get(phase)
-            require(details["prior_review_ref"] == ({"event_id": prior, "kind": phase + "_review"} if prior else None), "Review must carry latest prior review")
+            require(details["prior_review_ref"] == ({"event_id": prior, "kind": family + "_review"} if prior else None), "Review must carry latest prior review")
             require(details["review_kind"] == ("follow_up" if prior else "initial"), "Incorrect review kind")
             self.context(details["invocation"], role, True, entry)
-            target = phase + "_in_review"
+            if phase.startswith("phase:"):
+                self.current_scope = deepcopy(work_scope(details))
+            target = family + "_in_review"
 
         elif event in {"spec-reviewed", "code-reviewed"}:
-            phase = event.split("-")[0]
-            role, requestor = ("Architect", "Planner") if phase == "spec" else ("Reviewer", "Coder")
+            family = event.split("-")[0]
+            phase = "spec" if family == "spec" else self.stage(work_scope(entry["review_wrapper"]))
+            role, requestor = ("Architect", "Planner") if family == "spec" else ("Reviewer", "Coder")
             self.pair(entry, role, requestor)
-            require(previous == phase + "_in_review", "Review output without review start")
+            require(previous == family + "_in_review", "Review output without review start")
             wrapper = entry[WRAPPERS[event]]
             validate_wrapper(WRAPPERS[event].replace("_", "-"), wrapper)
             context = self.context(wrapper["context"], role)
             basis = self.config_snapshot(context)
-            for key in ("assurance_level", "review_disposition_policy"):
-                require(wrapper[key] == basis[key], "Review configuration basis mismatch")
+            require(wrapper["assurance_level"] == self.level(phase, basis) and wrapper["review_disposition_policy"] == basis["review_disposition_policy"], "Review configuration basis mismatch")
             start = self.entries[context["trigger_event_id"]]["details"]
             require(wrapper["reviewed_output_ref"] == start["source_ref"] and wrapper["prior_review_ref"] == start["prior_review_ref"] and wrapper["review_kind"] == start["review_kind"], "Review output disagrees with invocation scope")
+            require(work_scope(wrapper) == work_scope(start), "Review work scope disagrees with invocation")
+            source = check_reference(start["source_ref"], self.entries)["spec_change_wrapper" if phase == "spec" else "change_wrapper"]
+            require(wrapper["reviewed_commit"] == source["checkpoint_commit"], "Review commit differs from the source handoff")
             require(wrapper["reviewed_artifacts"] == self.artifacts, "Review uses stale document versions")
             new_findings = all_findings(wrapper)
             for fid, finding in new_findings.items():
@@ -385,65 +510,70 @@ class Replay:
                 if old is None:
                     require(fid.startswith(("S" if phase == "spec" else "C") + "-" + context["trigger_event_id"] + "-"), "New finding identity must use its first review-start event")
                 else:
-                    require(old["phase"] == phase, "Finding belongs to the other review loop")
+                    require(old["phase"] == phase or phase == "code" and old["phase"].startswith("phase:"), "Finding belongs to the other review loop")
                     if old["severity"] != finding["severity"] or old.get("resolved"):
                         require(finding["reconsideration_reason"], "Changed classification/reopened finding requires grounds")
                     if finding["reconsideration_reason"]:
                         self.dispositions.pop(fid, None)
-                self.findings[fid] = {**finding, "phase": phase, "resolved": False}
+                self.findings[fid] = {**finding, "phase": old["phase"] if old else phase, "resolved": False}
             for fid in wrapper["resolved_findings"]:
-                require(fid in self.findings and self.findings[fid]["phase"] == phase and fid not in new_findings, "Invalid resolved finding")
+                require(fid in self.findings and (self.findings[fid]["phase"] == phase or phase == "code" and self.findings[fid]["phase"].startswith("phase:")) and fid not in new_findings, "Invalid resolved finding")
                 self.findings[fid]["resolved"] = True
-            require(set(self.open_findings(phase)).issubset(new_findings), "Review silently dropped an unresolved finding")
+            retained = {fid for fid, f in self.findings.items() if not f.get("resolved") and
+                        (f["phase"] == phase or phase == "code" and f["phase"].startswith("phase:"))}
+            require(retained.issubset(new_findings), "Review silently dropped an unresolved finding (including accepted limitations)")
             self.apply_dispositions(wrapper["dispositions"], entry)
-            expected = self.result(phase)
+            expected = self.result(phase, basis)
             require(wrapper["accepted"] == expected, f"Acceptance must be {expected} under the recorded dispositions")
-            if phase == "code" and expected == "true":
+            if family == "code" and expected == "true":
                 self.check_checks(wrapper["checks"])
             if self.repair_pending[phase]:
                 self.cycles[phase] += 1
                 self.repair_pending[phase] = False
             self.reviews[phase] = entry_id
             self.review_runs[phase].append({"accepted": expected, "must_fix": sorted(fid for fid, f in self.open_findings(phase).items() if f["severity"] == "must_fix"), "meaningful_change": wrapper["meaningful_change"]})
-            if LEVELS[wrapper["assurance_level"]] >= LEVELS[self.config["assurance_level"]]:
-                self.assurance_gaps.discard(phase)
-            else:
-                # A first review may have been running when assurance increased.
-                # Its original invocation basis remains valid evidence, but cannot
-                # satisfy the feature's now-higher requirement.
-                self.assurance_gaps.add(phase)
+            if expected == "true":
+                self.accepted_reviews.add(entry_id)
             self.inflight = None
             self.last_error = None
             return_phase = self.review_returns.pop(phase, None)
-            target = return_phase if return_phase and expected == "true" else self.result_status(phase, expected)
+            return_scope = self.review_return_scopes.pop(phase, None)
+            current_result = self.result(phase)
+            target = return_phase if return_phase and current_result == "true" else self.result_status(phase, current_result)
+            if return_scope and current_result == "true":
+                self.current_scope = return_scope
 
         elif event == "review-findings-dispositioned" or event.endswith("-approved-by-user"):
             reference = details["review_ref"]
-            phase = "spec" if reference["kind"] == "spec_review" else "code"
+            phase = self.review_stage(reference)
+            family = self.family(phase)
             require(reference["kind"] in {"spec_review", "code_review"} and self.reviews.get(phase) == reference["event_id"], "Disposition must identify the latest review")
             requestors = {"Planner", "Architect"} if phase == "spec" else {"Coder", "Reviewer"}
             if event.endswith("-approved-by-user"):
-                require(event.startswith(phase + "-"), "Approval event belongs to the other review loop")
+                require(event.startswith(family + "-"), "Approval event belongs to the other review loop")
                 requestors = {"Planner" if phase == "spec" else "Coder"}
             require(entry["actor"] == "User" and entry["requestor"] in requestors, "Invalid user disposition actor/requestor")
-            require(previous in {phase + "_changes_requested", phase + "_conditionally_approved", phase + "_approved"}, "Disposition outside findings state")
-            require(all(self.findings.get(d["finding_id"], {}).get("phase") == phase for d in details["decisions"]), "Cross-phase finding disposition")
+            require(previous in {family + "_changes_requested", family + "_conditionally_approved", family + "_approved", "coding_in_progress"} and phase in self.reviews, "Disposition outside findings state")
+            require(all(self.findings.get(d["finding_id"], {}).get("phase") == phase or phase == "code" and self.findings.get(d["finding_id"], {}).get("phase", "").startswith("phase:") for d in details["decisions"]), "Cross-phase finding disposition")
             self.apply_dispositions(details["decisions"], entry, user=True)
             self.review_decisions.setdefault(reference["event_id"], set()).update(d["finding_id"] for d in details["decisions"])
-            if phase == "code" and self.result(phase) == "true":
+            if family == "code" and self.result(phase) == "true":
                 self.check_checks(self.entries[self.reviews[phase]]["review_wrapper"]["checks"])
+            if self.result(phase) == "true":
+                self.accepted_reviews.add(self.reviews[phase])
             target = self.result_status(phase, self.result(phase))
 
         elif event.endswith("-approved-with-justifications"):
-            phase = event.split("-")[0]
+            phase = self.review_stage(details["review_ref"])
+            family = self.family(phase)
             self.pair(entry, "Orchestrator", "Planner" if phase == "spec" else "Coder")
-            require(previous in {phase + "_changes_requested", phase + "_conditionally_approved"}, "Justifications must concern reviewed work")
-            require(details["review_ref"] == {"event_id": self.reviews[phase], "kind": phase + "_review"}, "Stale deferral review")
+            require(previous in {family + "_changes_requested", family + "_conditionally_approved"}, "Justifications must concern reviewed work")
+            require(details["review_ref"] == {"event_id": self.reviews[phase], "kind": family + "_review"}, "Stale deferral review")
             require(self.result(phase) != "false", "Unresolved must-fix findings cannot be conditionally approved")
             require(all(d["finding_id"] in self.findings and self.findings[d["finding_id"]]["phase"] == phase
                         and self.findings[d["finding_id"]]["severity"] != "must_fix" for d in details["dispositions"]),
                     "Justifications must concern this loop's non-must-fix findings")
-            target = phase + "_conditionally_approved"
+            target = family + "_conditionally_approved"
 
         elif event == "user-authorization-recorded":
             self.pair(entry, "User", "User")
@@ -460,17 +590,34 @@ class Replay:
                 self.coding_authorization = entry_id
             elif kind == "repair_cycle":
                 phase = details["limits"]["phase"]
-                require(phase in {"spec", "code"} and self.reviews.get(phase), "Repair authorization needs phase/review")
-                require({"event_id": self.reviews[phase], "kind": phase + "_review"} in details["references"], "Repair authorization must cite current review")
+                require(phase in self.cycles and self.reviews.get(phase), "Repair authorization needs phase/review")
+                require({"event_id": self.reviews[phase], "kind": self.family(phase) + "_review"} in details["references"], "Repair authorization must cite current review")
                 require(details["limits"]["additional_cycles"] is not None, "Specify extra repair allowance (one for generic continue)")
                 if details["decision"] == "granted":
                     self.extra_cycles[phase] += details["limits"]["additional_cycles"]
             elif kind == "checkpoint_recovery":
-                attempts = details["failed_attempts"] + auth["uncertain_attempts"]
+                attempts = auth["failed_attempts"] + auth["uncertain_attempts"]
                 require(attempts, "Recovery authorization needs failed or uncertain push-attempt context")
                 require(details["limits"]["max_attempts"] == 1, "Checkpoint retry authorizes exactly one push")
                 require(len({a["attempt_id"] for a in attempts}) == len(attempts), "Recovery context repeats an attempt identity")
                 for attempt in attempts:
+                    # Earlier log-only attempts have this read-time meaning.
+                    attempt.setdefault("checkpoint_kind", "log")
+                    attempt.setdefault("publishing_role", "Orchestrator")
+                    attempt.setdefault("invocation", None)
+                    attempt.setdefault("phase_id", None)
+                    require(attempt["event_ids"] or attempt["checkpoint_kind"] == "artifacts", "Only artifact checkpoints omit event ranges")
+                    if attempt["publishing_role"] in {"Planner", "Coder"}:
+                        invocation = attempt["invocation"]
+                        require(invocation and invocation["role"] == attempt["publishing_role"], "Artifact recovery must retain producer invocation")
+                        start = self.entries.get(invocation["trigger_event_id"], {})
+                        require(start.get("actor") == invocation["role"] and start.get("event") in
+                                {"spec-creation-started", "spec-revision-started", "coding-started", "coding-revision-started"},
+                                "Unknown publishing invocation")
+                        require(invocation["attempt"] <= len(self.errors.get(invocation["trigger_event_id"], [])) + 1,
+                                "Recovery refers to an unrecorded producer attempt")
+                        if "configuration_ref" in invocation:
+                            self.config_snapshot(invocation)
                     require(all(i in self.entries for i in attempt["event_ids"]), "Push attempt refers to unrecorded events")
                     require(attempt["remote"] == self.log["branch_context"]["remote"] and attempt["feature_branch"] == self.log["branch_context"]["feature_branch"], "Push attempt target disagrees with feature branch")
             elif kind == "external_operation" and details["operation"] == "continue-role":
@@ -484,35 +631,73 @@ class Replay:
 
         elif event in {"coding-started", "coding-revision-started"}:
             revision = event == "coding-revision-started"
+            scope = work_scope(details)
+            stage = self.stage(scope)
             self.pair(entry, "Coder", "Reviewer" if revision else "Planner")
             require(self.all_approved() and "spec" not in self.assurance_gaps, "Coding requires valid artifact approvals and sufficient spec assurance")
             if revision:
                 require(previous in {"code_changes_requested", "code_conditionally_approved"}, "No code repair is ready")
-                require(self.repair_gate("code") is None, f"Code repair gate: {self.repair_gate('code')}")
-                require(details["source_ref"] == {"event_id": self.reviews["code"], "kind": "code_review"}, "Code repair requires latest review")
-                self.repair_pending["code"] = True
+                require(stage == self.stage(self.current_scope), "Code repair must target the active review scope")
+                require(self.result(stage) != "true", "Code repair requires unresolved findings in the active review scope")
+                require(self.repair_gate(stage) is None, f"Code repair gate: {self.repair_gate(stage)}")
+                require(details["source_ref"] == {"event_id": self.reviews[stage], "kind": "code_review"}, "Code repair requires latest review in this scope")
+                self.repair_pending[stage] = True
             else:
-                require(previous == "spec_approved", "Initial/in-scope coding follows spec acceptance")
+                require(previous == "spec_approved" or scope["kind"] == "phase" and previous == "coding_in_progress", "Initial/in-scope coding follows spec acceptance or phase readiness")
                 require(details["source_ref"] == {"event_id": self.outputs["spec"], "kind": "spec_change_wrapper"}, "Coding requires latest spec handoff")
+                require(self.inflight is None, "Recover the active writer before a new assignment")
+                if self.phases:
+                    require(scope["kind"] == "phase", "A phased plan needs explicit phase assignments")
+                    require(scope["plan_ref"] == self.plan_ref, "Coding assignments use the current approved plan")
+                    index = next(i for i, p in enumerate(self.phases) if p["id"] == scope["phase_id"])
+                    require(all(self.phase_ready(p["id"]) for p in self.phases[:index]), "Earlier phases must be ready before advancement")
+                    if stage in self.coder_assignments:
+                        prior = self.entries[self.coder_assignments[stage]["trigger_event_id"]]["details"]
+                        require(previous == "spec_approved" and scope["phase_id"] not in self.completed_phases
+                                and work_scope(prior)["plan_ref"] != self.plan_ref,
+                                "Existing phase assignment must be recovered, not restarted")
+                    else:
+                        require(details["invocation"]["context_id"] not in self.phase_coders.values(), "Next phase starts in a fresh Coder context")
+                    self.phase_coders[scope["phase_id"]] = details["invocation"]["context_id"]
+                else:
+                    require(scope["kind"] == "feature", "No phased task plan is approved")
             auth = self.authorizations.get(details["authorization_ref"]["event_id"], {})
             require(details["authorization_ref"]["event_id"] == self.coding_authorization and auth.get("kind") == "coding" and auth.get("decision") == "granted" and auth.get("scope_epoch") == self.scope_epoch,
                     "Coding needs explicit authorization for the current material scope")
             self.context(details["invocation"], "Coder", True, entry)
+            self.coder_assignments[stage] = deepcopy(details["invocation"])
+            self.current_scope = deepcopy(scope)
             target = "coding_in_progress"
 
-        elif event in {"coding-updated", "coding-complete"}:
+        elif event in {"coding-updated", "coding-complete", "coding-phase-complete"}:
             require(previous in {"coding_in_progress", "blocked"}, "Coding output outside implementation")
             start = self.entries[self.starts["Coder"]["trigger_event_id"]]
             self.pair(entry, "Coder", start["requestor"])
+            if event == "coding-updated" and details:
+                self.context(details["invocation"], "Coder")
+                require(work_scope(details) == self.current_scope, "Coordination scope must retain its assignment")
+                validate_progress(details)
+                independent = any(b["independent_task_ids"] for b in details["blockers"])
+                target = "blocked" if details["blockers"] and not independent else "coding_in_progress"
+                self.inflight = None if details.get("yielded", False) else "Coder"
+                require(entry["status"] == target, f"Coordination status must be {target}")
+                self.status = target
+                self.entries[entry_id] = deepcopy(entry)
+                return
             wrapper = entry["change_wrapper"]
             validate_wrapper("change-wrapper", wrapper)
             self.context(wrapper["context"], "Coder")
+            scope = work_scope(wrapper)
+            stage = self.stage(scope)
+            final_phase = self.phases and self.current_scope.get("phase_id") == self.phases[-1]["id"]
+            require(scope == self.current_scope or event == "coding-complete" and final_phase and scope["kind"] == "feature",
+                    "Coder output must cover its assignment; only the last Coder consolidates the feature")
             self.apply_artifacts(wrapper, entry, coder=True)
             self.apply_dispositions(wrapper["dispositions"], entry)
-            self.outputs["code"] = entry_id
+            self.outputs[stage] = entry_id
             self.inflight = None
             self.last_error = None
-            if event == "coding-complete":
+            if event in {"coding-complete", "coding-phase-complete"}:
                 require(wrapper["output_kind"] == "consolidated" and not wrapper["blockers"], "Coding completion requires consolidated unblocked output")
                 require(wrapper["task_progress"] and all(t["status"] in {"completed", "dispositioned"} for t in wrapper["task_progress"]), "Required tasks remain incomplete")
                 for task in wrapper["task_progress"]:
@@ -524,17 +709,49 @@ class Replay:
                                 "Incomplete task needs explicit accept-task-result authority for that task")
                 require(wrapper["checks"], "Coding completion requires verification evidence")
                 self.check_checks(wrapper["checks"])
-                target = "coding_complete"
+                if event == "coding-phase-complete":
+                    require(scope["kind"] == "phase" and not final_phase, "Only a nonfinal phase uses coding-phase-complete")
+                    phase = next(p for p in self.phases if p["id"] == scope["phase_id"])
+                    require(set(phase["task_ids"]) == {t["task_id"] for t in wrapper["task_progress"]}, "Phase completion must account for exactly its assigned tasks")
+                    self.completed_phases.add(phase["id"])
+                    if "code" in self.outputs:
+                        # Changed earlier work after final handoff needs the last
+                        # Coder's renewed cumulative result and mandatory review.
+                        self.completed_phases.discard(self.phases[-1]["id"])
+                    target = "coding_in_progress"
+                else:
+                    require(scope["kind"] == "feature", "coding-complete is exclusively whole-feature completion")
+                    if self.phases:
+                        require(all(self.phase_ready(p["id"]) for p in self.phases[:-1]), "Final completion requires all earlier phases ready")
+                        require({t for p in self.phases for t in p["task_ids"]} == {t["task_id"] for t in wrapper["task_progress"]}, "Final consolidation accounts for every phase task")
+                        self.completed_phases.add(self.phases[-1]["id"])
+                    self.current_scope = {"kind": "feature"}
+                    target = "coding_complete"
             else:
                 require(wrapper["output_kind"] == "incremental", "Interim coding updates must be incremental")
                 independent = any(b["independent_task_ids"] for b in wrapper["blockers"])
                 target = "blocked" if wrapper["blockers"] and not independent else "coding_in_progress"
 
+        elif event == "review-evidence-assessed":
+            phase = self.review_stage(details["review_ref"])
+            role = "Architect" if phase == "spec" else "Reviewer"
+            self.pair(entry, role, "Planner" if phase == "spec" else "Coder")
+            context = details["invocation"]
+            self.config_snapshot(context)
+            original = self.entries[context["trigger_event_id"]]
+            require(original["actor"] == role and context["role"] == role and original["event"].endswith("review-started"), "Applicability needs an actual review-role context")
+            require(self.inflight in {None, role}, "Obtain a coherent producer yield before assessment")
+            require(details["source_ref"] == {"event_id": self.outputs[phase], "kind": "spec_change_wrapper" if phase == "spec" else "change_wrapper"}, "Assessment must identify the current source handoff")
+            source = self.source_wrapper(phase)
+            require(details["current_commit"] == source["checkpoint_commit"] and details["reviewed_artifacts"] == self.artifacts and work_scope(details) == work_scope(source), "Assessment basis disagrees with current work")
+            require(all(e["freshness"] != "incomplete" and not e["coverage_gaps"] and not e["uncertainty"] for e in details["evidence"]) or details["conclusion"] != "applicable", "Incomplete/uncertain assessment cannot establish applicability")
+            self.assessments.append(deepcopy(details))
+
         elif event == "user-override":
             self.pair(entry, "User", "User")
             targets = [c["target"] for c in details["changes"]]
             require(len(set(targets)) == len(targets) and not any(a != b and b.startswith(a + "/") for a in targets for b in targets), "Overlapping override targets")
-            old_level = self.config["assurance_level"]
+            require(not self.phases or "/capability/roles/reviewer" not in targets, "Phased Reviewer changes require a complete capability replacement")
             for change in details["changes"]:
                 keys = change["target"].strip("/").split("/")
                 parent = self.config
@@ -543,8 +760,6 @@ class Replay:
                 require(parent[keys[-1]] == change["previous"], "Override previous value does not match effective configuration")
                 parent[keys[-1]] = deepcopy(change["new"])
             validate_capability(self.config)
-            if LEVELS[self.config["assurance_level"]] > LEVELS[old_level]:
-                self.assurance_gaps.update(self.reviews)
             self.config_ref = entry_id
             self.configurations[entry_id] = deepcopy(self.config)
 
@@ -576,6 +791,25 @@ class Replay:
         require(entry["status"] == target, f"{event}: resulting status must be {target}, got {entry['status']}")
         self.status = target
         self.entries[entry_id] = deepcopy(entry)
+        self.refresh_gaps()
+        # A catch-up/repair of an earlier phase does not erase an already-started
+        # later assignment. Once ready, recover that same writer and baseline.
+        current_id = self.current_scope.get("phase_id")
+        if self.status == "coding_in_progress" and current_id in self.completed_phases and self.phase_ready(current_id):
+            index = next(i for i, p in enumerate(self.phases) if p["id"] == current_id)
+            for phase in self.phases[index + 1:]:
+                next_stage = "phase:" + phase["id"]
+                if phase["id"] in self.completed_phases:
+                    if not self.phase_ready(phase["id"]):
+                        self.current_scope = {"kind": "phase", "phase_id": phase["id"], "plan_ref": deepcopy(self.plan_ref)}
+                        break
+                    continue
+                if next_stage in self.coder_assignments:
+                    self.starts["Coder"] = deepcopy(self.coder_assignments[next_stage])
+                    start = self.entries[self.starts["Coder"]["trigger_event_id"]]
+                    self.current_scope = deepcopy(work_scope(start["details"]))
+                    self.inflight = "Coder"
+                break
 
     def known_issues(self):
         return {fid: {"finding": f, "disposition": self.dispositions[fid]}
@@ -590,15 +824,29 @@ class Replay:
             gate = self.role_recovery_gate(self.last_error["invocation"])
             if gate:
                 return gate
+        if self.inflight == "Coder" and "spec" in self.assurance_gaps:
+            return "yield_coder_for_assurance_review"
+        if self.inflight == "Coder" and any(p["id"] in self.completed_phases and
+                p["id"] != self.current_scope.get("phase_id") and not self.phase_ready(p["id"]) for p in self.phases[:-1]):
+            return "yield_coder_for_phase_review"
         if self.inflight:
             return "recover_invocation_or_output"
-        if "spec" in self.assurance_gaps:
+        if "spec" in self.assurance_gaps and self.status not in {"spec_in_progress", "spec_changes_requested", "spec_conditionally_approved", "spec_created", "spec_updated"}:
             return "review_assurance_gap_spec"
+        if self.status in {"spec_approved", "coding_in_progress", "coding_complete", "code_approved"}:
+            for phase in self.phases[:-1]:
+                stage = "phase:" + phase["id"]
+                if phase["id"] in self.completed_phases and not self.phase_ready(phase["id"]):
+                    if not self.config["capability"].get("stage_assignments", {}).get("intermediate_reviewer"):
+                        return "resolve_intermediate_reviewer_assignment"
+                    return "review_assurance_gap_" + stage if stage in self.reviews else "start_phase_review"
         if "code" in self.assurance_gaps and self.status == "code_approved":
             return "review_assurance_gap_code"
         if self.status == "spec_in_progress":
             if self.feedback_ref:
                 return "continue_planner_" + self.earliest_artifact
+            if not any(self.artifacts.values()) and "spec" in self.outputs and self.source_wrapper("spec")["questions"]:
+                return "obtain_planner_clarification"
             for name in ARTIFACTS:
                 if self.artifacts[name] and name not in self.approvals:
                     return "obtain_" + name + "_approval"
@@ -613,14 +861,18 @@ class Replay:
             auth = self.authorizations.get(self.coding_authorization, {})
             return "start_coder" if auth.get("decision") == "granted" and auth.get("scope_epoch") == self.scope_epoch else "obtain_coding_authorization"
         if self.status == "code_approved":
-            return "review_assurance_gap_code" if self.assurance_gaps else "obtain_final_user_acceptance"
-        for phase in ("spec", "code"):
-            if self.status in {phase + "_changes_requested", phase + "_conditionally_approved"}:
+            return "obtain_final_user_acceptance"
+        for phase in (("spec",) if self.status.startswith("spec_") else (self.stage(self.current_scope),)):
+            family = self.family(phase)
+            if self.status in {family + "_changes_requested", family + "_conditionally_approved"}:
                 if phase == "spec" and self.user_revision_pending:
                     return "start_planner_revision"
                 if any(d["decision"] in {"reconsider", "clarify"} for fid, d in self.dispositions.items() if self.findings[fid]["phase"] == phase and not self.findings[fid].get("resolved")):
                     return "reconsider_" + phase + "_review"
                 return self.repair_gate(phase) or ("start_planner_revision" if phase == "spec" else "start_coder_revision")
+        if self.phases and self.status == "coding_in_progress":
+            if self.current_scope.get("phase_id") in self.completed_phases:
+                return "start_next_phase_coder"
         return {"coding_in_progress": "continue_coder", "blocked": "resolve_scoped_blocker",
                 "coding_complete": "start_reviewer_review"}.get(self.status, "recover_invocation_or_output")
 
@@ -659,12 +911,35 @@ def resume_action(log, observations=None, reader_version=None):
     if delivery != "delivered":
         action = {"failed": "obtain_checkpoint_recovery_direction", "uncommitted": "validate_and_commit_checkpoint",
                   "committed": "deliver_authorized_checkpoint", "uncertain": "obtain_checkpoint_outcome_direction"}.get(delivery, "reconcile_checkpoint_delivery")
+    elif observations.get("unrecorded_output") is not None:
+        output = observations["unrecorded_output"]
+        require(isinstance(output, dict) and output.get("event") in {*WRAPPERS, "review-evidence-assessed"},
+                "Recovered output must be an actual role return, not a user decision or pointer")
+        candidate = deepcopy(log)
+        candidate["history"].append(output)
+        candidate["status"] = output.get("status")
+        replay(candidate, previous=log)
+        action = "record_recovered_output"
+    elif observations.get("unrecorded_approval") is not None:
+        approval = observations["unrecorded_approval"]
+        require(isinstance(approval, dict) and approval.get("event") == "spec-artifact-approved", "Recovered approval must be an actual artifact decision")
+        candidate = deepcopy(log)
+        candidate["history"].append(approval)
+        candidate["status"] = approval.get("status")
+        replay(candidate, previous=log)
+        action = "record_recovered_approval"
     elif state.inflight:
         invocation = observations.get("invocation", "unknown")
         if action == "recover_invocation_or_output":
             action = {"running": "recover_running_invocation", "completed": "record_recovered_output", "paused": "continue_existing_role_context",
                       "not_started": "invoke_recorded_role"}.get(invocation, "establish_invocation_liveness")
+            if state.inflight == "Coder" and invocation == "completed":
+                action = "recover_cumulative_coder_output"
+    elif observations.get("artifact_handoff_pending"):
+        action = "recover_required_role_return"
     return {"status": state.status, "action": action, "workflow_action": state.next_action(),
             "configuration": state.config, "configuration_ref": state.config_ref,
             "artifacts": state.artifacts, "approval_bases": state.approvals, "repair_cycles": state.cycles,
-            "assurance_gaps": sorted(state.assurance_gaps), "known_issues": state.known_issues()}
+            "assurance_gaps": sorted(state.assurance_gaps), "known_issues": state.known_issues(),
+            "work_scope": state.current_scope,
+            "phase_readiness": {p["id"]: state.phase_ready(p["id"]) for p in state.phases[:-1]}}

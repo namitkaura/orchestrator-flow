@@ -2,9 +2,13 @@
 
 The implemented v2 scope is Codex. Claude Code, GitHub Copilot, and Cursor remain deferred. Historical background stays in [../archived/](../archived/).
 
+The corrections govern producer-owned artifact checkpoints, separate Orchestrator log checkpoints, cumulative Coder handoffs, direct JSON validation, bounded recovery, helper responsibilities and exceptional implementation phases. They take precedence over conflicting original-proposal behavior; workflow version remains 2.0.0. Automated coverage lives in the repository-level [test suite](../../tests/README.md). Test-kit implementation and live runs remain separately authorized work.
+
 | Document | Purpose |
 | --- | --- |
 | [Original proposal](proposal-orchestrator-flow-v2.0.0.md) | Design intent and decisions, with the subsequent Codex-only scope noted. |
+| [Workflow corrections proposal](proposal-orchestrator-flow-v2.0.0-corrections.md) | Focused v2.0.0 workflow corrections and contract clarifications from live testing; takes precedence on its stated changes and excludes test-kit revisions. |
+| [Test-kit proposal](proposal-orchestrator-flow-v2.0.0-testkit.md) | Intended live-test kit, historical implementation and findings, and requirements for its correction and relocation to `tests/live/`. |
 | [Live test overview](orchestrator-flow-v2.0.0-live-test-plan.md) | Coverage, evidence standards, and the division between automated checks and live observations. |
 | [Agent runbook](test-runbook.md) | Set up three working repositories and local remotes, operate the tests, and collect results. |
 | [Scenario instructions](test-scenarios.md) | Timed stimuli, expected behavior, and the coverage matrix for the master agent. |
@@ -33,4 +37,4 @@ Submitting the master prompt starts work. Merely reading these documents does no
 - [Standalone role exercise](prompts/role-exercise.md): fills a coverage gap with a clearly labeled native role test.
 - [Evidence collection](prompts/collect-evidence.md): audits the recorded runs without repairing them.
 
-The master owns coordination records inside the allocated run container. Orchestrator owns each consumer feature's real task log and checkpoints. Do not put test expectations or answer keys into product proposals or runtime role instructions.
+The master owns coordination records inside the allocated run container. Orchestrator owns each consumer feature's real task log and log checkpoints; Planner/Coder publish their owned artifact checkpoints. Do not put test expectations or answer keys into product proposals or runtime role instructions.

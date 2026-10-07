@@ -8,7 +8,8 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / ".codex/skills/orchestrator-flow/scripts"))
 from checkpoint_state import (committed_checkpoint, event_commits, inspect_delivery, journal_path,
-                              read_attempts, record_push_attempt, record_push_failure)
+                              read_attempts, record_push_attempt, record_push_failure, recent_history, select_feature_branch,
+                              workflow_checkpoints)
 from workflow_artifacts import ValidationError
 from workflow_protocol import replay, resume_action
 from flow_fixtures import Flow, complete_flow
@@ -45,7 +46,7 @@ class CheckpointTests(unittest.TestCase):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(log, indent=2) + "\n", encoding="utf-8")
         self.git("add", "--", log["task_log_ref"])
-        self.git("commit", "--only", "-m", f"Record fixture update\n\nOrchestrator-Log: {log['task_log_ref']}\nOrchestrator-Events: {first}-{len(log['history'])}", "--", log["task_log_ref"])
+        self.git("commit", "--only", "-m", f"Record fixture update\n\nOrchestrator-Feature: {log['feature']}\nOrchestrator-Checkpoint: log\nOrchestrator-Role: Orchestrator\nOrchestrator-Log: {log['task_log_ref']}\nOrchestrator-Events: {first}-{len(log['history'])}", "--", log["task_log_ref"])
         return self.git("rev-parse", "HEAD").stdout.strip()
 
     def fail_push(self, authorization=None):
@@ -56,6 +57,175 @@ class CheckpointTests(unittest.TestCase):
         failure = record_push_failure(self.repo, "example", attempt["attempt_id"], result.returncode, "Fixture remote was unavailable.")
         self.git("remote", "set-url", "origin", str(self.remote))
         return failure
+
+    def artifact_checkpoint(self, path="requirements.md", body="draft", role="Planner"):
+        target = self.repo / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(body, encoding="utf-8")
+        self.git("add", "--", path)
+        invocation = self.flow.contexts[role] if role != "Orchestrator" else None
+        trailers = f"Orchestrator-Feature: example\nOrchestrator-Checkpoint: artifacts\nOrchestrator-Role: {role}"
+        if invocation:
+            trailers += f"\nOrchestrator-Invocation: {invocation['trigger_event_id']}/{role}/{invocation['attempt']}"
+        self.git("commit", "--only", "-m", "Preserve artifact progress\n\n" + trailers, "--", path)
+        return self.git("rev-parse", "HEAD").stdout.strip()
+
+    def test_artifact_delivery_and_uncertain_recovery_after_delivered_log(self):
+        log_commit = self.checkpoint()
+        self.git("push", "origin", "HEAD:refs/heads/feature/example")
+        artifact = self.artifact_checkpoint()
+        observed = inspect_delivery(self.repo, self.flow.log)
+        self.assertEqual(observed["delivery"], "committed")
+        self.assertEqual(observed["checkpoint"]["commit"], artifact)
+        self.assertNotEqual(artifact, log_commit)
+        attempt = record_push_attempt(self.repo, self.flow.log)
+        self.assertEqual(attempt["event_ids"], [])
+        self.assertEqual(attempt["publishing_role"], "Planner")
+        uncertain = inspect_delivery(self.repo, self.flow.log)["uncertain_attempt"]
+        self.assertEqual(uncertain["attempt_id"], attempt["attempt_id"])
+        auth = self.flow.authorize("checkpoint_recovery", uncertain=[uncertain])
+        self.checkpoint(first=2)
+        record_push_attempt(self.repo, self.flow.log, auth)
+        count = self.git("rev-list", "--count", "HEAD").stdout
+        self.git("push", "origin", "HEAD:refs/heads/feature/example")
+        self.assertEqual(inspect_delivery(self.repo, self.flow.log)["delivery"], "delivered")
+        self.assertEqual(self.git("rev-list", "--count", "HEAD").stdout, count)
+
+    def test_coder_artifact_checkpoints_need_no_interim_wrapper(self):
+        self.flow.finish_spec()
+        self.flow.review("spec")
+        self.flow.authorize()
+        self.flow.start_coding()
+        self.checkpoint()
+        self.git("push", "origin", "HEAD:refs/heads/feature/example")
+        for number in range(3):
+            self.artifact_checkpoint("src/example.py", f"value = {number}\n", "Coder")
+            record_push_attempt(self.repo, self.flow.log)
+            self.git("push", "origin", "HEAD:refs/heads/feature/example")
+        result = resume_action(self.flow.log, {**inspect_delivery(self.repo, self.flow.log), "invocation": "paused"})
+        self.assertEqual(result["action"], "continue_existing_role_context")
+        self.assertNotIn("code", replay(self.flow.log).outputs)
+        failure_commit = self.artifact_checkpoint("src/example.py", "value = 4\n", "Coder")
+        failure = self.fail_push()
+        self.assertEqual(failure["attempted_commit"], failure_commit)
+        self.assertEqual(failure["publishing_role"], "Coder")
+        self.assertEqual(inspect_delivery(self.repo, self.flow.log)["delivery"], "failed")
+        self.assertEqual(resume_action(self.flow.log, inspect_delivery(self.repo, self.flow.log))["action"], "obtain_checkpoint_recovery_direction")
+
+    def test_artifact_identity_uses_history_at_commit_without_inventing_native_context(self):
+        self.checkpoint()
+        first_context = self.flow.context("Planner")
+        self.flow.add("subagent-error", "Planner", "User", "spec_in_progress", details={
+            "invocation": first_context, "category": "role_failure", "message": "Invocation interrupted.",
+            "helper": None, "output_ref": None})
+        self.flow.contexts["Planner"].update(attempt=2, context_id="replacement-native-session")
+        self.checkpoint(first=2)
+        artifact = self.artifact_checkpoint()
+        started = record_push_attempt(self.repo, self.flow.log)
+        self.assertEqual(started["invocation"], {"trigger_event_id": "1", "role": "Planner", "attempt": 2})
+        # Git identifies the attempt; it cannot infer a replacement native handle.
+        uncertain = inspect_delivery(self.repo, self.flow.log)["uncertain_attempt"]
+        self.flow.authorize("checkpoint_recovery", uncertain=[uncertain])
+        self.flow.override("/assurance_level", "maximum")
+        self.checkpoint(first=3)
+        replay(self.flow.log)
+        old = next(c for c in workflow_checkpoints(self.repo, self.flow.log) if c["commit"] == artifact)
+        self.assertEqual(old["invocation"], started["invocation"])
+
+    def test_later_failure_record_cannot_authorize_an_earlier_artifact_attempt(self):
+        self.checkpoint()
+        original = self.flow.context("Planner")
+        self.flow.contexts["Planner"]["attempt"] = 2
+        self.artifact_checkpoint()
+        self.flow.add("subagent-error", "Planner", "User", "spec_in_progress", details={
+            "invocation": original, "category": "role_failure", "message": "Only recorded after the artifact.",
+            "helper": None, "output_ref": None})
+        self.checkpoint(first=2)
+        with self.assertRaisesRegex(ValidationError, "unrecorded attempt"):
+            inspect_delivery(self.repo, self.flow.log)
+
+    def test_recent_history_paginates_metadata_without_bodies_and_preserves_dirty_state(self):
+        first = self.checkpoint()
+        secret = "THIS_IS_FILE_CONTENT_NOT_RECOVERY_METADATA"
+        for number in range(3):
+            self.artifact_checkpoint(body=secret + str(number))
+        (self.repo / "unrelated.txt").write_text("untouched", encoding="utf-8")
+        page = recent_history(self.repo, self.flow.log, limit=2)
+        self.assertIsNotNone(page["next_cursor"])
+        older = recent_history(self.repo, self.flow.log, cursor=page["next_cursor"], limit=2)
+        self.assertEqual(older["commits"][-1]["commit"], first)
+        self.assertIsNone(older["next_cursor"])
+        self.assertNotIn(secret, json.dumps([page, older]))
+        self.assertIn("?? unrelated.txt", page["working_tree"])
+        self.assertEqual(len({c["commit"] for c in page["commits"] + older["commits"]}), 4)
+        self.artifact_checkpoint(body="newer")
+        with self.assertRaisesRegex(ValidationError, "HEAD changed"):
+            recent_history(self.repo, self.flow.log, cursor=page["next_cursor"])
+
+    def test_native_branch_validation_does_not_invent_a_prefix_or_version(self):
+        for feature, explicit, expected in (("mail-migration", None, "mail-migration"),
+                ("v2.0.0-mail-migration", None, "v2.0.0-mail-migration"), ("mail-migration", "provider-migration", "provider-migration")):
+            self.assertEqual(select_feature_branch(self.repo, feature, explicit), expected)
+        with self.assertRaises(ValidationError):
+            select_feature_branch(self.repo, "bad name")
+
+    def published_coding(self):
+        """Prepare real published artifacts and one cumulative Coder return."""
+        self.checkpoint()
+        def document(name):
+            return f"# {name}\nContent version: 1\n\n" + ("- [ ] 1. **[Verification]** Check the approved behavior\n" if name == "tasks" else "Approved content\n") + "\n## Revision History\n### Version 1 — 2026-09-30\n- Initial draft.\n"
+        for name in ("requirements", "design", "tasks"):
+            commit = self.artifact_checkpoint(self.flow.log[name + "_ref"], document(name))
+            self.git("push", "origin", "HEAD:refs/heads/feature/example")
+            self.flow.checkpoint_commit = commit
+            self.flow.spec_output(name)
+            self.flow.approve(name)
+        self.flow.spec_output(consolidated=True)
+        self.flow.review("spec")
+        self.flow.authorize()
+        self.flow.start_coding()
+        self.checkpoint(first=2)
+        commit = self.artifact_checkpoint(self.flow.log["tasks_ref"], document("tasks").replace("[ ] 1.", "[x] 1."), "Coder")
+        self.git("push", "origin", "HEAD:refs/heads/feature/example")
+        self.flow.checkpoint_commit = commit
+        self.flow.code_output(progress=True)
+        return document("tasks").replace("[ ] 1.", "[x] 1.")
+
+    def test_workspace_provenance_and_task_progress_compare_actual_git_content(self):
+        from validate_orchestrator_artifacts import validate_workspace
+        self.published_coding()
+        state = replay(self.flow.log)
+        validate_workspace(state, self.repo)
+        path = self.repo / self.flow.log["tasks_ref"]
+        path.write_text(path.read_text(encoding="utf-8").replace("approved behavior", "different behavior"), encoding="utf-8")
+        with self.assertRaisesRegex(ValidationError, "content changes"):
+            validate_workspace(state, self.repo)
+        # A dishonest producer report still cannot hide material edits in a commit.
+        commit = self.artifact_checkpoint(self.flow.log["tasks_ref"], path.read_text(encoding="utf-8"), "Coder")
+        self.git("push", "origin", "HEAD:refs/heads/feature/example")
+        self.flow.log["history"][-1]["change_wrapper"]["checkpoint_commit"] = commit
+        with self.assertRaisesRegex(ValidationError, "concealed"):
+            validate_workspace(replay(self.flow.log), self.repo)
+
+    def test_historical_completion_does_not_require_newly_planned_tasks_done(self):
+        from validate_orchestrator_artifacts import validate_workspace
+        content = self.published_coding()
+        self.checkpoint(first=13)
+        request = self.flow.add("user-change-requested", "Orchestrator", "User", "spec_changes_requested", details={
+            "request": "Add the agreed follow-up verification.", "earliest_artifact": "tasks", "references": []})
+        self.flow.start_spec_revision("User", "tasks")
+        self.checkpoint(first=14)
+        revised = content.replace("Content version: 1", "Content version: 2").replace(
+            "## Revision History", "- [ ] 2. **[Verification]** Run the additional approved check\n\n## Revision History")
+        revised += "### Version 2 — 2026-10-01\n- Add the user-requested verification.\n"
+        commit = self.artifact_checkpoint(self.flow.log["tasks_ref"], revised)
+        self.git("push", "origin", "HEAD:refs/heads/feature/example")
+        self.flow.checkpoint_commit = commit
+        self.flow.spec_output("tasks")
+        self.flow.log["history"][-1]["spec_change_wrapper"]["causes"] = [{"event_id": request, "kind": "event"}]
+        state = replay(self.flow.log)
+        validate_workspace(state, self.repo)
+        self.assertEqual(state.next_action(), "obtain_tasks_approval")
 
     def test_retry_authorization_is_committed_before_one_push_without_receipt(self):
         original = self.checkpoint()
@@ -159,12 +329,12 @@ class CheckpointTests(unittest.TestCase):
     def prepare_final_checkpoint(self):
         self.flow = complete_flow(baseline=self.baseline)
         count = len(self.flow.log["history"])
-        for index in range(1, count):
-            prefix = deepcopy(self.flow.log)
-            prefix["history"] = prefix["history"][:index]
-            prefix["status"] = prefix["history"][-1]["status"]
-            self.checkpoint(first=index, log=prefix)
-            self.git("push", "origin", "HEAD:refs/heads/feature/example")
+        # Deliver the fixture's prior history once; final acceptance stays separate.
+        prefix = deepcopy(self.flow.log)
+        prefix["history"] = prefix["history"][:-1]
+        prefix["status"] = prefix["history"][-1]["status"]
+        self.checkpoint(log=prefix)
+        self.git("push", "origin", "HEAD:refs/heads/feature/example")
         self.checkpoint(first=count)
         return count
 
@@ -178,7 +348,7 @@ class CheckpointTests(unittest.TestCase):
         self.git("push", "origin", "HEAD:refs/heads/feature/example")
         observations = inspect_delivery(self.repo, self.flow.log)
         self.assertEqual(resume_action(self.flow.log, observations)["action"], "finish_final_checkpoint_then_squash_message")
-        self.assertEqual(len(event_commits(self.repo, self.flow.log["task_log_ref"])), count + 1)
+        self.assertEqual(len(event_commits(self.repo, self.flow.log["task_log_ref"])), 3)
         self.assertEqual(self.git("status", "--porcelain").stdout, "")
 
     def test_interrupted_final_checkpoint_recovers_without_reopening_work(self):
@@ -193,7 +363,7 @@ class CheckpointTests(unittest.TestCase):
         observed = inspect_delivery(self.repo, self.flow.log)
         self.assertEqual(observed["delivery"], "delivered")
         self.assertEqual(resume_action(self.flow.log, observed)["action"], "finish_final_checkpoint_then_squash_message")
-        self.assertEqual(len(event_commits(self.repo, self.flow.log["task_log_ref"])), count + 1)
+        self.assertEqual(len(event_commits(self.repo, self.flow.log["task_log_ref"])), 3)
         self.assertEqual([r["record"] for r in read_attempts(self.repo, "example")], ["started", "started"])
 
     def test_uncertain_retry_can_be_authorized_when_remote_inspection_is_unavailable(self):
@@ -280,7 +450,7 @@ class CheckpointTests(unittest.TestCase):
         (self.repo / "unrelated.txt").write_text("separate work", encoding="utf-8")
         self.git("add", "unrelated.txt")
         self.git("commit", "-m", "Separate unrelated work")
-        with self.assertRaisesRegex(ValidationError, "without later unrelated commits"):
+        with self.assertRaisesRegex(ValidationError, "unrelated commits"):
             record_push_attempt(self.repo, self.flow.log)
 
     def test_delivery_helpers_work_with_unrelated_staged_and_unstaged_changes(self):

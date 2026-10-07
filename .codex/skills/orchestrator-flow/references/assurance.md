@@ -2,6 +2,8 @@
 
 Use one accepted feature assurance level independently of per-role capability. All levels retain Planner, Architect, Coder, Reviewer, requirements/design/tasks, their approval gates, and the task execution structure. Each level includes an initial review of the complete relevant spec and complete relevant implementation. Lower assurance changes scrutiny and obligations, not coverage to a convenient subset.
 
+The exceptional phase policy in `workflow-protocol.md` sets review-stage rigor without changing feature assurance: no intermediate review at Basic, Basic at Standard, Standard at Maximum. Architect and the final whole-feature review retain the full feature assurance. Initial coverage means the entire applicable stage and dependencies, with complete current spec bodies; future-phase implementation is not an omission. Intermediate readiness does not grant final acceptance or waive a condition under final assurance. Preserve explicit user dispositions and their revisit conditions.
+
 ## Classification before remediation
 
 Every finding describes the factual behavior, triggering conditions and practical consequences for the actual project. Distinguish a demonstrated correctness problem, a hardening opportunity, and a preference. Classify against the feature's agreed acceptance standard without hiding facts. Consider exposure, affected users, likelihood, reversibility, recovery cost and user preference.
@@ -44,6 +46,10 @@ Helpers provide inspected sources with enough path/revision/date/experiment cont
 Preserve completed reports and relevant research across usage interruptions, model changes and resumed sessions. Basic and Standard check whether relevant sources and assumptions changed, reuse valid completed evidence, and repeat only affected or incomplete work. At Maximum, actively revalidate decision-critical research observations and conclusions against current sources even when they appear unchanged. Report confirmed evidence without forcing a pointless research rewrite. Planner owns substantive corrections; reviewers report them as findings.
 
 A fresh Maximum review means doing the full required review work, not creating a fresh agent. Preserve ongoing role context and bounded handoffs where supported. Evidence reuse does not waive Maximum's comprehensive passes.
+
+Review necessity depends on all applicable accepted evidence at the required stage, not the last override. Unchanged Maximum evidence survives Maximum → Standard → Maximum; log and checkbox-only changes do not invalidate content evidence. Compare actual assurance, reviewed scope/versions/commit, later changes, sources/assumptions and decisions. If applicability cannot be established from existing records, delegate a bounded assessment and record `review-evidence-assessed` only when it affects a gate. It cannot invent higher assurance, replace mandatory review of changed work, or grant acceptance. Stage gaps remain independent, including in-flight lower-assurance returns.
+
+Each nonfinal phase has its own completed repair/re-review count (one at Standard, two at Maximum), separately from the final Basic one-cycle, Standard two-cycle and Maximum rigorous-loop policy. Preserve counts through replacement, interruption, override and returns to unresolved phases. Initial passes, retries and artifact checkpoints do not consume cycles. Basic needs no intermediate Reviewer assignment; higher assurance resolves the recorded stage assignment before dispatch. Only the last Coder owns final integration and all final-review repairs.
 
 ## Maximum specification review obligations
 

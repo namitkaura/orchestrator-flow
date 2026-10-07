@@ -6,7 +6,7 @@
   "design_ref": ".docs/specs/example/design.md",
   "tasks_ref": ".docs/specs/example/tasks.md",
   "task_log_ref": ".docs/specs/example/task_log.json",
-  "assurance_level": "standard",
+  "assurance_level": "maximum",
   "capability": {
     "platform": "codex",
     "roles": {
@@ -31,9 +31,15 @@
         "reasoning_effort": "high"
       }
     },
-    "acknowledged_limitations": []
+    "acknowledged_limitations": [],
+    "stage_assignments": {
+      "intermediate_reviewer": {
+        "model": "example-model",
+        "reasoning_effort": "low"
+      }
+    }
   },
-  "review_disposition_policy": "spec_user_code_auto",
+  "review_disposition_policy": "within_scope_auto",
   "branch_context": {
     "feature_branch": "feature/example",
     "integration_branch": "main",
@@ -61,7 +67,7 @@
           "configuration_ref": "1"
         },
         "initial_configuration": {
-          "assurance_level": "standard",
+          "assurance_level": "maximum",
           "capability": {
             "platform": "codex",
             "roles": {
@@ -88,7 +94,7 @@
             },
             "acknowledged_limitations": []
           },
-          "review_disposition_policy": "spec_user_code_auto"
+          "review_disposition_policy": "within_scope_auto"
         },
         "branch_context": {
           "feature_branch": "feature/example",
@@ -101,6 +107,81 @@
     },
     {
       "id": "2",
+      "timestamp": "2026-09-30T12:00:00Z",
+      "event": "user-override",
+      "actor": "User",
+      "requestor": "User",
+      "status": "spec_in_progress",
+      "details": {
+        "changes": [
+          {
+            "target": "/capability",
+            "previous": {
+              "platform": "codex",
+              "roles": {
+                "planner": {
+                  "model": "example-model",
+                  "reasoning_effort": "high"
+                },
+                "architect": {
+                  "model": "example-model",
+                  "reasoning_effort": "high"
+                },
+                "coder": {
+                  "model": "example-model",
+                  "reasoning_effort": "high"
+                },
+                "reviewer": {
+                  "model": "example-model",
+                  "reasoning_effort": "high"
+                },
+                "helpers": {
+                  "model": "example-model",
+                  "reasoning_effort": "high"
+                }
+              },
+              "acknowledged_limitations": []
+            },
+            "new": {
+              "platform": "codex",
+              "roles": {
+                "planner": {
+                  "model": "example-model",
+                  "reasoning_effort": "high"
+                },
+                "architect": {
+                  "model": "example-model",
+                  "reasoning_effort": "high"
+                },
+                "coder": {
+                  "model": "example-model",
+                  "reasoning_effort": "high"
+                },
+                "reviewer": {
+                  "model": "example-model",
+                  "reasoning_effort": "high"
+                },
+                "helpers": {
+                  "model": "example-model",
+                  "reasoning_effort": "high"
+                }
+              },
+              "acknowledged_limitations": [],
+              "stage_assignments": {
+                "intermediate_reviewer": {
+                  "model": "example-model",
+                  "reasoning_effort": "low"
+                }
+              }
+            }
+          }
+        ],
+        "rationale": "The user selected this configuration.",
+        "user_statement": "Use the new value for this feature."
+      }
+    },
+    {
+      "id": "3",
       "timestamp": "2026-09-30T12:00:00Z",
       "event": "spec-updated",
       "actor": "Planner",
@@ -115,7 +196,25 @@
           "configuration_ref": "1"
         },
         "checkpoint_commit": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-        "implementation_phases": [],
+        "implementation_phases": [
+          {
+            "id": "P1",
+            "title": "Foundations",
+            "task_ids": [
+              "1",
+              "2"
+            ]
+          },
+          {
+            "id": "P2",
+            "title": "Integration, Test-Maintenance and Verification",
+            "task_ids": [
+              "3",
+              "4",
+              "5"
+            ]
+          }
+        ],
         "notes": "No hidden decisions.",
         "feature": "example",
         "feature_dir": ".docs/specs/example",
@@ -160,7 +259,7 @@
       }
     },
     {
-      "id": "3",
+      "id": "4",
       "timestamp": "2026-09-30T12:00:00Z",
       "event": "spec-artifact-approved",
       "actor": "User",
@@ -170,14 +269,14 @@
         "artifact": "requirements",
         "version": 1,
         "output_ref": {
-          "event_id": "2",
+          "event_id": "3",
           "kind": "spec_change_wrapper"
         },
         "user_statement": "I approve this document version."
       }
     },
     {
-      "id": "4",
+      "id": "5",
       "timestamp": "2026-09-30T12:00:00Z",
       "event": "spec-updated",
       "actor": "Planner",
@@ -192,7 +291,25 @@
           "configuration_ref": "1"
         },
         "checkpoint_commit": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-        "implementation_phases": [],
+        "implementation_phases": [
+          {
+            "id": "P1",
+            "title": "Foundations",
+            "task_ids": [
+              "1",
+              "2"
+            ]
+          },
+          {
+            "id": "P2",
+            "title": "Integration, Test-Maintenance and Verification",
+            "task_ids": [
+              "3",
+              "4",
+              "5"
+            ]
+          }
+        ],
         "notes": "No hidden decisions.",
         "feature": "example",
         "feature_dir": ".docs/specs/example",
@@ -240,7 +357,7 @@
       }
     },
     {
-      "id": "5",
+      "id": "6",
       "timestamp": "2026-09-30T12:00:00Z",
       "event": "spec-artifact-approved",
       "actor": "User",
@@ -250,14 +367,14 @@
         "artifact": "design",
         "version": 1,
         "output_ref": {
-          "event_id": "4",
+          "event_id": "5",
           "kind": "spec_change_wrapper"
         },
         "user_statement": "I approve this document version."
       }
     },
     {
-      "id": "6",
+      "id": "7",
       "timestamp": "2026-09-30T12:00:00Z",
       "event": "spec-updated",
       "actor": "Planner",
@@ -272,7 +389,25 @@
           "configuration_ref": "1"
         },
         "checkpoint_commit": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-        "implementation_phases": [],
+        "implementation_phases": [
+          {
+            "id": "P1",
+            "title": "Foundations",
+            "task_ids": [
+              "1",
+              "2"
+            ]
+          },
+          {
+            "id": "P2",
+            "title": "Integration, Test-Maintenance and Verification",
+            "task_ids": [
+              "3",
+              "4",
+              "5"
+            ]
+          }
+        ],
         "notes": "No hidden decisions.",
         "feature": "example",
         "feature_dir": ".docs/specs/example",
@@ -323,7 +458,7 @@
       }
     },
     {
-      "id": "7",
+      "id": "8",
       "timestamp": "2026-09-30T12:00:00Z",
       "event": "spec-artifact-approved",
       "actor": "User",
@@ -333,14 +468,14 @@
         "artifact": "tasks",
         "version": 1,
         "output_ref": {
-          "event_id": "6",
+          "event_id": "7",
           "kind": "spec_change_wrapper"
         },
         "user_statement": "I approve this document version."
       }
     },
     {
-      "id": "8",
+      "id": "9",
       "timestamp": "2026-09-30T12:00:00Z",
       "event": "spec-created",
       "actor": "Planner",
@@ -355,7 +490,25 @@
           "configuration_ref": "1"
         },
         "checkpoint_commit": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-        "implementation_phases": [],
+        "implementation_phases": [
+          {
+            "id": "P1",
+            "title": "Foundations",
+            "task_ids": [
+              "1",
+              "2"
+            ]
+          },
+          {
+            "id": "P2",
+            "title": "Integration, Test-Maintenance and Verification",
+            "task_ids": [
+              "3",
+              "4",
+              "5"
+            ]
+          }
+        ],
         "notes": "No hidden decisions.",
         "feature": "example",
         "feature_dir": ".docs/specs/example",
@@ -396,7 +549,7 @@
       }
     },
     {
-      "id": "9",
+      "id": "10",
       "timestamp": "2026-09-30T12:00:00Z",
       "event": "spec-review-started",
       "actor": "Architect",
@@ -404,22 +557,22 @@
       "status": "spec_in_review",
       "details": {
         "source_ref": {
-          "event_id": "8",
+          "event_id": "9",
           "kind": "spec_change_wrapper"
         },
         "prior_review_ref": null,
         "review_kind": "initial",
         "invocation": {
-          "trigger_event_id": "9",
+          "trigger_event_id": "10",
           "role": "Architect",
           "attempt": 1,
           "context_id": "architect-session",
-          "configuration_ref": "1"
+          "configuration_ref": "2"
         }
       }
     },
     {
-      "id": "10",
+      "id": "11",
       "timestamp": "2026-09-30T12:00:00Z",
       "event": "spec-reviewed",
       "actor": "Architect",
@@ -427,11 +580,11 @@
       "status": "spec_approved",
       "spec_review_wrapper": {
         "context": {
-          "trigger_event_id": "9",
+          "trigger_event_id": "10",
           "role": "Architect",
           "attempt": 1,
           "context_id": "architect-session",
-          "configuration_ref": "1"
+          "configuration_ref": "2"
         },
         "reviewed_commit": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
         "notes": "Inspected current sources and applicable prior decisions.",
@@ -457,13 +610,13 @@
           }
         },
         "reviewed_output_ref": {
-          "event_id": "8",
+          "event_id": "9",
           "kind": "spec_change_wrapper"
         },
         "prior_review_ref": null,
         "review_kind": "initial",
-        "assurance_level": "standard",
-        "review_disposition_policy": "spec_user_code_auto",
+        "assurance_level": "maximum",
+        "review_disposition_policy": "within_scope_auto",
         "repair_class": null,
         "changed_surfaces": [
           "src/example.py"
@@ -496,7 +649,7 @@
       }
     },
     {
-      "id": "11",
+      "id": "12",
       "timestamp": "2026-09-30T12:00:00Z",
       "event": "user-authorization-recorded",
       "actor": "User",
@@ -509,7 +662,7 @@
         "scope": "Current approved feature scope",
         "references": [
           {
-            "event_id": "10",
+            "event_id": "11",
             "kind": "spec_review"
           }
         ],
@@ -523,7 +676,7 @@
       }
     },
     {
-      "id": "12",
+      "id": "13",
       "timestamp": "2026-09-30T12:00:00Z",
       "event": "coding-started",
       "actor": "Coder",
@@ -531,36 +684,44 @@
       "status": "coding_in_progress",
       "details": {
         "source_ref": {
-          "event_id": "8",
+          "event_id": "9",
           "kind": "spec_change_wrapper"
         },
         "authorization_ref": {
-          "event_id": "11",
+          "event_id": "12",
           "kind": "authorization"
         },
         "invocation": {
-          "trigger_event_id": "12",
+          "trigger_event_id": "13",
           "role": "Coder",
           "attempt": 1,
-          "context_id": "coder-session",
-          "configuration_ref": "1"
+          "context_id": "coder-P1",
+          "configuration_ref": "2"
+        },
+        "work_scope": {
+          "kind": "phase",
+          "phase_id": "P1",
+          "plan_ref": {
+            "event_id": "9",
+            "kind": "spec_change_wrapper"
+          }
         }
       }
     },
     {
-      "id": "13",
+      "id": "14",
       "timestamp": "2026-09-30T12:00:00Z",
-      "event": "coding-complete",
+      "event": "coding-phase-complete",
       "actor": "Coder",
       "requestor": "Planner",
-      "status": "coding_complete",
+      "status": "coding_in_progress",
       "change_wrapper": {
         "context": {
-          "trigger_event_id": "12",
+          "trigger_event_id": "13",
           "role": "Coder",
           "attempt": 1,
-          "context_id": "coder-session",
-          "configuration_ref": "1"
+          "context_id": "coder-P1",
+          "configuration_ref": "2"
         },
         "checkpoint_commit": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
         "notes": "No unrelated changes.",
@@ -588,7 +749,7 @@
             "summary": "Mark task 1 complete.",
             "rationale": "The behavioral witness passed.",
             "approval_basis_ref": {
-              "event_id": "7",
+              "event_id": "8",
               "kind": "approval"
             }
           }
@@ -627,7 +788,13 @@
           {
             "task_id": "1",
             "status": "completed",
-            "evidence": "Behavioral witness passes.",
+            "evidence": "Assigned behavioral and integration checks pass.",
+            "disposition_ref": null
+          },
+          {
+            "task_id": "2",
+            "status": "completed",
+            "evidence": "Assigned behavioral and integration checks pass.",
             "disposition_ref": null
           }
         ],
@@ -658,11 +825,19 @@
             "freshness": "new",
             "applicability_check": "Compared relevant source content and deployment assumptions with the prior inspection."
           }
-        ]
+        ],
+        "work_scope": {
+          "kind": "phase",
+          "phase_id": "P1",
+          "plan_ref": {
+            "event_id": "9",
+            "kind": "spec_change_wrapper"
+          }
+        }
       }
     },
     {
-      "id": "14",
+      "id": "15",
       "timestamp": "2026-09-30T12:00:00Z",
       "event": "code-review-started",
       "actor": "Reviewer",
@@ -670,34 +845,42 @@
       "status": "code_in_review",
       "details": {
         "source_ref": {
-          "event_id": "13",
+          "event_id": "14",
           "kind": "change_wrapper"
         },
         "prior_review_ref": null,
         "review_kind": "initial",
         "invocation": {
-          "trigger_event_id": "14",
+          "trigger_event_id": "15",
           "role": "Reviewer",
           "attempt": 1,
           "context_id": "reviewer-session",
-          "configuration_ref": "1"
+          "configuration_ref": "2"
+        },
+        "work_scope": {
+          "kind": "phase",
+          "phase_id": "P1",
+          "plan_ref": {
+            "event_id": "9",
+            "kind": "spec_change_wrapper"
+          }
         }
       }
     },
     {
-      "id": "15",
+      "id": "16",
       "timestamp": "2026-09-30T12:00:00Z",
       "event": "code-reviewed",
       "actor": "Reviewer",
       "requestor": "Coder",
-      "status": "code_approved",
+      "status": "coding_in_progress",
       "review_wrapper": {
         "context": {
-          "trigger_event_id": "14",
+          "trigger_event_id": "15",
           "role": "Reviewer",
           "attempt": 1,
           "context_id": "reviewer-session",
-          "configuration_ref": "1"
+          "configuration_ref": "2"
         },
         "reviewed_commit": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
         "notes": "Inspected current sources and applicable prior decisions.",
@@ -723,13 +906,319 @@
           }
         },
         "reviewed_output_ref": {
-          "event_id": "13",
+          "event_id": "14",
           "kind": "change_wrapper"
         },
         "prior_review_ref": null,
         "review_kind": "initial",
         "assurance_level": "standard",
-        "review_disposition_policy": "spec_user_code_auto",
+        "review_disposition_policy": "within_scope_auto",
+        "repair_class": null,
+        "changed_surfaces": [
+          "src/example.py"
+        ],
+        "review_scope": "full",
+        "scope_reason": "Cover the complete relevant work on the initial pass; verify affected contracts on repair.",
+        "meaningful_change": true,
+        "evidence": [
+          {
+            "sources": [
+              {
+                "ref": "src/example.py",
+                "context": "Feature baseline and current working changes inspected"
+              }
+            ],
+            "observations": [
+              "The implemented branch meets the approved acceptance criterion."
+            ],
+            "inferences": [],
+            "coverage_gaps": [],
+            "uncertainty": [],
+            "assumptions": [
+              "The approved deployment remains local."
+            ],
+            "freshness": "new",
+            "applicability_check": "Compared relevant source content and deployment assumptions with the prior inspection."
+          }
+        ],
+        "resolved_findings": [],
+        "test_results": {
+          "unit_tests": {
+            "status": "pass",
+            "details": "The relevant behavioral checks passed."
+          },
+          "integration_tests": {
+            "status": "pass",
+            "details": "The relevant behavioral checks passed."
+          }
+        },
+        "checks": [
+          {
+            "name": "behavioral-tests",
+            "status": "pass",
+            "required": true,
+            "details": "Expected result and preservation witness passed.",
+            "disposition_ref": null
+          }
+        ],
+        "work_scope": {
+          "kind": "phase",
+          "phase_id": "P1",
+          "plan_ref": {
+            "event_id": "9",
+            "kind": "spec_change_wrapper"
+          }
+        }
+      }
+    },
+    {
+      "id": "17",
+      "timestamp": "2026-09-30T12:00:00Z",
+      "event": "coding-started",
+      "actor": "Coder",
+      "requestor": "Planner",
+      "status": "coding_in_progress",
+      "details": {
+        "source_ref": {
+          "event_id": "9",
+          "kind": "spec_change_wrapper"
+        },
+        "authorization_ref": {
+          "event_id": "12",
+          "kind": "authorization"
+        },
+        "invocation": {
+          "trigger_event_id": "17",
+          "role": "Coder",
+          "attempt": 1,
+          "context_id": "coder-P2",
+          "configuration_ref": "2"
+        },
+        "work_scope": {
+          "kind": "phase",
+          "phase_id": "P2",
+          "plan_ref": {
+            "event_id": "9",
+            "kind": "spec_change_wrapper"
+          }
+        }
+      }
+    },
+    {
+      "id": "18",
+      "timestamp": "2026-09-30T12:00:00Z",
+      "event": "coding-complete",
+      "actor": "Coder",
+      "requestor": "Planner",
+      "status": "coding_complete",
+      "change_wrapper": {
+        "context": {
+          "trigger_event_id": "17",
+          "role": "Coder",
+          "attempt": 1,
+          "context_id": "coder-P2",
+          "configuration_ref": "2"
+        },
+        "checkpoint_commit": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "notes": "No unrelated changes.",
+        "output_kind": "consolidated",
+        "artifacts": {
+          "requirements": {
+            "ref": ".docs/specs/example/requirements.md",
+            "version": 1
+          },
+          "design": {
+            "ref": ".docs/specs/example/design.md",
+            "version": 1
+          },
+          "tasks": {
+            "ref": ".docs/specs/example/tasks.md",
+            "version": 1
+          }
+        },
+        "artifact_changes": [
+          {
+            "artifact": "tasks",
+            "previous_version": 1,
+            "current_version": 1,
+            "change_kind": "progress",
+            "summary": "Mark task 1 complete.",
+            "rationale": "The behavioral witness passed.",
+            "approval_basis_ref": {
+              "event_id": "8",
+              "kind": "approval"
+            }
+          }
+        ],
+        "changed_files": [
+          "src/example.py"
+        ],
+        "new_files": [
+          "tests/test_example.py"
+        ],
+        "deleted_files": [],
+        "cli_runs": [
+          "python -m unittest"
+        ],
+        "test_results": {
+          "unit_tests": {
+            "status": "pass",
+            "details": "The relevant behavioral checks passed."
+          },
+          "integration_tests": {
+            "status": "pass",
+            "details": "The relevant behavioral checks passed."
+          }
+        },
+        "checks": [
+          {
+            "name": "behavioral-tests",
+            "status": "pass",
+            "required": true,
+            "details": "Expected result and preservation witness passed.",
+            "disposition_ref": null
+          }
+        ],
+        "implementation_details": "Implemented and verified the approved input behavior.",
+        "task_progress": [
+          {
+            "task_id": "1",
+            "status": "completed",
+            "evidence": "Assigned behavioral and integration checks pass.",
+            "disposition_ref": null
+          },
+          {
+            "task_id": "2",
+            "status": "completed",
+            "evidence": "Assigned behavioral and integration checks pass.",
+            "disposition_ref": null
+          },
+          {
+            "task_id": "3",
+            "status": "completed",
+            "evidence": "Assigned behavioral and integration checks pass.",
+            "disposition_ref": null
+          },
+          {
+            "task_id": "4",
+            "status": "completed",
+            "evidence": "Assigned behavioral and integration checks pass.",
+            "disposition_ref": null
+          },
+          {
+            "task_id": "5",
+            "status": "completed",
+            "evidence": "Assigned behavioral and integration checks pass.",
+            "disposition_ref": null
+          }
+        ],
+        "blockers": [],
+        "dispositions": [],
+        "causes": [
+          {
+            "event_id": "14",
+            "kind": "change_wrapper"
+          }
+        ],
+        "cumulative_scope": [
+          "src/example.py",
+          "tests/test_example.py"
+        ],
+        "evidence": [
+          {
+            "sources": [
+              {
+                "ref": "src/example.py",
+                "context": "Feature baseline and current working changes inspected"
+              }
+            ],
+            "observations": [
+              "The implemented branch meets the approved acceptance criterion."
+            ],
+            "inferences": [],
+            "coverage_gaps": [],
+            "uncertainty": [],
+            "assumptions": [
+              "The approved deployment remains local."
+            ],
+            "freshness": "new",
+            "applicability_check": "Compared relevant source content and deployment assumptions with the prior inspection."
+          }
+        ],
+        "work_scope": {
+          "kind": "feature"
+        }
+      }
+    },
+    {
+      "id": "19",
+      "timestamp": "2026-09-30T12:00:00Z",
+      "event": "code-review-started",
+      "actor": "Reviewer",
+      "requestor": "Coder",
+      "status": "code_in_review",
+      "details": {
+        "source_ref": {
+          "event_id": "18",
+          "kind": "change_wrapper"
+        },
+        "prior_review_ref": null,
+        "review_kind": "initial",
+        "invocation": {
+          "trigger_event_id": "19",
+          "role": "Reviewer",
+          "attempt": 1,
+          "context_id": "reviewer-session",
+          "configuration_ref": "2"
+        }
+      }
+    },
+    {
+      "id": "20",
+      "timestamp": "2026-09-30T12:00:00Z",
+      "event": "code-reviewed",
+      "actor": "Reviewer",
+      "requestor": "Coder",
+      "status": "code_approved",
+      "review_wrapper": {
+        "context": {
+          "trigger_event_id": "19",
+          "role": "Reviewer",
+          "attempt": 1,
+          "context_id": "reviewer-session",
+          "configuration_ref": "2"
+        },
+        "reviewed_commit": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "notes": "Inspected current sources and applicable prior decisions.",
+        "accepted": "true",
+        "issue_details": {
+          "must_fix": [],
+          "should_fix": [],
+          "nit": []
+        },
+        "dispositions": [],
+        "reviewed_artifacts": {
+          "requirements": {
+            "ref": ".docs/specs/example/requirements.md",
+            "version": 1
+          },
+          "design": {
+            "ref": ".docs/specs/example/design.md",
+            "version": 1
+          },
+          "tasks": {
+            "ref": ".docs/specs/example/tasks.md",
+            "version": 1
+          }
+        },
+        "reviewed_output_ref": {
+          "event_id": "18",
+          "kind": "change_wrapper"
+        },
+        "prior_review_ref": null,
+        "review_kind": "initial",
+        "assurance_level": "maximum",
+        "review_disposition_policy": "within_scope_auto",
         "repair_class": null,
         "changed_surfaces": [
           "src/example.py"
@@ -781,7 +1270,7 @@
       }
     },
     {
-      "id": "16",
+      "id": "21",
       "timestamp": "2026-09-30T12:00:00Z",
       "event": "implementation-complete",
       "actor": "Orchestrator",
@@ -789,7 +1278,7 @@
       "status": "implementation_complete",
       "details": {
         "review_ref": {
-          "event_id": "15",
+          "event_id": "20",
           "kind": "code_review"
         },
         "user_statement": "I accept this feature and its disclosed limitations.",

@@ -32,7 +32,9 @@
         "model": {
           "type": "string",
           "minLength": 1,
-          "not": { "const": "not_supported" }
+          "not": {
+            "const": "not_supported"
+          }
         },
         "reasoning_effort": {
           "type": "string",
@@ -94,6 +96,18 @@
             "minLength": 1
           },
           "minItems": 0
+        },
+        "stage_assignments": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "intermediate_reviewer": {
+              "$ref": "urn:orchestrator-flow:common#/$defs/assignment"
+            }
+          },
+          "required": [
+            "intermediate_reviewer"
+          ]
         }
       },
       "required": [
@@ -214,6 +228,19 @@
         "context_id",
         "configuration_ref"
       ]
+    },
+    "checkpoint_invocation": {
+      "description": "Producer identity from artifact trailers; native context/configuration remain in actual role records and are not inferred from Git.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "trigger_event_id": {"$ref": "urn:orchestrator-flow:common#/$defs/invocation/properties/trigger_event_id"},
+        "role": {"enum": ["Planner", "Coder"]},
+        "attempt": {"$ref": "urn:orchestrator-flow:common#/$defs/invocation/properties/attempt"},
+        "context_id": {"$ref": "urn:orchestrator-flow:common#/$defs/invocation/properties/context_id"},
+        "configuration_ref": {"$ref": "urn:orchestrator-flow:common#/$defs/invocation/properties/configuration_ref"}
+      },
+      "required": ["trigger_event_id", "role", "attempt"]
     },
     "artifact": {
       "type": "object",
@@ -787,7 +814,7 @@
             "type": "string",
             "pattern": "^[1-9][0-9]*$"
           },
-          "minItems": 1
+          "minItems": 0
         },
         "remote": {
           "type": "string",
@@ -811,6 +838,39 @@
         "observation": {
           "type": "string",
           "minLength": 1
+        },
+        "checkpoint_kind": {
+          "enum": [
+            "artifacts",
+            "log"
+          ]
+        },
+        "publishing_role": {
+          "enum": [
+            "Planner",
+            "Coder",
+            "Orchestrator"
+          ]
+        },
+        "invocation": {
+          "anyOf": [
+            {
+              "$ref": "urn:orchestrator-flow:common#/$defs/checkpoint_invocation"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "phase_id": {
+          "anyOf": [
+            {
+              "$ref": "urn:orchestrator-flow:common#/$defs/phase_id"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
@@ -822,6 +882,27 @@
         "feature_branch",
         "authorization_event_id",
         "observation"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "checkpoint_kind": {
+                "const": "artifacts"
+              }
+            },
+            "required": [
+              "checkpoint_kind"
+            ]
+          },
+          "else": {
+            "properties": {
+              "event_ids": {
+                "minItems": 1
+              }
+            }
+          }
+        }
       ]
     },
     "failure": {
@@ -847,7 +928,7 @@
             "type": "string",
             "pattern": "^[1-9][0-9]*$"
           },
-          "minItems": 1
+          "minItems": 0
         },
         "remote": {
           "type": "string",
@@ -874,6 +955,39 @@
         "error_summary": {
           "type": "string",
           "minLength": 1
+        },
+        "checkpoint_kind": {
+          "enum": [
+            "artifacts",
+            "log"
+          ]
+        },
+        "publishing_role": {
+          "enum": [
+            "Planner",
+            "Coder",
+            "Orchestrator"
+          ]
+        },
+        "invocation": {
+          "anyOf": [
+            {
+              "$ref": "urn:orchestrator-flow:common#/$defs/checkpoint_invocation"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "phase_id": {
+          "anyOf": [
+            {
+              "$ref": "urn:orchestrator-flow:common#/$defs/phase_id"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
@@ -886,6 +1000,97 @@
         "authorization_event_id",
         "exit_code",
         "error_summary"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "checkpoint_kind": {
+                "const": "artifacts"
+              }
+            },
+            "required": [
+              "checkpoint_kind"
+            ]
+          },
+          "else": {
+            "properties": {
+              "event_ids": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "commit": {
+      "type": "string",
+      "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"
+    },
+    "phase_id": {
+      "type": "string",
+      "pattern": "^P[1-9][0-9]*$"
+    },
+    "work_scope": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "feature"
+            }
+          },
+          "required": [
+            "kind"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "phase"
+            },
+            "phase_id": {
+              "$ref": "urn:orchestrator-flow:common#/$defs/phase_id"
+            },
+            "plan_ref": {
+              "$ref": "urn:orchestrator-flow:common#/$defs/reference"
+            }
+          },
+          "required": [
+            "kind",
+            "phase_id",
+            "plan_ref"
+          ]
+        }
+      ]
+    },
+    "implementation_phase": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "urn:orchestrator-flow:common#/$defs/phase_id"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "task_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "urn:orchestrator-flow:common#/$defs/id"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "task_ids"
       ]
     }
   }

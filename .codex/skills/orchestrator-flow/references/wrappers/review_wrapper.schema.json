@@ -160,6 +160,19 @@
     },
     "meaningful_change": {
       "type": "boolean"
+    },
+    "reviewed_commit": {
+      "anyOf": [
+        {
+          "$ref": "urn:orchestrator-flow:common#/$defs/commit"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "work_scope": {
+      "$ref": "urn:orchestrator-flow:common#/$defs/work_scope"
     }
   },
   "required": [
@@ -182,6 +195,7 @@
     "resolved_findings",
     "test_results",
     "checks",
-    "meaningful_change"
+    "meaningful_change",
+    "reviewed_commit"
   ]
 }

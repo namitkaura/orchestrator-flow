@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import sys
 from pathlib import Path
@@ -51,16 +52,57 @@ def check_document(path, expected_version):
         raise ValueError(f"{path}: Revision History must preserve versions 1 through {expected_version}")
 
 
-def check_task_completion(path, progress):
-    """Compare completion claims with each actual numbered checkbox, not ordering."""
+def numbered_tasks(text):
+    """Return actual numbered checkboxes outside code, preserving execution order."""
     tasks = {}
-    for line, outside in markdown_lines(spec_lines(path)):
+    for line, outside in markdown_lines(text.splitlines(keepends=True)):
+        if outside and line.rstrip() == "## Revision History":
+            break
         match = re.match(r"^\s*- \[([ xX])\] ([1-9]\d*)\.\s", line) if outside else None
         if match:
-            task_id = match[2]
-            if task_id in tasks:
-                raise ValueError(f"{path}: duplicate task {task_id}")
-            tasks[task_id] = match[1].lower() == "x"
+            if match[2] in tasks:
+                raise ValueError(f"Duplicate task {match[2]}")
+            tasks[match[2]] = match[1].lower() == "x"
+    return tasks
+
+
+def progress_basis(text):
+    """Ignore only newline encoding and numbered completion marks outside fences."""
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
+    parts, history = [], False
+    for line, outside in markdown_lines(text.splitlines(keepends=True)):
+        history |= outside and line.rstrip() == "## Revision History"
+        parts.append(re.sub(r"^(\s*- \[)[ xX](\] [1-9]\d*\.\s)", r"\1 \2", line) if outside and not history else line)
+    return "".join(parts)
+
+
+def body_chunk(path, offset=0, max_chars=8000, history=False):
+    """Scan fence state from the beginning; offsets count normalized characters."""
+    if offset < 0 or max_chars < 1:
+        raise ValueError("offset must be nonnegative and max-chars positive")
+    position, parts, remaining = 0, [], max_chars
+    for line in spec_lines(path, history):
+        end = position + len(line)
+        if end > offset:
+            part = line[max(0, offset - position):]
+            if len(part) > remaining:
+                parts.append(part[:remaining])
+                return {"start_offset": offset, "next_offset": offset + max_chars, "eof": False, "text": "".join(parts)}
+            parts.append(part)
+            remaining -= len(part)
+        position = end
+    if offset > position:
+        raise ValueError("offset exceeds the selected document body")
+    return {"start_offset": offset, "next_offset": position, "eof": True, "text": "".join(parts)}
+
+
+def check_task_completion(path, progress, task_ids=None, *, text=None):
+    """Compare completion claims with each actual numbered checkbox, not ordering."""
+    tasks = numbered_tasks("".join(spec_lines(path)) if text is None else text)
+    if task_ids is not None:
+        if not set(task_ids).issubset(tasks):
+            raise ValueError(f"{path}: phase refers to absent tasks")
+        tasks = {task_id: tasks[task_id] for task_id in task_ids}
     reported = {task["task_id"]: task for task in progress}
     if not tasks or len(reported) != len(progress) or set(tasks) != set(reported):
         raise ValueError(f"{path}: consolidated progress must account for every numbered task exactly once")
@@ -73,9 +115,14 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("path", type=Path)
     parser.add_argument("--history", action="store_true", help="Return Revision History instead of current content")
+    parser.add_argument("--offset", type=int)
+    parser.add_argument("--max-chars", type=int)
     args = parser.parse_args()
-    for line in spec_lines(args.path, args.history):
-        sys.stdout.write(line)
+    if args.offset is not None or args.max_chars is not None:
+        print(json.dumps(body_chunk(args.path, args.offset or 0, args.max_chars if args.max_chars is not None else 8000, args.history)))
+    else:
+        for line in spec_lines(args.path, args.history):
+            sys.stdout.write(line)
 
 
 if __name__ == "__main__":

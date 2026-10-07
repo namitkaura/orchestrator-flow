@@ -6,7 +6,7 @@ import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / ".codex/skills/orchestrator-flow/scripts"))
 from workflow_artifacts import ValidationError, validate_wrapper
 from workflow_protocol import replay, resume_action
-from flow_fixtures import Flow, disposition, finding, reference
+from flow_fixtures import Flow, disposition, finding, reference, complete_flow, evidence
 
 
 def coding_flow(assurance="standard", policy="spec_user_code_auto"):
@@ -40,6 +40,70 @@ def feedback(flow):
 
 
 class RecoveryAndReviewTests(unittest.TestCase):
+    def test_inflight_acceptance_keeps_original_basis_with_current_gate_separate(self):
+        flow = coding_flow("maximum")
+        flow.code_output()
+        fid = "C-" + flow.next_id + "-1"
+        issues = {"must_fix": [], "should_fix": [finding(fid)], "nit": []}
+        flow.review("code", issues=issues, accepted="conditional")
+        flow.override("/assurance_level", "standard")
+        flow.start_coding(revision=True)
+        response = disposition(fid, "accept_limitation", "policy")
+        flow.code_output(dispositions=[response])
+        flow.start_review("code")
+        flow.override("/assurance_level", "maximum")
+        flow.review_output("code", issues=issues, dispositions=[response])
+        entry = flow.log["history"][-1]
+        entry["review_wrapper"]["assurance_level"] = "standard"
+        entry["status"] = flow.log["status"] = "code_conditionally_approved"
+        state = replay(flow.log)
+        self.assertEqual(entry["review_wrapper"]["accepted"], "true")
+        self.assertIn("code", state.assurance_gaps)
+        self.assertIn(fid, state.open_findings("code"))
+
+    def test_bounded_applicability_clears_only_the_assessed_stage(self):
+        flow = complete_flow("maximum")
+        flow.log["history"].pop()
+        flow.log["status"] = "code_approved"
+        old_reviews = deepcopy(flow.reviews)
+        old_contexts = deepcopy(flow.contexts)
+        flow.override("/assurance_level", "standard")
+        feedback_id = feedback(flow)
+        flow.start_spec_revision("User", "tasks")
+        flow.checkpoint_commit = "c" * 40
+        flow.spec_output("tasks", "editorial")
+        flow.log["history"][-1]["spec_change_wrapper"]["causes"] = [reference(feedback_id)]
+        flow.spec_output(consolidated=True)
+        flow.review("spec")
+        flow.authorize()
+        flow.start_coding()
+        flow.code_output()
+        # Changed work still needs its mandatory review despite earlier evidence.
+        self.assertEqual(replay(flow.log).next_action(), "start_reviewer_review")
+        flow.review("code")
+        flow.override("/assurance_level", "maximum")
+        self.assertEqual(replay(flow.log).assurance_gaps, {"spec", "code"})
+        for stage, role, requestor in (("spec", "Architect", "Planner"), ("code", "Reviewer", "Coder")):
+            flow.add("review-evidence-assessed", role, requestor, flow.log["status"], details={
+                "review_ref": reference(old_reviews[stage], stage + "_review"),
+                "source_ref": reference(flow.outputs[stage], "spec_change_wrapper" if stage == "spec" else "change_wrapper"),
+                "work_scope": {"kind": "feature"}, "reviewed_artifacts": deepcopy(flow.artifacts), "current_commit": "c" * 40,
+                "conclusion": "applicable", "evidence": [evidence("revalidated")], "invocation": old_contexts[role]})
+            if stage == "spec":
+                self.assertEqual(replay(flow.log).assurance_gaps, {"code"})
+        state = replay(flow.log)
+        self.assertEqual(state.assurance_gaps, set())
+        self.assertEqual(state.cycles, {"spec": 0, "code": 0})
+        self.assertEqual(state.next_action(), "obtain_final_user_acceptance")
+        for conclusion in ("inapplicable", "uncertain"):
+            invalidated = deepcopy(flow.log)
+            invalidated["history"][-1]["details"]["conclusion"] = conclusion
+            self.assertEqual(replay(invalidated).assurance_gaps, {"code"})
+        broken = deepcopy(flow.log)
+        broken["history"][-1]["details"]["evidence"][0]["coverage_gaps"] = ["Could not inspect current implementation."]
+        with self.assertRaisesRegex(ValidationError, "Incomplete"):
+            replay(broken)
+
     def test_coder_repairs_and_reviewer_followup_keep_causal_requestors(self):
         flow = coding_flow()
         flow.code_output()
@@ -333,7 +397,8 @@ class RecoveryAndReviewTests(unittest.TestCase):
                      "observation": "No recorded result; remote delivery cannot be established."}
         flow = Flow()
         auth = flow.authorize("checkpoint_recovery", uncertain=[uncertain])
-        self.assertEqual(replay(flow.log).authorizations[auth]["uncertain_attempts"], [uncertain])
+        self.assertEqual(replay(flow.log).authorizations[auth]["uncertain_attempts"],
+                         [dict(uncertain, checkpoint_kind="log", publishing_role="Orchestrator", invocation=None, phase_id=None)])
         for field, value in (("exit_code", 1), ("error_summary", "Invented failure"), ("observation", ""),
                              ("remote", "other-remote"), ("event_ids", ["99"])):
             invalid = deepcopy(flow.log)

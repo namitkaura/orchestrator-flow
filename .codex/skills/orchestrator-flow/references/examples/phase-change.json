@@ -1,7 +1,14 @@
 {
-  "context": null,
+  "context": {
+    "trigger_event_id": "13",
+    "role": "Coder",
+    "attempt": 1,
+    "context_id": "coder-P1",
+    "configuration_ref": "2"
+  },
+  "checkpoint_commit": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
   "notes": "No unrelated changes.",
-  "output_kind": "incremental",
+  "output_kind": "consolidated",
   "artifacts": {
     "requirements": {
       "ref": ".docs/specs/example/requirements.md",
@@ -13,10 +20,23 @@
     },
     "tasks": {
       "ref": ".docs/specs/example/tasks.md",
-      "version": 2
+      "version": 1
     }
   },
-  "artifact_changes": [],
+  "artifact_changes": [
+    {
+      "artifact": "tasks",
+      "previous_version": 1,
+      "current_version": 1,
+      "change_kind": "progress",
+      "summary": "Mark task 1 complete.",
+      "rationale": "The behavioral witness passed.",
+      "approval_basis_ref": {
+        "event_id": "8",
+        "kind": "approval"
+      }
+    }
+  ],
   "changed_files": [
     "src/example.py"
   ],
@@ -51,45 +71,17 @@
     {
       "task_id": "1",
       "status": "completed",
-      "evidence": "Approved offline parsing and its behavioral witness are complete.",
+      "evidence": "Assigned behavioral and integration checks pass.",
       "disposition_ref": null
     },
     {
       "task_id": "2",
-      "status": "pending",
-      "evidence": "Waiting for live request authority.",
-      "disposition_ref": null
-    },
-    {
-      "task_id": "3",
-      "status": "in_progress",
-      "evidence": "Approved offline repair can continue.",
+      "status": "completed",
+      "evidence": "Assigned behavioral and integration checks pass.",
       "disposition_ref": null
     }
   ],
-  "blockers": [
-    {
-      "id": "provider-live-check",
-      "operation": "live provider verification",
-      "task_ids": [
-        "2"
-      ],
-      "reason": "A further live request requires separate authorization.",
-      "attempts": [
-        "One authorized request failed."
-      ],
-      "evidence": [
-        "Recorded timeout from the authorized request."
-      ],
-      "depends_on": [
-        "live response"
-      ],
-      "independent_task_ids": [
-        "3"
-      ],
-      "required_authorization": "One additional bounded live request."
-    }
-  ],
+  "blockers": [],
   "dispositions": [],
   "causes": [],
   "cumulative_scope": [
@@ -117,5 +109,12 @@
       "applicability_check": "Compared relevant source content and deployment assumptions with the prior inspection."
     }
   ],
-  "checkpoint_commit": null
+  "work_scope": {
+    "kind": "phase",
+    "phase_id": "P1",
+    "plan_ref": {
+      "event_id": "9",
+      "kind": "spec_change_wrapper"
+    }
+  }
 }

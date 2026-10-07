@@ -878,6 +878,9 @@
                   },
                   "invocation": {
                     "$ref": "urn:orchestrator-flow:common#/$defs/invocation"
+                  },
+                  "work_scope": {
+                    "$ref": "urn:orchestrator-flow:common#/$defs/work_scope"
                   }
                 },
                 "required": [
@@ -1234,6 +1237,9 @@
                   },
                   "invocation": {
                     "$ref": "urn:orchestrator-flow:common#/$defs/invocation"
+                  },
+                  "work_scope": {
+                    "$ref": "urn:orchestrator-flow:common#/$defs/work_scope"
                   }
                 },
                 "required": [
@@ -1319,6 +1325,9 @@
                   },
                   "invocation": {
                     "$ref": "urn:orchestrator-flow:common#/$defs/invocation"
+                  },
+                  "work_scope": {
+                    "$ref": "urn:orchestrator-flow:common#/$defs/work_scope"
                   }
                 },
                 "required": [
@@ -1706,10 +1715,8 @@
                       "phase": {
                         "anyOf": [
                           {
-                            "enum": [
-                              "spec",
-                              "code"
-                            ]
+                            "type": "string",
+                            "pattern": "^(spec|code|phase:P[1-9][0-9]*)$"
                           },
                           {
                             "type": "null"
@@ -2408,6 +2415,301 @@
               "status",
               "event",
               "review_wrapper"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "timestamp": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+              },
+              "id": {
+                "type": "string",
+                "pattern": "^[1-9][0-9]*$"
+              },
+              "actor": {
+                "enum": [
+                  "User",
+                  "Planner",
+                  "Architect",
+                  "Coder",
+                  "Reviewer",
+                  "Orchestrator"
+                ]
+              },
+              "requestor": {
+                "enum": [
+                  "User",
+                  "Planner",
+                  "Architect",
+                  "Coder",
+                  "Reviewer"
+                ]
+              },
+              "status": {
+                "enum": [
+                  "spec_in_progress",
+                  "spec_created",
+                  "spec_updated",
+                  "spec_in_review",
+                  "spec_approved",
+                  "spec_conditionally_approved",
+                  "spec_changes_requested",
+                  "coding_in_progress",
+                  "coding_complete",
+                  "blocked",
+                  "code_in_review",
+                  "code_approved",
+                  "code_conditionally_approved",
+                  "code_changes_requested",
+                  "implementation_complete"
+                ]
+              },
+              "event": {
+                "const": "coding-updated"
+              },
+              "details": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "kind": {
+                    "const": "coordination"
+                  },
+                  "invocation": {
+                    "$ref": "urn:orchestrator-flow:common#/$defs/invocation"
+                  },
+                  "summary": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "task_progress": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "urn:orchestrator-flow:common#/$defs/task_progress"
+                    }
+                  },
+                  "blockers": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "urn:orchestrator-flow:common#/$defs/blocker"
+                    }
+                  },
+                  "references": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "urn:orchestrator-flow:common#/$defs/reference"
+                    }
+                  },
+                  "work_scope": {
+                    "$ref": "urn:orchestrator-flow:common#/$defs/work_scope"
+                  },
+                  "yielded": {
+                    "type": "boolean",
+                    "description": "Actual coherent producer yield for Orchestrator Git/review coordination; absence means false."
+                  }
+                },
+                "required": [
+                  "kind",
+                  "invocation",
+                  "summary",
+                  "task_progress",
+                  "blockers",
+                  "references"
+                ]
+              }
+            },
+            "required": [
+              "timestamp",
+              "id",
+              "actor",
+              "requestor",
+              "status",
+              "event",
+              "details"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "timestamp": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+              },
+              "id": {
+                "type": "string",
+                "pattern": "^[1-9][0-9]*$"
+              },
+              "actor": {
+                "enum": [
+                  "User",
+                  "Planner",
+                  "Architect",
+                  "Coder",
+                  "Reviewer",
+                  "Orchestrator"
+                ]
+              },
+              "requestor": {
+                "enum": [
+                  "User",
+                  "Planner",
+                  "Architect",
+                  "Coder",
+                  "Reviewer"
+                ]
+              },
+              "status": {
+                "enum": [
+                  "spec_in_progress",
+                  "spec_created",
+                  "spec_updated",
+                  "spec_in_review",
+                  "spec_approved",
+                  "spec_conditionally_approved",
+                  "spec_changes_requested",
+                  "coding_in_progress",
+                  "coding_complete",
+                  "blocked",
+                  "code_in_review",
+                  "code_approved",
+                  "code_conditionally_approved",
+                  "code_changes_requested",
+                  "implementation_complete"
+                ]
+              },
+              "event": {
+                "const": "coding-phase-complete"
+              },
+              "change_wrapper": {
+                "$ref": "urn:orchestrator-flow:change-wrapper"
+              }
+            },
+            "required": [
+              "timestamp",
+              "id",
+              "actor",
+              "requestor",
+              "status",
+              "event",
+              "change_wrapper"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "timestamp": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+              },
+              "id": {
+                "type": "string",
+                "pattern": "^[1-9][0-9]*$"
+              },
+              "actor": {
+                "enum": [
+                  "User",
+                  "Planner",
+                  "Architect",
+                  "Coder",
+                  "Reviewer",
+                  "Orchestrator"
+                ]
+              },
+              "requestor": {
+                "enum": [
+                  "User",
+                  "Planner",
+                  "Architect",
+                  "Coder",
+                  "Reviewer"
+                ]
+              },
+              "status": {
+                "enum": [
+                  "spec_in_progress",
+                  "spec_created",
+                  "spec_updated",
+                  "spec_in_review",
+                  "spec_approved",
+                  "spec_conditionally_approved",
+                  "spec_changes_requested",
+                  "coding_in_progress",
+                  "coding_complete",
+                  "blocked",
+                  "code_in_review",
+                  "code_approved",
+                  "code_conditionally_approved",
+                  "code_changes_requested",
+                  "implementation_complete"
+                ]
+              },
+              "event": {
+                "const": "review-evidence-assessed"
+              },
+              "details": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "review_ref": {
+                    "$ref": "urn:orchestrator-flow:common#/$defs/reference"
+                  },
+                  "source_ref": {
+                    "$ref": "urn:orchestrator-flow:common#/$defs/reference"
+                  },
+                  "work_scope": {
+                    "$ref": "urn:orchestrator-flow:common#/$defs/work_scope"
+                  },
+                  "reviewed_artifacts": {
+                    "$ref": "urn:orchestrator-flow:common#/$defs/artifacts"
+                  },
+                  "current_commit": {
+                    "$ref": "urn:orchestrator-flow:common#/$defs/commit"
+                  },
+                  "conclusion": {
+                    "enum": [
+                      "applicable",
+                      "inapplicable",
+                      "uncertain"
+                    ]
+                  },
+                  "evidence": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "urn:orchestrator-flow:common#/$defs/evidence"
+                    },
+                    "minItems": 1
+                  },
+                  "invocation": {
+                    "$ref": "urn:orchestrator-flow:common#/$defs/invocation"
+                  }
+                },
+                "required": [
+                  "review_ref",
+                  "source_ref",
+                  "work_scope",
+                  "reviewed_artifacts",
+                  "current_commit",
+                  "conclusion",
+                  "evidence",
+                  "invocation"
+                ]
+              }
+            },
+            "required": [
+              "timestamp",
+              "id",
+              "actor",
+              "requestor",
+              "status",
+              "event",
+              "details"
             ]
           }
         ]

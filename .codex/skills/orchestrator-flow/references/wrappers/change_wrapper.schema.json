@@ -125,6 +125,19 @@
         "$ref": "urn:orchestrator-flow:common#/$defs/evidence"
       },
       "minItems": 0
+    },
+    "checkpoint_commit": {
+      "anyOf": [
+        {
+          "$ref": "urn:orchestrator-flow:common#/$defs/commit"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "work_scope": {
+      "$ref": "urn:orchestrator-flow:common#/$defs/work_scope"
     }
   },
   "required": [
@@ -145,6 +158,7 @@
     "dispositions",
     "causes",
     "cumulative_scope",
-    "evidence"
+    "evidence",
+    "checkpoint_commit"
   ]
 }
