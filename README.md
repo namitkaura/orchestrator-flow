@@ -22,8 +22,8 @@ The Codex contracts are [workflow-protocol.md](.codex/skills/orchestrator-flow/r
 | [.codex/skills/orchestrator-flow/](.codex/skills/orchestrator-flow) | Codex instructions, UI metadata, role references, schemas, examples, runtime scripts, dependency declaration, and version/template symlinks |
 | [Directives/codingAgentDirectives.md](Directives/codingAgentDirectives.md) | Reusable coding guidance for projects using any of the four platforms; copy and customize per project, separately from workflow installations |
 | [tests/](tests) | Repository development tests and fixtures, outside all platform-specific integration directories |
-| [.docs/v2.0.0/](.docs/v2.0.0/README.md) | Release proposal and agent-operated local test kit: overview, runbook, scenarios, completed sample proposals, and prompts |
-| [.docs/v2.0.0/](.docs/v2.0.0/README.md) | Release proposal and agent-operated local test kit: overview, runbook, scenarios, completed sample proposals, and prompts |
+| [.docs/v2.0.0/](.docs/v2.0.0/) | Workflow and test-kit proposals, corrections, and release validation summaries |
+| [tests/live/](tests/live/README.md) | Reusable live test kit: bootstrap setup, twelve feature cases, prompts, evidence, and run-retention instructions |
 
 ## Codex setup: link the source checkout
 

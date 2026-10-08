@@ -8,7 +8,7 @@ python -B -m unittest discover -s tests -v
 
 These development tests remain in the repository's `tests/` directory. The Codex skill runs through a directory symlink into this checkout and keeps its required runtime scripts and schemas together. Test Git operations run exclusively in temporary repositories with local bare remotes. The runtime utilities do not dispatch agents, commit, push, install integrations or alter consumer projects. Claude Code, GitHub Copilot and Cursor retain their committed native implementations; this suite does not require them to adopt Codex v2 resources.
 
-For native agent execution, use the separate [v2.0.0 local test kit](../.docs/v2.0.0/README.md). Its master prompt delegates setup, scripted decisions, test-chat coordination, and evidence collection within fresh disposable repositories. Those live results are separate from this suite's recorded-history and helper evidence.
+For native agent execution, use the separate [live test kit](live/README.md). Its master prompt delegates non-application bootstrap setup, twelve feature runs including initial application creation, scripted decisions, feature-specific local chats, and evidence collection in fresh disposable repositories. Maintaining the kit does not launch those runs or authorize cleanup. Live results remain separate from this suite's recorded-history and helper evidence.
 
 | Suite | Evidence |
 | --- | --- |
@@ -19,6 +19,8 @@ For native agent execution, use the separate [v2.0.0 local test kit](../.docs/v2
 | `test_implementation_phases.py` | Ordinary/final acceptance boundaries; Basic without unused intermediate capability; assurance escalation; phase plans bound to tasks revisions/approvals; repair starts bound to the active review scope; stage repair counts; earlier-phase catch-up and final-assurance treatment of phase findings with whole-feature final repairs. |
 
 Corrections coverage also checks same-version progress and preserved approval/provenance, actual Git content comparisons, no-artifact Planner returns, typed coordination without completion, stdin candidate validation, exact bounded-body reconstruction, artifact-only delivery after a delivered log, metadata pagination, and evidence sufficiency after lowering/restoring assurance. Examples with orchestration references correspond to the repository fixture histories; example commit hashes are illustrative. They are not consumer feature logs or claims of real published artifacts.
+
+The kit's [deterministic phase inventory](live/scenarios.md#deterministic-phase-coverage) maps proposal requirements to specific tests and records missing behavioral coverage as corrections-work dependencies. A whole-suite pass does not establish absent reasoning-mapping or Maximum intermediate-limit cases. Native phased execution remains Deferred/Not run in this kit revision. Record the exact tested runtime source and results separately from the source used for the kit or installed skill.
 
 The checkout's VERSION and templates link checks must pass. Resource tests use those existing links and do not need permission to create additional symlinks. Broken or flattened links remain setup errors; follow the repository's clone-and-symlink guidance to repair them.
 

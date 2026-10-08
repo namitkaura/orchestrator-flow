@@ -6,7 +6,7 @@ The first live test run of the Codex v2 implementation exposed workflow defects,
 
 The original v2 proposal aimed to make rigor proportional to consequences while preserving reliable approvals, explicit configuration, recoverable checkpoints, and independent review. These corrections support that aim. Unnecessary document revisions, repeated reviews, and duplicate artifacts consume time and context without improving the delivered result. Required handoffs and initial review coverage still need to work at every assurance level.
 
-This is a bounded supplement to the original v2.0.0 proposal, not a replacement design. It defines corrections to the unfinished v2.0.0 release. The current implementation scope is Codex only; the subsequent scope decision recorded in `AGENTS.md` takes precedence over the original proposal's broader platform rollout.
+This is a bounded supplement to the [original v2.0.0 proposal](proposal-orchestrator-flow-v2.0.0.md). It supersedes conflicting requirements for the changes it specifies while preserving the rest of that design. It defines corrections to the unfinished v2.0.0 release. The current implementation scope is Codex only; the subsequent scope decision recorded in `AGENTS.md` takes precedence over the original proposal's broader platform rollout.
 
 ### Task progress and assurance changes cause unnecessary churn
 
@@ -335,7 +335,7 @@ Planning must define the minimal phase representation in wrappers, task-log hist
 
 Update the affected Codex entry and role instructions, shared protocol, schema descriptions, wrapper examples, runtime validation/replay/document helpers, and repository documentation together. Change only the files relevant to these corrections. Keep development tests under `tests/` and runtime helpers inside the Codex skill.
 
-Keep this proposal discoverable from the v2 documentation index. Retain the original proposal as the broader design baseline and make the precedence of these corrections clear. README and test guidance should describe corrected behavior where they currently promise or demonstrate the old behavior. Test-kit runbooks, scenarios, sample proposals, and operator prompts are a separate work item.
+Keep this proposal discoverable through direct links from the original proposal and repository documentation. Retain the original proposal as the broader design baseline and make the precedence of these corrections clear. README and test guidance should describe corrected behavior where they currently promise or demonstrate the old behavior. Test-kit runbooks, scenarios, sample proposals, and operator prompts are a separate work item.
 
 Use proportionate verification with actual behavioral assertions:
 

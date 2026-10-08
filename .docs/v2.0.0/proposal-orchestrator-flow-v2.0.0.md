@@ -1,6 +1,6 @@
 # Proposal: v2.0.0 Orchestrator Flow Improvements and Refactoring
 
-This document preserves the original proposal. The implementation scope was subsequently narrowed to Codex; other platform updates are deferred. Current maintenance scope is recorded in [AGENTS.md](../../AGENTS.md), and the [v2.0.0 documentation index](README.md) links the implemented contract and test kit.
+This document preserves the original proposal. The implementation scope was subsequently narrowed to Codex; other platform updates are deferred. The [corrections proposal](proposal-orchestrator-flow-v2.0.0-corrections.md) supersedes conflicting requirements for the changes it specifies. Current maintenance scope is recorded in [AGENTS.md](../../AGENTS.md), and the [reusable live test kit](../../tests/live/README.md) contains the operating instructions and prompts.
 
 ## Problem Statement
 

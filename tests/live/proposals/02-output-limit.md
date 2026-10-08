@@ -2,7 +2,7 @@
 
 ## Problem Statement
 
-The line-list CLI can now preserve unique values, but the user sometimes needs only the first few results. Manually editing the input or piping to another program is inconvenient for this small local workflow.
+The accepted line-list CLI and unique-lines feature can preserve unique values, but the user sometimes needs only the first few results. This feature starts from the accepted unique-lines branch tip. Manually editing the input or piping to another program is inconvenient for this small local workflow.
 
 ## Proposed Solution
 
@@ -32,4 +32,4 @@ Positive-only limits form the initial planning baseline. Later user decisions ma
 
 ## References
 
-Read the consumer repository's current README, project instructions, implementation, tests, and the accepted unique-lines specification under `.docs/specs/unique-lines/`. The source and accepted decisions govern existing behavior; the earlier proposal alone is not approval evidence.
+Read the consumer repository's current README, project instructions, implementation, tests, and the accepted unique-lines documents and task log under `.docs/specs/unique-lines/`. Follow their references to the accepted initial application, including a versioned initial feature directory where applicable. The source and accepted decisions govern existing behavior; the earlier proposals alone are not approval evidence.

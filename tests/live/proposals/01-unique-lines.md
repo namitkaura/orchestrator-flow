@@ -2,7 +2,7 @@
 
 ## Problem Statement
 
-The local line-list CLI currently prints every nonempty input line, including duplicates. For small personal lists, the user wants an optional way to keep each exact value once while retaining the original order. Existing scripts using the command without a new option must retain their behavior.
+The accepted initial line-list application prints every nonempty input line, including duplicates. This feature starts from that application's accepted branch tip. For small personal lists, the user wants an optional way to keep each exact value once while retaining the original order. Existing scripts using the command without a new option must retain their behavior.
 
 ## Proposed Solution
 
@@ -30,4 +30,4 @@ The recorded behavior is the planning baseline. Internal data structure choices 
 
 ## References
 
-Read the consumer repository's `README.md`, `AGENTS.md`, `line_list.py`, and `tests/`. They establish the current implementation and coding conventions. `.docs/inputs/00-line-list-project.md` records the intended baseline; verify current source instead of treating that input as implementation evidence.
+Read the consumer repository's `README.md`, `AGENTS.md`, `line_list.py`, and `tests/`. Consult the accepted initial-application documents and task log in its recorded directory under `.docs/specs/`, using the accepted feature identifier including any version suffix. Its colocated `proposal.md` records the original input; current source and accepted decisions establish the behavior to preserve.

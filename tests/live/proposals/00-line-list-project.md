@@ -2,7 +2,7 @@
 
 ## Problem Statement
 
-We need a small, understandable Python project on which to exercise a development workflow. It will run locally for one user, read small text files, and have no service, deployment, credentials, external API, or public users. Its code and tests should be quick to inspect so workflow overhead remains visible.
+Create a small, understandable Python project through Orchestrator Flow. It will run locally for one user, read small text files, and have no service, deployment, credentials, external API, or public users. Its code and tests should be quick to inspect. The repository currently contains ordinary project guidance, ignore rules, and product proposals, but no application implementation.
 
 ## Proposed Solution
 
@@ -18,13 +18,13 @@ Require exactly one input path. Invalid command syntax returns a nonzero exit st
 
 Use Python's standard library and `unittest`; no dependency manager or application package installation is required. Keep input processing distinct from argument parsing so later options can be verified at both function and CLI boundaries. Do not preimplement filtering options from the later feature proposals.
 
-Create a short README with invocation and test commands, a minimal `AGENTS.md` describing ordinary project coding conventions, and `.gitignore` entries for Python caches. Keep the product guidance free of test-controller expectations and special workflow-policy overrides. The baseline should be a few small files, not a framework.
+Create a short README with invocation and test commands. Preserve the bootstrap's ordinary `AGENTS.md` conventions and Python-cache ignore rules; extend them only where the application needs it. The application should be a few small files, not a framework.
 
 ### 3. Verify the baseline
 
 Use `python -m unittest discover -s tests -v`. Cover order, retained duplicates/case/whitespace, empty lines/files, line endings, and the CLI's use of the processing function. Include a meaningful nonzero-error check without over-specifying a traceback or diagnostic string.
 
-This baseline is built once as test setup and then distributed as identical Git history to three local repositories. It is not itself evidence that Orchestrator Flow completed a feature.
+Deliver this initial application as a complete feature, including its planning, reviews, implementation, verification, and explicit acceptance.
 
 ### 4. Non-goals
 
@@ -32,8 +32,8 @@ No recursion, directory traversal, stdin mode, network access, automatic retries
 
 ## Questions
 
-The behavior above is the setup baseline. The setup agent may choose small internal function names and file organization. Raise material contradictions rather than adding user-visible behavior beyond this scope.
+The behavior above is the planning baseline. Internal function names and file organization remain design choices. Raise material contradictions rather than adding user-visible behavior beyond this scope.
 
 ## References
 
-This proposal defines a new seed project. `line_list.py`, `tests/`, `README.md`, and `AGENTS.md` are outputs to create, not claims about existing files. Follow-up proposals are independent inputs after this baseline exists.
+Read the existing `AGENTS.md`, `.gitignore`, and this input. `line_list.py`, application tests under `tests/`, and the product `README.md` are outputs to create, not claims about existing files. Subsequent features depend on this application's accepted delivery; do not preimplement their options.

@@ -14,7 +14,7 @@ The objective is to test configuration enforcement and workflow behavior across 
 
 ### The first implementation is an agent-operated kit inside release documentation
 
-The current kit lives under `.docs/v2.0.0/` and contains:
+The first implementation lived under `.docs/v2.0.0/` and contained the following material. Its operating documents now reside in the [canonical reusable kit](../../tests/live/README.md); the original layout below preserves the context for this relocation proposal.
 
 - An overview named `orchestrator-flow-v2.0.0-live-test-plan.md`, whose actual title is a live-test overview. It explains coverage, run shape, evidence standards, and limits; it is not a plan for implementing the kit.
 - A runbook and scenario catalogue describing setup, orchestration, interventions, and expected observations.
@@ -77,7 +77,7 @@ Move the operating kit as a unit, updating its references and source-path discov
 | `proposals/` | `tests/live/proposals/` | Hold the finished product inputs used by the test features. |
 | `prompts/` | `tests/live/prompts/` | Hold reusable message text with documented substitution rules. |
 
-Keep the original workflow proposal, the workflow corrections proposal, and this test-kit proposal in `.docs/v2.0.0/`. Retain a release-document index there with a link to the kit's new entry point. Do not leave a second editable copy of the operating kit in the old location.
+Keep the original workflow proposal, the workflow corrections proposal, and this test-kit proposal in `.docs/v2.0.0/`. Use direct proposal or directory links in repository navigation; the reusable kit's entry point is `tests/live/README.md`. Do not leave a second editable copy of the operating kit in the old location.
 
 Use release-neutral operating filenames; record the actual workflow version and source used for each run. This does not promise support for an unknown future workflow contract. The present target remains the Codex v2 implementation.
 
@@ -294,9 +294,19 @@ Judge discretionary classification and remediation against approved behavior, pr
 
 Closeout must identify actual feature states, pending gates, active or idle agents, delivery blockers, and preserved repositories/evidence. A user-requested bounded stop prohibits new scenarios or repair cycles beyond that instruction. Controller closeout must not manufacture feature events or acceptance.
 
+#### Run retention and eventual cleanup
+
+Document the lifecycle in the runbook and closeout instructions. Closing an individual test run preserves its complete `testrun-N` directory while the Orchestrator Flow feature is still being implemented, validated, or investigated. A completed run or an accepted sample feature does not by itself authorize disposal of the run's files.
+
+Once a run is closed and its review is complete, the user may tidy the Codex UI by archiving its master and feature chats and removing its three local test-project entries. This UI cleanup can happen before the Orchestrator Flow feature is finished; preserve the run folders until they are no longer needed. The main `orchestrator-flow` project remains in use. Explain how to find archived chats and restore a local project entry, and distinguish removing an app project entry from deleting its files.
+
+After the Orchestrator Flow feature is explicitly accepted and merged into `main`, the user may delete selected closed `testrun-N` directories in full, including their working repositories, local bare remotes, fixtures, and collected evidence. Retain a concise final validation summary with the release documentation identifying the tested source, coverage, outcomes, and material limitations. There is no requirement to preserve the disposable repositories or raw evidence indefinitely or copy them into the source repository. Archived chats remain historical records, but links to deleted run files no longer work and those runs cannot be resumed.
+
+Cleanup is a separate user-directed action. Ordinary master startup and closeout authority does not authorize archiving chats, removing project entries, or deleting run folders automatically. Add short instructions using existing app and filesystem operations; do not build cleanup scripts, scheduled retention, or project-management infrastructure. Preparing the revised kit performs none of these cleanup actions.
+
 ### 11. Update references and verify the kit proportionately
 
-Update the root README, `AGENTS.md`, `tests/README.md`, the v2 documentation index, and all internal prompt/runbook/scenario links for the new layout. Keep the existing Python suite in its current development-test role. Adjust source discovery and recorded kit-file inventories so moving the files does not omit them from run provenance.
+Update the root README, `AGENTS.md`, `tests/README.md`, and all incoming and internal prompt/runbook/scenario links for the new layout. Keep the existing Python suite in its current development-test role. Adjust source discovery and recorded kit-file inventories so moving the files does not omit them from run provenance.
 
 Verify before handing back the revised kit:
 
@@ -310,6 +320,7 @@ Verify before handing back the revised kit:
 - Resume and helper scenarios specify the actual native observations needed, including fresh Orchestrator versus fresh Coder context, pre-resumption scope, intentional edit ownership, and who ran tests.
 - Repair-decision prompts distinguish specification and final implementation allowances from controller extensions; no intermediate-phase grants or native phase exercises are introduced.
 - Deterministic phase coverage is traceable to workflow tests, and the report explicitly retains the deferred native-phase coverage gap without enlarging the twelve-feature matrix.
+- Closeout guidance distinguishes retention during validation, optional user-directed UI cleanup, and eventual disposal after feature acceptance and merge; it identifies the concise validation summary to retain without automatically cleaning up a run.
 - Existing automated checks affected by reference/layout changes still pass, and `git diff --check` is clean.
 
 Prefer targeted checks and a coherent walkthrough of setup, one feature, a replacement resume, and the next feature's new chat over a new large test framework. Static checks cannot certify live agent compliance. Launching the revised kit is a separate user-authorized action; its acceptance report must distinguish preparation checks from actual live execution.
@@ -322,8 +333,8 @@ Prefer targeted checks and a coherent walkthrough of setup, one feature, a repla
 - Exported packages, installation frameworks, hosted remotes, worktrees, automated merges, or edits to the user's installed skill and personal settings.
 - Model benchmarking, exhaustive capability combinations, forced discretionary findings, or open-ended repair and rerun loops.
 - Native implementation-phase exercises, including synthetic starting fixtures and genuinely large feature runs, or extra sample features introduced solely to test phases. This revision uses ordinary-path observations and deterministic workflow coverage only for that extension.
-- Moving collected run outputs into `tests/live/` or committing consumer test repositories and evidence into the workflow source repository.
-- Rewriting, cleaning, migrating, resuming, or retroactively repairing `testrun-1` as part of kit maintenance. Its observations and original failures remain preserved.
+- Moving raw run outputs into `tests/live/` or committing consumer test repositories and evidence archives into the workflow source repository. The concise final validation summary described in section 10 is release documentation.
+- Rewriting, cleaning, migrating, resuming, or retroactively repairing `testrun-1` as part of kit maintenance. Its observations and original failures remain preserved during implementation and validation; later user-directed disposal follows section 10.
 - Starting chats, setting up a new test run, sending messages, or performing maintenance Git writes merely because this proposal or the operating files are being edited. Those actions require the applicable user authorization.
 
 ## Questions
@@ -338,14 +349,14 @@ Use the corrected workflow contracts when preparing the next run's expectations.
 
 ## References
 
-Repository links below identify the current source locations before the planned move. When implementing the relocation, update these references to the canonical new locations. The first-run evidence lives outside the repository and is supplemental; the essential observations and requirements are summarized in this proposal.
+Repository links below identify the canonical source locations after relocation. The first-run evidence lives outside the repository and is supplemental; the essential observations and requirements are summarized in this proposal. Later user-directed disposal may remove those external files, so the retained proposal and final validation summary must remain understandable without them.
 
 - [Workflow corrections proposal](proposal-orchestrator-flow-v2.0.0-corrections.md): separate runtime work and deterministic coverage for task-progress versions, assurance applicability, temporary artifacts, handoffs, review representations, blockers, branch defaults, producing-role checkpoints, recovery, Coder helpers, and exceptional implementation phases.
 - [Original workflow proposal](proposal-orchestrator-flow-v2.0.0.md), [repository guidance](../../AGENTS.md), and [README](../../README.md): workflow purpose, current Codex scope, repository maintenance boundaries, and installation policy.
-- [Current live-test overview](orchestrator-flow-v2.0.0-live-test-plan.md), [runbook](test-runbook.md), and [scenario catalogue](test-scenarios.md): implemented testing approach and operating instructions to preserve or correct as specified here.
-- [Sample proposals](proposals/README.md): the four product inputs to run consistently across all three projects.
-- [Master prompt](prompts/master-agent.md), [runner prompt](prompts/workflow-runner.md), [decision catalogue](prompts/test-decisions.md), and [resume prompt](prompts/resume-run.md): current authority, chat lifecycle, settings, gates, and continuation instructions.
-- [Standalone-role prompt](prompts/role-exercise.md) and [evidence-collection prompt](prompts/collect-evidence.md): bounded gap exercises and evidence/reporting responsibilities.
+- [Current live-test overview](../../tests/live/overview.md), [runbook](../../tests/live/runbook.md), and [scenario catalogue](../../tests/live/scenarios.md): the canonical operating kit implementing the requirements specified here.
+- [Sample proposals](../../tests/live/proposals/README.md): the four product inputs to run consistently across all three projects.
+- [Master prompt](../../tests/live/prompts/master-agent.md), [runner prompt](../../tests/live/prompts/workflow-runner.md), [decision catalogue](../../tests/live/prompts/test-decisions.md), and [resume prompt](../../tests/live/prompts/resume-run.md): current authority, chat lifecycle, settings, gates, and continuation instructions.
+- [Standalone-role prompt](../../tests/live/prompts/role-exercise.md) and [evidence-collection prompt](../../tests/live/prompts/collect-evidence.md): bounded gap exercises and evidence/reporting responsibilities.
 - [Python test guide](../../tests/README.md), [workflow protocol](../../.codex/skills/orchestrator-flow/references/workflow-protocol.md), and [assurance contract](../../.codex/skills/orchestrator-flow/references/assurance.md): separation of deterministic and native evidence and the runtime standards under test.
 - [First-run closeout report](../../../orchestrator-flow-test-runs/testrun-1/.orchestrator-test/closeout-report.md) and [manifest](../../../orchestrator-flow-test-runs/testrun-1/.orchestrator-test/run.json): preserved outcomes, coverage gaps, and next-revision requirements.
 - [Artifact/source inventory](../../../orchestrator-flow-test-runs/testrun-1/.orchestrator-test/evidence/closeout-layout-and-source-status.json), [Maximum handoff audit](../../../orchestrator-flow-test-runs/testrun-1/.orchestrator-test/evidence/U-M-native-return-causal-audit-output.md), and [standalone fixture/review assessment](../../../orchestrator-flow-test-runs/testrun-1/.orchestrator-test/evidence/Maximum-standalone-initial-result-assessment.json): supporting evidence for artifact handling, relaxed returns, fixture validity, and attribution limits.
