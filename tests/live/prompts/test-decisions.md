@@ -47,6 +47,8 @@ Use Basic and `all_user` for L-B as assigned. Acceptance of the feature snapshot
 
 ## Approve a document
 
+Requirements and design keep their sequential return/approval gates. The final tasks draft already includes the consolidated Planner return before approval. For unchanged tasks, approve the actual version below; the Orchestrator records that approval and hands the same return plus the approval context to Architect without recalling Planner for another wrapper. Material feedback still requires the appropriate revision and approval.
+
 > I have reviewed {{ARTIFACT_PATH}} at content version {{VERSION}} from {{PLANNER_OUTPUT_REF}}. Under the delegated test authority, approve that version for the agreed scope. Rationale: {{DECISION_RATIONALE}}.
 
 ## Request a concrete correction or product change
@@ -67,7 +69,7 @@ An editorial correction must be a real wording change with no behavioral effect.
 
 > For review {{REVIEW_REF}}: {{PER_FINDING_DECISIONS_WITH_IDS_AND_RATIONALE}}. Preserve the factual findings and stable identities. Implement approved in-scope fixes and retain legitimately accepted lesser limitations in the appropriate records. No must-fix exception or required-check waiver is granted.
 
-Follow the actual selected policy. Do not manufacture a finding or disposition merely to fill a cell.
+Follow the actual selected policy. Completed nit-only reviews normally accept at every assurance/policy with concise known issues, without this extra decision or a producer round trip. An actual user request to fix, clarify, or reconsider a nit uses the existing decision/repair path and remains binding until resolved or changed by the user; a policy-only proposal or matching producer response cannot erase that authority. Do not manufacture a finding, nit-fix request, or disposition merely to fill a cell.
 
 ## Grant one additional specification repair pair
 
@@ -85,9 +87,9 @@ This is separate from the specification allowance and is usable only after the a
 
 > For the existing feature {{FEATURE_ID}}, explicitly change {{TARGET}} from {{ACTUAL_PREVIOUS_VALUE}} to {{NEW_VALUE}} because {{DECISION_RATIONALE}}. Leave unrelated settings and repository defaults unchanged. Record and deliver the real override before the next affected native invocation. Preserve scope, approvals, evidence meaning, and repair/attempt counts.
 
-Use the actual schema target and complete role assignment for a role/helper change, changing only the selected model or effort component. U-M changes model; L-B changes effort; U-S changes only the helper assignment after initialization and before replacement. Do not repeat the helper variation in L-B. Prefer Luna for that deliberate helper variation when available. For an in-flight assurance change, append:
+Use the actual schema target and complete role assignment for a role/helper change, changing only the selected model or effort component. U-M changes model; L-B changes effort after push recovery at a later Planner approval boundary; U-S changes only the helper assignment after initialization and before replacement. Verify subsequent affected work under the new assignment while preserving completed work, approvals, logical assignment, progress, and counters. Capability-only changes do not invalidate useful in-flight returns or require historical capability attribution/configuration references in invocation contexts. Reuse supported contexts, replacing incompatible contexts through normal controls when needed. Do not repeat the helper variation in L-B. Prefer Luna for that deliberate helper variation when available. For an in-flight assurance change, append:
 
-> Preserve the running review's actual invocation basis. Assess its return on that basis, then satisfy the current assurance before dependent work. Do not relabel earlier evidence as having run under the new setting.
+> Preserve the running review's actual starting assurance basis. Assess its return on that basis, then satisfy the current assurance before dependent work. Do not relabel earlier evidence as having run under the new assurance.
 
 ## Request a coherent yield for the same-feature replacement
 
@@ -101,7 +103,7 @@ After confirming the yield, send the helper-only override above through the curr
 
 > In the next appropriate {{LEAD_ROLE}} investigation, use a native helper with the feature's configured helper assignment to answer {{CONCRETE_SOURCE_QUESTION}}. Require inspected sources or reproducible observations, distinguish inference and gaps, and have the lead verify the decision-relevant claim. This does not change scope or authorize unsupported nested delegation.
 
-Choose genuine source questions for each of Planner, Architect, Coder, and Reviewer. Coder helpers explore or execute tests; Coder retains all intentional edits. In U-S select an actual remaining Coder question/test need so the post-recovery dispatch can demonstrate the recorded override. Controller helpers never satisfy this coverage.
+Choose genuine source questions for each of Planner, Architect, Coder, and Reviewer. Coder helpers explore or execute tests; Coder retains all intentional edits. In U-S select an actual remaining Coder question/test need so the post-recovery dispatch can demonstrate the recorded override. Compatible helper contexts and fresh applicable test results may be reused under the selected assurance; do not demand a new helper per command. Controller helpers never satisfy this coverage.
 
 ## Unavailable assignment and recovery
 
@@ -111,17 +113,21 @@ Use only when a concrete unavailable combination is known and permitted by the s
 
 > The reported assignment is unavailable. Under delegated authority, replace it with {{CONFIRMED_SUPPORTED_ASSIGNMENT}} for {{ROLE_OR_HELPER}} and resume affected work. Assurance and unrelated assignments remain unchanged. Record the change before dispatch.
 
+A runtime continuation defect, such as historical run-2 L-B, is not native assignment unavailability and does not authorize this fallback or silent reversal of an accepted override.
+
 ## Authorize one checkpoint recovery push
 
 > The owned failure fixture has been removed and the remote inspected: {{REMOTE_INSPECTION_REF}}. Under delegated authority, authorize one checkpoint-recovery push for the latest actual {{FAILED_OR_UNCERTAIN_ATTEMPT_ID}} to {{REMOTE_AND_BRANCH}}, carrying outstanding work and the recorded recovery authorization. Preserve the real attempt evidence. This grants exactly one push. Another failed or uncertain attempt requires new direction.
 
 Send only after restoring the fixture, reconciling the actual attempt/remote state, and verifying the scripted recovery grant is unused. Advance permission to inject one failure is not retry authority. Record a real process failure only when the process actually started; approval blocks and unknown outcomes are different states.
 
+An unexpected pre-execution approval rejection, such as historical run-2 U-S, needs its own direction and cannot borrow L-B's scripted recovery grant.
+
 ## Ordinary extra attempt
 
 > At the ordinary-attempt gate for {{TRIGGER_AND_ROLE}}, authorize one additional attempt to {{BOUNDED_OPERATION}}, because {{CONCRETE_EXPECTED_BENEFIT}}. Preserve numbering, requestor, prior evidence, and helper identity. This grants no model fallback and does not replenish on resume.
 
-Use the runbook's bound after the normal three attempts. Do not chain additional grants from this template.
+Use the runbook's bound after the normal three attempts. Do not chain additional grants from this template. A small report-only correction stays in the same assignment before the dependent gate, without automatic failure/attempt/cycle accounting, empty commits, or retests. Genuine unusable output, execution failure, or repeated inability still follows bounded recovery. Recorder errors belong to the recorder and consume no producer attempt; do not inject malformed returns to exercise this distinction.
 
 ## Test the final acceptance boundary
 
@@ -138,3 +144,5 @@ The probe is not acceptance. After inspecting the actual complete result, checks
 > Stop affected test work at {{BOUNDARY}}. Preserve current files, logs, native invocation/attempt evidence, and failure details. Do not mark the feature complete or extend authority. The controller will record the result and continue only independent tests.
 
 Stopping or accepting a sample feature does not authorize run cleanup. Follow the [retention lifecycle](../runbook.md#run-retention-and-eventual-cleanup); startup and closeout never archive chats, remove project entries, or delete run directories automatically.
+
+After a stop or unexpected human gate, apply the runbook's [Report and closeout](../runbook.md#report-and-closeout) rule. Continue independent authorized work, then publish the actual partial result and return control when none can advance; do not leave an otherwise idle turn waiting for a decision.

@@ -80,6 +80,8 @@ Record ready `threadId` and `hostId` before messaging. A queued `clientThreadId`
 
 Use `wait_threads` in bounded calls of at most 60 seconds, retaining cursors. Use targeted `read_thread` requests for actual gates or evidence; progress summaries are not original native returns. Avoid repeated whole-conversation reads. Follow the [U-S recovery sequence](scenarios.md#c6-context-output-and-resumption), verifying original writer/helper liveness before replacement. A commit alone does not prove a writer stopped.
 
+At meaningful coordination boundaries, apply [Report and closeout](#report-and-closeout) to select remaining authorized work or finish the run. An unanswered human decision does not justify an otherwise idle observation loop.
+
 ## Bounded delegated decisions
 
 Send only fully rendered messages from [test-decisions.md](prompts/test-decisions.md) after the corresponding real gate or condition exists. Record exact delivered text, artifact versions/finding IDs/attempts, delegated provenance, and delivery reference in controller evidence. Runtime statements/rationale preserve that real provenance without inventing a human turn or schema field.
@@ -98,7 +100,9 @@ Send only fully rendered messages from [test-decisions.md](prompts/test-decision
 
 These are controller extensions beyond normal assurance allowances, not resets or grants for every implementation phase. No native phase exercise or intermediate-phase extension is authorized. Resume, replacement, and overrides do not replenish allowances. Unexpected scope/policy/cost/exception decisions return to the human. Missing a gate is a coverage limit; do not manufacture findings or failed repairs to reach it.
 
-Git ownership follows the corrected runtime: Planner/Coder publish owned artifacts; Orchestrator publishes authoritative log updates; Git yields are coordinated. Ordinary Coder groups need neither a wrapper nor acknowledgement. Required handoffs contain the full actual JSON return. Failed checkpoint delivery globally pauses workflow work. Successful delivery creates no success receipt, extra commit, or second push. Final merging remains manual and outside this run's authority.
+Completed nit-only reviews normally accept at every assurance and policy, retaining concise known issues without a producer round trip or extra approval. An actual user request to fix, clarify, or reconsider a nit remains binding through the existing decision/repair path; a proposed disposition or policy-only response cannot create or erase that exception. Observe naturally occurring cases without adding a nit-fix stimulus or repair allowance.
+
+Git ownership follows the corrected runtime: Planner/Coder publish owned artifacts; Orchestrator publishes authoritative log updates; Git yields are coordinated. Ordinary Coder groups need neither a wrapper nor acknowledgement. Required handoffs contain the complete actual JSON return under the current compact schemas; irrelevant optional fields may be omitted. Follow [G3](scenarios.md#g3-drafts-versions-and-consolidated-outputs) for the single consolidated final tasks return and faithful recording. Failed checkpoint delivery globally pauses workflow work. Successful delivery creates no success receipt, extra commit, or second push. Final merging remains manual and outside this run's authority.
 
 ## Controller records and evidence
 
@@ -112,11 +116,13 @@ Git ownership follows the corrected runtime: Planner/Coder publish owned artifac
 | Interventions | Prerequisite/boundary, stimulus and delivery reference, owned files/index state, attempt status, consumed grants, blockers, and evidence references. |
 | Defaults transition | U-B old/new file hashes and unstaged state, unchanged feature configuration, final delivered tip, and L-B's explicit adoption decision and publication checkpoint. |
 | Recovery | Orchestrator/Coder continuity separately, writer/helper liveness, pre/post-replacement checkpoints, recorded override, and next affected native invocation. |
-| Closeout | Actual feature states, scenario/variant results, unresolved findings, pending gates, agent liveness, preserved paths, and retention status. |
+| Closeout | Actual feature states, scenario/variant results, unresolved findings, pending decisions and causes, current owners, timestamped liveness and delivery observations/limits, why no further authorized work can advance, report/evidence paths, and retention status. |
 
 Keep `decisions.md` as the ordered record of delivered decisions and their evidence references. Preserve actual native returns before parsing, including malformed or pointer-only completion responses. An exact-return verdict requires a complete original capture with source identity; a summary, missing original, or potentially truncated capture is Unverified for that claim. Record narrower observed runtime validation separately. A saved valid wrapper is not a substitute for the original return.
 
-Collect evidence at meaningful boundaries, including available prior log snapshots. Validate actual outputs and log updates with the installed helpers; use `--previous` for genuine earlier snapshots and `--workspace` at relevant completed boundaries. Do not recreate missing original snapshots. `resume-action`, checkpoint `inspect`, and `recent` use real observations. Preserve failed/skipped commands and incomplete reads. See [repository validation guidance](../../AGENTS.md#validation).
+Configuration evidence connects accepted values and actual override decisions to subsequent affected native use. Keep requested controls, exposed effective settings, role/context identity, and unavailable backend telemetry distinct. Do not require configuration references in invocation contexts, execution-segment events, historical model attribution, or a consumer dispatch ledger. A small reporting correction may succeed in the same assignment without a failure event; distinguish it from genuine unusable output and recorder errors under [C7](scenarios.md#c7-failure-categories-and-attempt-bounds).
+
+Collect evidence at meaningful boundaries, including available prior log snapshots kept externally. Validate actual outputs and log updates with the installed read-only helpers; use `--previous` for genuine earlier snapshots and `--workspace` at relevant completed boundaries. Do not recreate missing original snapshots or require routine consumer snapshots. `resume-action`, checkpoint `inspect`, and `recent` use real observations. `record-handoff` is an explicit writer for the owning workflow Orchestrator, never an evidence-audit operation. Preserve failed/skipped commands and incomplete reads. See [repository validation guidance](../../AGENTS.md#validation).
 
 Inspect both current file/index states and committed history. Distinguish product source/tests/docs, workflow Git-metadata journals, ignored caches, declared controller fixtures, and accidental scratch artifacts. Keep unexpected artifacts as evidence; do not clean them away to manufacture a clean result. Roles do not create wrapper files or consumer `.orchestrator-test` directories for the controller.
 
@@ -126,9 +132,27 @@ For synthetic standalone exercises, validate coherent metadata and provenance be
 
 Use [collect-evidence.md](prompts/collect-evidence.md) directly or through an explicitly authorized read-only evidence agent. It may write controller reports and evidence but cannot message runners, repair their work, or mutate histories.
 
+At each meaningful coordination boundary, inspect the existing schedule, dependencies, actual grants, ownership, bounded liveness evidence, and remaining controller/reporting tasks:
+
+| Observed condition | Master action |
+| --- | --- |
+| An authorized case or controller task can advance | Continue it under the existing sequence, dependencies, and allowances, including independent projects when another case is blocked. |
+| Assigned work required for progress or closeout is active | Observe with the existing bounded waits and cursors; act on actual completion, failure, or a decision gate. |
+| A helper remains active after its assigned work is finished | Resolve its owner and finish or stop it through the existing authorized native coordination path. Preserve the actual outcome; do not invent a completion return or rerun checks to obtain one. |
+| No authorized work can advance, no required assigned work is active, and remaining cases need human decisions or blocked predecessors | Publish the partial/blocked report and manifest, identify pending decisions, and return a final response. Do not wait for the human in an otherwise idle execution turn. |
+| All planned work has finished | Publish actual coverage/verdicts and the manifest, then return a final response. Completion does not imply all variants passed. |
+
+Ask for unexpected direction when needed and continue independent permitted work. If that work ends before an answer arrives, close with the blocked result. Reporting is already authorized and needs no further feature acceptance or maintenance approval. Reuse valid observations with their timestamps; recheck changed or uncertain state rather than routinely rereading all chats or repeating validation. Do not add exercises, repeated status refreshes, a fixed timeout, heartbeat, scheduler, or watchdog to occupy the wait.
+
+If liveness or a reporting prerequisite cannot be resolved within existing controls and authority, report the specific uncertainty and needed direction, including the locations and limits of records actually saved. Do not infer a writer stopped, introduce unsupported interruption, or wait indefinitely for a context with no assigned work. A commentary promise to report is not closeout: finish the permitted reporting and send the final response. These instructions do not establish or repair the technical cause of an unexplained platform stall.
+
 Write `CONTROL_ROOT/report.md` with source identity, actual feature states, scenario/variant and role, configuration, delivered stimulus, expected/observed behavior, references, result, and limitations. Use Pass only for exercised behavior with supporting evidence, Fail for observed contract violations, Unverified for attempted but insufficiently observed variants, and Not run for unattempted cases. Retain historical failures after later success. Classify supported causes as workflow defect, harness defect, agent compliance failure, or environmental/observability limit.
 
 Separate native workflow, standalone role, deterministic test, and inspection/inference evidence. Use the [deterministic inventory](scenarios.md#deterministic-phase-coverage) with tested source and actual results; a whole-suite pass does not establish missing cases. Mark native phases Deferred/Not run. Report pending gates, active/idle agents, delivery blockers, real branch tips, and preserved evidence. A user-requested bounded stop prevents starting additional scenarios or repairs.
+
+The report, `CONTROL_ROOT/run.json` closeout fields, and final response must agree on accepted/delivered features, partially executed blocked cases, unattempted cases, pending decisions and their observed causes, current ownership, timestamped liveness/delivery evidence and limits, historical failures, and coverage by evidence type. Preserve product acceptance separately from workflow compliance. Use the existing records; no reporting receipts, additional summary file, or controller schema is required.
+
+Keep the historical run-2 gates distinct: U-S's automatic approval rejection occurred before a push executed, so it was not an executed Git failure and cannot consume L-B's scripted recovery grant. L-B's runtime continuation defect was not model unavailability and does not authorize fallback or reverting its accepted effort. Any later continuation needs actual direction and source attribution; closeout neither grants it nor rewrites past evidence.
 
 Include a concise release-summary draft in the report: tested source/version and relevant dirty content, run IDs, feature outcomes, coverage by evidence type, unresolved findings and material limitations. It must make sense without external files. The source-maintenance work later retains the actual final validation summary with release documentation before disposal. The master does not gain write authority to the workflow source or fabricate a final live-validation result.
 

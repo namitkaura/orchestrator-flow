@@ -13,7 +13,7 @@ The [development suite](../README.md) checks schemas, recorded transitions, docu
 | Ownership | Planner publishes specs; Coder owns intentional implementation/test/documentation/progress edits and artifact checkpoints; helpers explore and execute tests; Orchestrator owns gates, configuration, logs and their checkpoints. |
 | Workflow | Sequential document approvals, coding authority, dispositions, cumulative completion returns, recovery before a completion wrapper, rejected artifact pushes, unrelated-change preservation, and explicit feature acceptance. |
 
-Capability is a model/effort assignment, independently of assurance. The goal is enforcement and persistence, not comparing model quality, speed, token use, or cost. The [configuration contract](../../.codex/skills/orchestrator-flow/references/workflow-protocol.md#configuration-and-capability) distinguishes repository defaults from accepted feature snapshots. The [assurance policy](../../.codex/skills/orchestrator-flow/references/assurance.md) retains mandatory roles and complete initial coverage at every level.
+Capability is a model/effort assignment, independently of assurance. The goal is enforcement and persistence, not comparing model quality, speed, token use, or cost. The [configuration contract](../../.codex/skills/orchestrator-flow/references/workflow-protocol.md#configuration-and-authority) distinguishes repository defaults from accepted feature snapshots. The [assurance policy](../../.codex/skills/orchestrator-flow/references/assurance.md) retains mandatory roles and complete initial coverage at every level.
 
 ## Product and chat lifecycle
 
