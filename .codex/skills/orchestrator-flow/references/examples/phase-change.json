@@ -3,12 +3,9 @@
     "trigger_event_id": "13",
     "role": "Coder",
     "attempt": 1,
-    "context_id": "coder-P1",
-    "configuration_ref": "2"
+    "context_id": "coder-P1"
   },
   "checkpoint_commit": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-  "notes": "No unrelated changes.",
-  "output_kind": "consolidated",
   "artifacts": {
     "requirements": {
       "ref": ".docs/specs/example/requirements.md",
@@ -43,50 +40,25 @@
   "new_files": [
     "tests/test_example.py"
   ],
-  "deleted_files": [],
-  "cli_runs": [
-    "python -m unittest"
-  ],
-  "test_results": {
-    "unit_tests": {
-      "status": "pass",
-      "details": "The relevant behavioral checks passed."
-    },
-    "integration_tests": {
-      "status": "pass",
-      "details": "The relevant behavioral checks passed."
-    }
-  },
   "checks": [
     {
       "name": "behavioral-tests",
       "status": "pass",
       "required": true,
-      "details": "Expected result and preservation witness passed.",
-      "disposition_ref": null
+      "details": "Expected result and preservation witness passed."
     }
   ],
-  "implementation_details": "Implemented and verified the approved input behavior.",
   "task_progress": [
     {
       "task_id": "1",
       "status": "completed",
-      "evidence": "Assigned behavioral and integration checks pass.",
-      "disposition_ref": null
+      "evidence": "Assigned behavioral and integration checks pass."
     },
     {
       "task_id": "2",
       "status": "completed",
-      "evidence": "Assigned behavioral and integration checks pass.",
-      "disposition_ref": null
+      "evidence": "Assigned behavioral and integration checks pass."
     }
-  ],
-  "blockers": [],
-  "dispositions": [],
-  "causes": [],
-  "cumulative_scope": [
-    "src/example.py",
-    "tests/test_example.py"
   ],
   "evidence": [
     {
@@ -99,9 +71,6 @@
       "observations": [
         "The implemented branch meets the approved acceptance criterion."
       ],
-      "inferences": [],
-      "coverage_gaps": [],
-      "uncertainty": [],
       "assumptions": [
         "The approved deployment remains local."
       ],
@@ -116,5 +85,6 @@
       "event_id": "9",
       "kind": "spec_change_wrapper"
     }
-  }
+  },
+  "summary": "Implemented and verified the approved input behavior."
 }

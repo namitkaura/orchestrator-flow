@@ -44,7 +44,8 @@ class Flow:
         self.authorization = None
         self.spec_requestor = "User"
         self.code_requestor = "Planner"
-        self.handed_off = False
+        self.consolidated = False
+        self.review_levels = {}
         self.checkpoint_commit = "b" * 40
         self.implementation_phases = []
         context = self.context("Planner", start=True)
@@ -62,7 +63,7 @@ class Flow:
     def context(self, role, start=False):
         if start:
             self.contexts[role] = {"trigger_event_id": self.next_id, "role": role, "attempt": 1,
-                                   "context_id": role.lower() + "-session", "configuration_ref": self.config_ref}
+                                   "context_id": role.lower() + "-session"}
         return deepcopy(self.contexts[role])
 
     def add(self, event, actor, requestor, status, **payload):
@@ -82,31 +83,33 @@ class Flow:
                         "rationale": "Make this artifact actionable for its downstream consumer.",
                         "approval_basis_ref": reference(self.approvals[artifact], "approval") if change_kind != "material" and artifact in self.approvals else None}]
             self.produced[artifact] = self.next_id
+            if change_kind == "material":
+                self.approvals.pop(artifact, None)
         wrapper = {"context": self.context("Planner"), "checkpoint_commit": self.checkpoint_commit if any(self.artifacts.values()) else None,
-                   "implementation_phases": deepcopy(self.implementation_phases), "notes": "No hidden decisions.", "feature": self.log["feature"], "feature_dir": self.log["feature_dir"],
-                   **{n + "_ref": v["ref"] if v else None for n, v in self.artifacts.items()}, "user_request": {"original_request": "Support the agreed local input behavior.", "additional_context": ""},
+                   "summary": "Plan the accepted input behavior; preserve existing nonempty inputs.",
                    "output_kind": "consolidated" if consolidated else "incremental", "artifacts": deepcopy(self.artifacts), "artifact_changes": changes,
                    "causes": [], "decisions": ["Manual retry is adequate for the accepted deployment."], "constraints": ["Preserve existing nonempty-input behavior."],
                    "downstream_impacts": [], "dispositions": dispositions or [], "questions": [], "research_updates": []}
-        event = "spec-updated" if self.handed_off or not consolidated else "spec-created"
-        status = ("spec_updated" if self.handed_off else "spec_created") if consolidated else "spec_in_progress"
-        self.outputs["spec"] = self.add(event, "Planner", self.spec_requestor, status, spec_change_wrapper=wrapper)
-        self.handed_off |= consolidated
+        if self.implementation_phases:
+            wrapper["implementation_phases"] = deepcopy(self.implementation_phases)
+        self.consolidated = consolidated
+        status = "spec_ready" if consolidated and all(n in self.approvals for n in self.artifacts) and not wrapper["questions"] else "spec_in_progress"
+        self.outputs["spec"] = self.add("spec-updated", "Planner", self.spec_requestor, status, spec_change_wrapper=wrapper)
         return wrapper
 
     def approve(self, name):
-        self.approvals[name] = self.add("spec-artifact-approved", "User", "Planner", "spec_in_progress", details={
+        self.approvals[name] = self.add("spec-artifact-approved", "User", "Planner", "spec_ready" if self.consolidated and all(n in self.approvals or n == name for n in self.artifacts) else "spec_in_progress", details={
             "artifact": name, "version": self.artifacts[name]["version"], "output_ref": reference(self.produced[name], "spec_change_wrapper"), "user_statement": "I approve this document version."})
 
     def finish_spec(self):
         for name in self.artifacts:
-            self.spec_output(name)
+            self.spec_output(name, consolidated=name == "tasks")
             self.approve(name)
-        self.spec_output(consolidated=True)
         return self
 
     def start_review(self, phase):
         role, requestor = ("Architect", "Planner") if phase == "spec" else ("Reviewer", "Coder")
+        self.review_levels[role] = self.log["assurance_level"]
         self.add(phase + "-review-started", role, requestor, phase + "_in_review", details={
             "source_ref": reference(self.outputs[phase], "spec_change_wrapper" if phase == "spec" else "change_wrapper"),
             "prior_review_ref": reference(self.reviews[phase], phase + "_review") if phase in self.reviews else None,
@@ -116,18 +119,20 @@ class Flow:
         role, requestor = ("Architect", "Planner") if phase == "spec" else ("Reviewer", "Coder")
         followup = phase in self.reviews
         source = self.log["history"][int(self.outputs[phase]) - 1]
-        wrapper = {"context": self.context(role), "reviewed_commit": source["spec_change_wrapper" if phase == "spec" else "change_wrapper"]["checkpoint_commit"],
-                   "notes": "Inspected current sources and applicable prior decisions.", "accepted": accepted,
+        start = self.log["history"][int(self.contexts[role]["trigger_event_id"]) - 1]["details"]
+        level = self.review_levels[role]
+        if start.get("work_scope", {}).get("kind") == "phase":
+            level = {"standard": "basic", "maximum": "standard"}[level]
+        wrapper = {"context": self.context(role), "summary": "Inspected current sources and applicable prior decisions.", "accepted": accepted,
                    "issue_details": issues or {"must_fix": [], "should_fix": [], "nit": []}, "dispositions": dispositions or [],
-                   "reviewed_artifacts": deepcopy(self.artifacts), "reviewed_output_ref": reference(self.outputs[phase], "spec_change_wrapper" if phase == "spec" else "change_wrapper"),
-                   "prior_review_ref": reference(self.reviews[phase], phase + "_review") if followup else None,
-                   "review_kind": "follow_up" if followup else "initial", "assurance_level": self.log["assurance_level"], "review_disposition_policy": self.log["review_disposition_policy"],
+                   "reviewed_output_ref": reference(self.outputs[phase], "spec_change_wrapper" if phase == "spec" else "change_wrapper"),
+                   "assurance_level": level,
                    "repair_class": repair_class if followup else None, "changed_surfaces": ["src/example.py"], "review_scope": scope,
                    "scope_reason": "Cover the complete relevant work on the initial pass; verify affected contracts on repair.", "meaningful_change": True,
                    "evidence": [evidence(freshness)], "resolved_findings": resolved or []}
         if phase == "code":
-            wrapper.update(test_results=self.test_results(), checks=self.checks())
-        status = phase + {"true": "_approved", "false": "_changes_requested", "conditional": "_conditionally_approved"}[accepted]
+            wrapper.update(checks=self.checks())
+        status = phase + {"true": "_approved", "false": "_changes_requested", "conditional": "_changes_requested"}[accepted]
         self.reviews[phase] = self.add(phase + "-reviewed", role, requestor, status, **{("spec_review_wrapper" if phase == "spec" else "review_wrapper"): wrapper})
         return wrapper
 
@@ -154,10 +159,6 @@ class Flow:
             "authorization_ref": reference(self.authorization, "authorization"), "invocation": self.context("Coder", start=True)})
 
     @staticmethod
-    def test_results():
-        return {kind: {"status": "pass", "details": "The relevant behavioral checks passed."} for kind in ("unit_tests", "integration_tests")}
-
-    @staticmethod
     def checks():
         return [{"name": "behavioral-tests", "status": "pass", "required": True, "details": "Expected result and preservation witness passed.", "disposition_ref": None}]
 
@@ -168,17 +169,22 @@ class Flow:
             changes = [{"artifact": "tasks", "previous_version": old, "current_version": old, "change_kind": "progress", "summary": "Mark task 1 complete.",
                         "rationale": "The behavioral witness passed.", "approval_basis_ref": reference(self.approvals["tasks"], "approval")}]
         wrapper = {"context": self.context("Coder"), "checkpoint_commit": self.checkpoint_commit,
-                   "notes": "No unrelated changes.", "output_kind": "consolidated" if consolidated else "incremental",
+                   "summary": "Implemented and verified the approved input behavior, including work before interruption.",
                    "artifacts": deepcopy(self.artifacts), "artifact_changes": changes, "changed_files": ["src/example.py"], "new_files": ["tests/test_example.py"], "deleted_files": [],
-                   "cli_runs": ["python -m unittest"], "test_results": self.test_results(), "checks": self.checks(), "implementation_details": "Implemented and verified the approved input behavior.",
+                   "checks": self.checks(),
                    "task_progress": [{"task_id": "1", "status": "completed", "evidence": "Behavioral witness passes.", "disposition_ref": None}],
-                   "blockers": blockers or [], "dispositions": dispositions or [], "causes": [], "cumulative_scope": ["src/example.py", "tests/test_example.py"], "evidence": [evidence()]}
-        status = "coding_complete" if consolidated else ("blocked" if blockers and not any(b["independent_task_ids"] for b in blockers) else "coding_in_progress")
-        self.outputs["code"] = self.add("coding-complete" if consolidated else "coding-updated", "Coder", self.code_requestor, status, change_wrapper=wrapper)
+                   "blockers": blockers or [], "dispositions": dispositions or [], "causes": [], "evidence": [evidence()]}
+        if not consolidated:
+            details = {"invocation": wrapper["context"], "summary": "Report scoped progress and outstanding work.",
+                       "task_progress": wrapper["task_progress"], "blockers": blockers or [], "references": []}
+            status = "blocked" if blockers and not any(b["independent_task_ids"] for b in blockers) else "coding_in_progress"
+            self.add("coding-updated", "Coder", self.code_requestor, status, details=details)
+            return details
+        self.outputs["code"] = self.add("coding-complete", "Coder", self.code_requestor, "coding_complete", change_wrapper=wrapper)
         return wrapper
 
     def user_dispositions(self, phase, values, accepted="false"):
-        status = phase + {"true": "_approved", "false": "_changes_requested", "conditional": "_conditionally_approved"}[accepted]
+        status = phase + {"true": "_approved", "false": "_changes_requested", "conditional": "_changes_requested"}[accepted]
         return self.add("review-findings-dispositioned", "User", "Architect" if phase == "spec" else "Reviewer", status,
                         details={"review_ref": reference(self.reviews[phase], phase + "_review"), "decisions": values, "user_statement": "Use these finding decisions."})
 

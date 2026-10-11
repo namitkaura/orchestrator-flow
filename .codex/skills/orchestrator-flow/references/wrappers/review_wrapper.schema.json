@@ -14,9 +14,6 @@
         }
       ]
     },
-    "notes": {
-      "type": "string"
-    },
     "accepted": {
       "enum": [
         "true",
@@ -50,11 +47,7 @@
           "minItems": 0
         }
       },
-      "required": [
-        "must_fix",
-        "should_fix",
-        "nit"
-      ]
+      "required": []
     },
     "dispositions": {
       "type": "array",
@@ -76,16 +69,6 @@
         }
       ]
     },
-    "prior_review_ref": {
-      "anyOf": [
-        {
-          "$ref": "urn:orchestrator-flow:common#/$defs/reference"
-        },
-        {
-          "type": "null"
-        }
-      ]
-    },
     "review_kind": {
       "enum": [
         "initial",
@@ -94,9 +77,6 @@
     },
     "assurance_level": {
       "$ref": "urn:orchestrator-flow:common#/$defs/assurance"
-    },
-    "review_disposition_policy": {
-      "$ref": "urn:orchestrator-flow:common#/$defs/policy"
     },
     "repair_class": {
       "anyOf": [
@@ -148,9 +128,6 @@
       },
       "minItems": 0
     },
-    "test_results": {
-      "$ref": "urn:orchestrator-flow:common#/$defs/test_results"
-    },
     "checks": {
       "type": "array",
       "items": {
@@ -173,29 +150,68 @@
     },
     "work_scope": {
       "$ref": "urn:orchestrator-flow:common#/$defs/work_scope"
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1
     }
   },
   "required": [
     "context",
-    "notes",
-    "accepted",
-    "issue_details",
-    "dispositions",
-    "reviewed_artifacts",
+    "summary",
     "reviewed_output_ref",
-    "prior_review_ref",
-    "review_kind",
     "assurance_level",
-    "review_disposition_policy",
-    "repair_class",
-    "changed_surfaces",
     "review_scope",
-    "scope_reason",
-    "evidence",
-    "resolved_findings",
-    "test_results",
-    "checks",
-    "meaningful_change",
-    "reviewed_commit"
+    "accepted",
+    "issue_details"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "context": {
+            "type": "null"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "reviewed_artifacts",
+          "reviewed_commit",
+          "review_kind"
+        ],
+        "properties": {
+          "reviewed_output_ref": {
+            "type": "null"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "reviewed_output_ref": {
+            "$ref": "urn:orchestrator-flow:common#/$defs/reference"
+          }
+        },
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "reviewed_artifacts"
+              ]
+            },
+            {
+              "required": [
+                "reviewed_commit"
+              ]
+            },
+            {
+              "required": [
+                "review_kind"
+              ]
+            }
+          ]
+        }
+      }
+    }
   ]
 }

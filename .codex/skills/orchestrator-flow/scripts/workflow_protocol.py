@@ -2,17 +2,16 @@
 from __future__ import annotations
 
 from copy import deepcopy
-import re
 
 from workflow_artifacts import (ValidationError, all_findings, check_compatibility,
                                 require, validate_capability, validate_shape, validate_wrapper,
-                                validate_progress, work_scope)
+                                validate_progress, work_scope, validate_review_scope)
 
 ARTIFACTS = ("requirements", "design", "tasks")
 LEVELS = {"basic": 0, "standard": 1, "maximum": 2}
 SETTLED = {"defer", "accept_limitation", "reject"}
-WRAPPERS = {"spec-created": "spec_change_wrapper", "spec-updated": "spec_change_wrapper",
-            "spec-reviewed": "spec_review_wrapper", "coding-updated": "change_wrapper",
+WRAPPERS = {"spec-updated": "spec_change_wrapper",
+            "spec-reviewed": "spec_review_wrapper",
             "coding-complete": "change_wrapper", "coding-phase-complete": "change_wrapper", "code-reviewed": "review_wrapper"}
 REFERENCE_EVENTS = {
     "spec_review": {"spec-reviewed"}, "code_review": {"code-reviewed"},
@@ -42,16 +41,6 @@ def check_references(value, entries):
     elif isinstance(value, list):
         for child in value:
             check_references(child, entries)
-    elif isinstance(value, str):
-        # Supported text: [wrapper from] history entry/entries 1, 2 and 3;
-        # spec/code review event/events 4, 5. Ordinary numbers are not references.
-        pattern = (r"(?:(spec_change_wrapper|spec_review_wrapper|change_wrapper|review_wrapper)\s+(?:from\s+)?)?"
-                   r"(?:(history\s+entr(?:y|ies))|((?:spec|code)\s+review\s+events?))\s+"
-                   r"([#\"']?\d+[\"']?(?:(?:\s*,\s*|\s+and\s+)[#\"']?\d+[\"']?)*)")
-        for match in re.finditer(pattern, value, re.I):
-            kind = match[1].lower() if match[1] else (match[3].split()[0].lower() + "_review" if match[3] else "event")
-            for number in re.findall(r"\d+", match[4]):
-                check_reference({"event_id": number, "kind": kind}, entries)
 
 
 class Replay:
@@ -67,6 +56,9 @@ class Replay:
         self.approvals = {}
         self.starts = {}
         self.errors = {}
+        self.contexts = {}
+        self.review_configurations = {}
+        self.review_artifacts = {}
         self.inflight = None
         self.outputs = {}
         self.reviews = {}
@@ -82,7 +74,6 @@ class Replay:
         self.scope_epoch = 0
         self.coding_authorization = None
         self.earliest_artifact = "requirements"
-        self.spec_handed_off = False
         self.last_error = None
         self.feedback_ref = None
         self.user_revision_pending = False
@@ -149,7 +140,9 @@ class Replay:
                 candidate_stage = self.review_stage({"event_id": event_id, "kind": "event"})
                 if candidate_stage != stage or LEVELS[wrapper["assurance_level"]] < LEVELS[required]:
                     continue
-                applicable = wrapper["reviewed_commit"] == source["checkpoint_commit"] and wrapper["reviewed_artifacts"] == self.artifacts
+                reviewed = self.reviewed_source(wrapper)
+                applicable = (reviewed["checkpoint_commit"] == source["checkpoint_commit"]
+                              and self.review_artifacts[wrapper["context"]["trigger_event_id"]] == self.artifacts)
                 for assessment in self.assessments:
                     if assessment["review_ref"]["event_id"] == event_id and assessment["source_ref"]["event_id"] == self.outputs[stage]:
                         applicable = assessment["conclusion"] == "applicable" and assessment["reviewed_artifacts"] == self.artifacts and assessment["current_commit"] == source["checkpoint_commit"]
@@ -167,10 +160,9 @@ class Replay:
         require(entry["actor"] == actor and entry["requestor"] == requestor,
                 f"{entry['event']}: expected actor/requestor {actor}/{requestor}")
 
-    def config_snapshot(self, context):
-        require(context is not None, "Embedded output requires orchestration context")
-        require(context["configuration_ref"] in self.configurations, "Unknown configuration basis")
-        return self.configurations[context["configuration_ref"]]
+    def configuration_at(self, event_id):
+        reference = max((ref for ref in self.configurations if int(ref) <= int(event_id)), key=int)
+        return self.configurations[reference]
 
     def role_recovery_gate(self, context):
         failures = self.errors.get(context["trigger_event_id"], [])
@@ -189,46 +181,70 @@ class Replay:
         category = (last.get("helper") or {}).get("category", last["category"])
         if category in {"model_unavailable", "usage_limit"}:
             assigned_role = "helpers" if last.get("helper") else context["role"].lower()
-            old = self.configurations[last["invocation"]["configuration_ref"]]["capability"]
-            current = self.config["capability"]
-            changed = old["platform"] != current["platform"] or old["roles"][assigned_role] != current["roles"][assigned_role]
+            failed_context = last["invocation"]
+            failed_id = next(e["id"] for e in reversed(list(self.entries.values()))
+                             if e["event"] == "subagent-error" and e["details"]["invocation"]["trigger_event_id"] == context["trigger_event_id"])
+            old = self.assignment(self.configuration_at(failed_id), assigned_role, failed_context)
+            if last.get("helper"):
+                old["assignment"] = {k: last["helper"][k] for k in ("model", "reasoning_effort")}
+            changed = old != self.assignment(self.config, assigned_role, failed_context)
             if not changed and not directed:
                 return "obtain_model_direction"
         if attempt > 3 and not directed:
             return "obtain_role_failure_direction"
         return None
 
+    def assignment(self, config, role, context=None):
+        capability = config["capability"]
+        assignment = capability["roles"][role.lower()]
+        if role.lower() == "reviewer" and context:
+            start = self.entries.get(context["trigger_event_id"], {}).get("details", {})
+            if work_scope(start)["kind"] == "phase":
+                assignment = capability.get("stage_assignments", {}).get("intermediate_reviewer")
+        return {"platform": capability["platform"], "assignment": assignment}
+
+    def active_context(self, role):
+        return self.contexts[self.starts[role]["trigger_event_id"]]
+
     def context(self, context, role, starting=False, entry=None):
-        self.config_snapshot(context)
-        require(context["role"] == role, "Invocation role mismatch")
+        require(context is not None and context["role"] == role, "Invocation role mismatch")
+        trigger = context["trigger_event_id"]
         if starting:
-            require(context["trigger_event_id"] == entry["id"] and context["attempt"] == 1,
+            require(trigger == entry["id"] and context["attempt"] == 1,
                     "A new logical invocation uses its start event and attempt 1")
-            require(context["configuration_ref"] == self.config_ref, "Invocation must use effective feature configuration")
             self.starts[role] = deepcopy(context)
+            if role in {"Architect", "Reviewer"}:
+                self.review_configurations[trigger] = {k: self.config[k] for k in ("assurance_level", "review_disposition_policy")}
+                self.review_artifacts[trigger] = deepcopy(self.artifacts)
             self.inflight = role
         else:
-            require(role in self.starts, f"No start event for {role}")
-            start = self.starts[role]
-            require(context["trigger_event_id"] == start["trigger_event_id"], "Output belongs to a different invocation")
-            failures = self.errors.get(start["trigger_event_id"], [])
-            allowed_attempt = len(failures) + 1
-            require(context["attempt"] == allowed_attempt, "Invocation attempt is duplicated or skips recovery")
+            require(role in self.starts and trigger == self.starts[role]["trigger_event_id"],
+                    "Output belongs to a different invocation")
+            failures = self.errors.get(trigger, [])
+            require(context["attempt"] == len(failures) + 1, "Invocation attempt is duplicated or skips recovery")
             if failures:
-                require(context["configuration_ref"] == self.config_ref, "Retried work must use effective configuration")
                 require(self.role_recovery_gate(context) is None, f"Role retry gate: {self.role_recovery_gate(context)}")
-            else:
-                require(context["configuration_ref"] == start["configuration_ref"], "Returned work must retain its original invocation configuration")
+        self.contexts[trigger] = deepcopy(context)
         return context
+
+    def spec_ready(self, source=None):
+        if source is None:
+            source = self.source_wrapper("spec") if "spec" in self.outputs else {}
+        return (self.all_approved() and source.get("output_kind") == "consolidated"
+                and source["artifacts"] == self.artifacts and not source.get("questions") and not self.feedback_ref)
+
+    def reviewed_source(self, wrapper):
+        reference = wrapper["reviewed_output_ref"]
+        return self.entries[reference["event_id"]][reference["kind"]]
 
     def all_approved(self):
         return all(self.artifacts[name] and name in self.approvals for name in ARTIFACTS)
 
     def apply_artifacts(self, wrapper, entry, coder=False):
-        changes = {c["artifact"]: c for c in wrapper["artifact_changes"]}
+        changes = {c["artifact"]: c for c in wrapper.get("artifact_changes", [])}
         if not coder and self.artifacts["tasks"]:
-            previous_plan = self.entries[self.produced["tasks"]]["spec_change_wrapper"]["implementation_phases"]
-            plan = wrapper["implementation_phases"]
+            previous_plan = self.entries[self.produced["tasks"]]["spec_change_wrapper"].get("implementation_phases", [])
+            plan = wrapper.get("implementation_phases", [])
             if plan != previous_plan:
                 change = changes.get("tasks")
                 require(change and change["change_kind"] in {"material", "editorial"},
@@ -258,7 +274,7 @@ class Replay:
                 self.approvals.pop(name, None)
                 self.scope_epoch += 1
             elif name in self.approvals:
-                require(change["approval_basis_ref"] == {"event_id": self.approvals[name]["event_id"], "kind": "approval"},
+                require(change.get("approval_basis_ref") == {"event_id": self.approvals[name]["event_id"], "kind": "approval"},
                         "Nonmaterial update must cite its preserved approval basis")
             self.artifacts[name] = deepcopy(new)
             if change["change_kind"] != "progress":
@@ -268,9 +284,9 @@ class Replay:
         if disposition["decision"] not in SETTLED:
             return False
         finding = self.findings[finding_id]
-        if disposition["authority"] == "user":
+        if disposition.get("authority") == "user":
             return bool(disposition.get("recorded_user_event"))
-        return (finding["severity"] != "must_fix" and self.level(stage or finding["phase"], config) != "maximum"
+        return (disposition.get("authority") == "policy" and finding["severity"] != "must_fix" and self.level(stage or finding["phase"], config) != "maximum"
                 and disposition["decision"] in {"defer", "accept_limitation"})
 
     def apply_dispositions(self, values, entry, user=False):
@@ -279,15 +295,17 @@ class Replay:
             disposition = deepcopy(raw)
             finding_id = disposition["finding_id"]
             require(finding_id in self.findings, f"Unknown finding {finding_id}")
+            if not user and not disposition.get("authority"):
+                continue  # Proposals remain in the return and grant no authority.
             old = self.dispositions.get(finding_id)
             if old and self.disposition_allowed(finding_id, old) and disposition["decision"] != old["decision"]:
                 require(disposition["decision"] == "reconsider", "Settled disposition requires explicit reconsideration")
             if user:
-                require(disposition["authority"] == "user" and disposition["authority_ref"] is None,
+                require(disposition["authority"] == "user" and disposition.get("authority_ref") is None,
                         "A user decision records its own authority, not another person's decision")
                 disposition["recorded_user_event"] = entry["id"]
-            elif disposition["authority"] == "user":
-                reference = disposition["authority_ref"]
+            elif disposition.get("authority") == "user":
+                reference = disposition.get("authority_ref")
                 require(reference is not None, "User authority requires its historical decision")
                 authority = check_reference(reference, self.entries)
                 require(authority["actor"] == "User", "Disposition authority is not a user decision")
@@ -299,13 +317,26 @@ class Replay:
                 if entry["actor"] in {"Architect", "Reviewer"}:
                     require(old and old["decision"] == disposition["decision"] and old["authority"] == "policy",
                             "Review may confirm a producer disposition, not invent one")
-                if old and old["authority"] == "user" and disposition["decision"] in SETTLED:
+                if old and old["authority"] == "user":
                     require(disposition["decision"] == old["decision"], "Policy cannot replace the user's selected finding response")
+                    # A matching producer response describes its work; it must
+                    # not replace the actual user decision or its authority.
+                    disposition = deepcopy(old)
             self.dispositions[finding_id] = disposition
 
     def open_findings(self, phase, config=None):
-        return {fid: f for fid, f in self.findings.items() if (f["phase"] == phase or phase == "code" and f["phase"].startswith("phase:")) and not f.get("resolved")
-                and not self.disposition_allowed(fid, self.dispositions.get(fid, {"decision": "fix"}), phase, config)}
+        findings = {}
+        for fid, finding in self.findings.items():
+            if not (finding["phase"] == phase or phase == "code" and finding["phase"].startswith("phase:")) or finding.get("resolved"):
+                continue
+            disposition = self.dispositions.get(fid, {"decision": "fix"})
+            user_followup = (disposition.get("authority") == "user" and disposition.get("recorded_user_event")
+                             and disposition["decision"] in {"fix", "clarify", "reconsider"})
+            if finding["severity"] == "nit" and not user_followup:
+                continue
+            if not self.disposition_allowed(fid, disposition, phase, config):
+                findings[fid] = finding
+        return findings
 
     def result(self, phase, config=None):
         findings = self.open_findings(phase, config)
@@ -316,7 +347,7 @@ class Replay:
     def result_status(self, phase, accepted):
         if phase.startswith("phase:") and accepted == "true":
             return "coding_in_progress"
-        return self.family(phase) + {"false": "_changes_requested", "conditional": "_conditionally_approved", "true": "_approved"}[accepted]
+        return self.family(phase) + {"false": "_changes_requested", "conditional": "_changes_requested", "true": "_approved"}[accepted]
 
     def stuck(self, phase):
         runs = self.review_runs[phase]
@@ -351,7 +382,7 @@ class Replay:
     def check_checks(self, checks):
         for check in checks:
             if check["required"] and check["status"] != "pass":
-                reference = check["disposition_ref"]
+                reference = check.get("disposition_ref")
                 require(reference is not None, f"Required check {check['name']} has not passed")
                 auth = self.authorizations.get(reference["event_id"], {})
                 require(auth.get("decision") == "granted" and auth.get("kind") == "external_operation"
@@ -359,7 +390,7 @@ class Replay:
                         and auth.get("scope_epoch") == self.scope_epoch,
                         "Check exception needs explicit authorization for this exact check")
 
-    def append(self, entry):
+    def append(self, entry, *, derive_status=False):
         event, entry_id, previous = entry["event"], entry["id"], self.status
         require(entry_id == str(len(self.entries) + 1), "History IDs must be contiguous strings starting at 1")
         details = entry.get("details", {})
@@ -383,7 +414,7 @@ class Replay:
         if event in {"spec-creation-started", "spec-revision-started"}:
             if self.entries:
                 require(event == "spec-revision-started", "Only one creation-start event is permitted")
-                require(previous in {"spec_changes_requested", "spec_conditionally_approved"}, "No spec revision is ready")
+                require(previous in {"spec_changes_requested"}, "No spec revision is ready")
                 if entry["requestor"] == "Architect":
                     require({"event_id": self.reviews["spec"], "kind": "spec_review"} in details["references"],
                             "Planner repair must cite the triggering Architect review")
@@ -408,27 +439,23 @@ class Replay:
             self.inflight = None
             target = "spec_changes_requested" if self.user_revision_pending else "spec_in_progress"
 
-        elif event in {"spec-created", "spec-updated"}:
+        elif event == "spec-updated":
             require(previous == "spec_in_progress", "Planner output requires a drafting cycle")
             start = self.entries[self.starts["Planner"]["trigger_event_id"]]
             self.pair(entry, "Planner", start["requestor"])
             wrapper = entry["spec_change_wrapper"]
             validate_wrapper("spec-change-wrapper", wrapper)
             self.context(wrapper["context"], "Planner")
-            require(wrapper["feature"] == self.log["feature"] and wrapper["feature_dir"] == self.log["feature_dir"], "Planner feature identity mismatch")
             self.apply_artifacts(wrapper, entry)
             if self.feedback_ref:
-                require({"event_id": self.feedback_ref, "kind": "event"} in wrapper["causes"], "Planner output must carry the recorded user feedback")
+                require({"event_id": self.feedback_ref, "kind": "event"} in wrapper.get("causes", []), "Planner output must carry the recorded user feedback")
                 self.feedback_ref = None
-            self.apply_dispositions(wrapper["dispositions"], entry)
+            self.apply_dispositions(wrapper.get("dispositions", []), entry)
             self.outputs["spec"] = entry_id
             self.inflight = None
             self.last_error = None
             if wrapper["output_kind"] == "consolidated":
-                require(self.all_approved() and not wrapper["questions"], "Consolidation requires approvals and resolved questions")
-                require(event == ("spec-updated" if self.spec_handed_off else "spec-created"), "Wrong consolidated event for this cycle")
-                self.spec_handed_off = True
-                phases = wrapper["implementation_phases"]
+                phases = wrapper.get("implementation_phases", [])
                 for phase in self.phases:
                     if phase["id"] in self.completed_phases:
                         revised = next((p for p in phases if p["id"] == phase["id"]), None)
@@ -438,9 +465,7 @@ class Replay:
                 self.plan_ref = {"event_id": entry_id, "kind": "spec_change_wrapper"}
                 for phase in phases:
                     self.initialize_stage("phase:" + phase["id"])
-                target = "spec_updated" if event == "spec-updated" else "spec_created"
-            else:
-                require(event == "spec-updated", "Interim drafts use spec-updated")
+                target = "spec_ready" if self.spec_ready(wrapper) else "spec_in_progress"
 
         elif event == "spec-artifact-approved":
             self.pair(entry, "User", "Planner")
@@ -451,13 +476,14 @@ class Replay:
             require(name not in self.approvals, "Do not invent renewed approval for an unchanged approval basis")
             require(all(n in self.approvals for n in ARTIFACTS[:ARTIFACTS.index(name)]), "Approve upstream artifacts first")
             self.approvals[name] = {"event_id": entry_id, "version": details["version"], "output_ref": details["output_ref"]}
+            target = "spec_ready" if self.spec_ready() else "spec_in_progress"
 
         elif event in {"spec-review-started", "code-review-started"}:
             family = event.split("-")[0]
             phase = "spec" if family == "spec" else self.stage(work_scope(details))
             role, requestor = ("Architect", "Planner") if family == "spec" else ("Reviewer", "Coder")
             self.pair(entry, role, requestor)
-            allowed = {"spec_created", "spec_updated"} if phase == "spec" else {"coding_complete"} if phase == "code" else {"coding_in_progress"}
+            allowed = {"spec_ready"} if phase == "spec" else {"coding_complete"} if phase == "code" else {"coding_in_progress"}
             if phase.startswith("phase:"):
                 require(self.level(phase) is not None, "Basic has no intermediate phase review")
                 require(work_scope(details)["phase_id"] != self.phases[-1]["id"], "Last phase goes directly to final review")
@@ -477,7 +503,7 @@ class Replay:
             source_kind = "spec_change_wrapper" if phase == "spec" else "change_wrapper"
             require(details["source_ref"] == {"event_id": self.outputs[phase], "kind": source_kind}, "Review must use latest consolidated output")
             source = self.entries[self.outputs[phase]][source_kind]
-            require(source["output_kind"] == "consolidated", "Review cannot start from an interim output")
+            require(phase != "spec" or self.spec_ready(), "Review requires consolidated context and valid approvals")
             require(work_scope(details) == work_scope(source), "Review scope must match its completed source handoff")
             prior = self.reviews.get(phase)
             require(details["prior_review_ref"] == ({"event_id": prior, "kind": family + "_review"} if prior else None), "Review must carry latest prior review")
@@ -496,14 +522,13 @@ class Replay:
             wrapper = entry[WRAPPERS[event]]
             validate_wrapper(WRAPPERS[event].replace("_", "-"), wrapper)
             context = self.context(wrapper["context"], role)
-            basis = self.config_snapshot(context)
-            require(wrapper["assurance_level"] == self.level(phase, basis) and wrapper["review_disposition_policy"] == basis["review_disposition_policy"], "Review configuration basis mismatch")
+            basis = self.review_configurations[context["trigger_event_id"]]
+            require(wrapper["assurance_level"] == self.level(phase, basis), "Review assurance basis mismatch")
             start = self.entries[context["trigger_event_id"]]["details"]
-            require(wrapper["reviewed_output_ref"] == start["source_ref"] and wrapper["prior_review_ref"] == start["prior_review_ref"] and wrapper["review_kind"] == start["review_kind"], "Review output disagrees with invocation scope")
+            require(wrapper["reviewed_output_ref"] == start["source_ref"], "Review output disagrees with invocation scope")
+            validate_review_scope(wrapper, initial=start["review_kind"] == "initial", repaired=self.repair_pending[phase])
             require(work_scope(wrapper) == work_scope(start), "Review work scope disagrees with invocation")
-            source = check_reference(start["source_ref"], self.entries)["spec_change_wrapper" if phase == "spec" else "change_wrapper"]
-            require(wrapper["reviewed_commit"] == source["checkpoint_commit"], "Review commit differs from the source handoff")
-            require(wrapper["reviewed_artifacts"] == self.artifacts, "Review uses stale document versions")
+            require(self.review_artifacts[context["trigger_event_id"]] == self.artifacts, "Review uses stale document versions")
             new_findings = all_findings(wrapper)
             for fid, finding in new_findings.items():
                 old = self.findings.get(fid)
@@ -512,26 +537,26 @@ class Replay:
                 else:
                     require(old["phase"] == phase or phase == "code" and old["phase"].startswith("phase:"), "Finding belongs to the other review loop")
                     if old["severity"] != finding["severity"] or old.get("resolved"):
-                        require(finding["reconsideration_reason"], "Changed classification/reopened finding requires grounds")
-                    if finding["reconsideration_reason"]:
+                        require(finding.get("reconsideration_reason"), "Changed classification/reopened finding requires grounds")
+                    if finding.get("reconsideration_reason"):
                         self.dispositions.pop(fid, None)
                 self.findings[fid] = {**finding, "phase": old["phase"] if old else phase, "resolved": False}
-            for fid in wrapper["resolved_findings"]:
+            for fid in wrapper.get("resolved_findings", []):
                 require(fid in self.findings and (self.findings[fid]["phase"] == phase or phase == "code" and self.findings[fid]["phase"].startswith("phase:")) and fid not in new_findings, "Invalid resolved finding")
                 self.findings[fid]["resolved"] = True
             retained = {fid for fid, f in self.findings.items() if not f.get("resolved") and
                         (f["phase"] == phase or phase == "code" and f["phase"].startswith("phase:"))}
             require(retained.issubset(new_findings), "Review silently dropped an unresolved finding (including accepted limitations)")
-            self.apply_dispositions(wrapper["dispositions"], entry)
+            self.apply_dispositions(wrapper.get("dispositions", []), entry)
             expected = self.result(phase, basis)
             require(wrapper["accepted"] == expected, f"Acceptance must be {expected} under the recorded dispositions")
-            if family == "code" and expected == "true":
-                self.check_checks(wrapper["checks"])
+            if expected == "true":
+                self.check_checks(wrapper.get("checks", []))
             if self.repair_pending[phase]:
                 self.cycles[phase] += 1
                 self.repair_pending[phase] = False
             self.reviews[phase] = entry_id
-            self.review_runs[phase].append({"accepted": expected, "must_fix": sorted(fid for fid, f in self.open_findings(phase).items() if f["severity"] == "must_fix"), "meaningful_change": wrapper["meaningful_change"]})
+            self.review_runs[phase].append({"accepted": expected, "must_fix": sorted(fid for fid, f in self.open_findings(phase).items() if f["severity"] == "must_fix"), "meaningful_change": wrapper.get("meaningful_change", False)})
             if expected == "true":
                 self.accepted_reviews.add(entry_id)
             self.inflight = None
@@ -543,37 +568,23 @@ class Replay:
             if return_scope and current_result == "true":
                 self.current_scope = return_scope
 
-        elif event == "review-findings-dispositioned" or event.endswith("-approved-by-user"):
+        elif event == "review-findings-dispositioned":
             reference = details["review_ref"]
             phase = self.review_stage(reference)
             family = self.family(phase)
             require(reference["kind"] in {"spec_review", "code_review"} and self.reviews.get(phase) == reference["event_id"], "Disposition must identify the latest review")
             requestors = {"Planner", "Architect"} if phase == "spec" else {"Coder", "Reviewer"}
-            if event.endswith("-approved-by-user"):
-                require(event.startswith(family + "-"), "Approval event belongs to the other review loop")
-                requestors = {"Planner" if phase == "spec" else "Coder"}
             require(entry["actor"] == "User" and entry["requestor"] in requestors, "Invalid user disposition actor/requestor")
-            require(previous in {family + "_changes_requested", family + "_conditionally_approved", family + "_approved", "coding_in_progress"} and phase in self.reviews, "Disposition outside findings state")
+            require(previous in {family + "_changes_requested", family + "_approved", "coding_in_progress"} and phase in self.reviews, "Disposition outside findings state")
             require(all(self.findings.get(d["finding_id"], {}).get("phase") == phase or phase == "code" and self.findings.get(d["finding_id"], {}).get("phase", "").startswith("phase:") for d in details["decisions"]), "Cross-phase finding disposition")
             self.apply_dispositions(details["decisions"], entry, user=True)
             self.review_decisions.setdefault(reference["event_id"], set()).update(d["finding_id"] for d in details["decisions"])
-            if family == "code" and self.result(phase) == "true":
-                self.check_checks(self.entries[self.reviews[phase]]["review_wrapper"]["checks"])
+            if self.result(phase) == "true":
+                review = self.entries[self.reviews[phase]]
+                self.check_checks(review[WRAPPERS[review["event"]]].get("checks", []))
             if self.result(phase) == "true":
                 self.accepted_reviews.add(self.reviews[phase])
             target = self.result_status(phase, self.result(phase))
-
-        elif event.endswith("-approved-with-justifications"):
-            phase = self.review_stage(details["review_ref"])
-            family = self.family(phase)
-            self.pair(entry, "Orchestrator", "Planner" if phase == "spec" else "Coder")
-            require(previous in {family + "_changes_requested", family + "_conditionally_approved"}, "Justifications must concern reviewed work")
-            require(details["review_ref"] == {"event_id": self.reviews[phase], "kind": family + "_review"}, "Stale deferral review")
-            require(self.result(phase) != "false", "Unresolved must-fix findings cannot be conditionally approved")
-            require(all(d["finding_id"] in self.findings and self.findings[d["finding_id"]]["phase"] == phase
-                        and self.findings[d["finding_id"]]["severity"] != "must_fix" for d in details["dispositions"]),
-                    "Justifications must concern this loop's non-must-fix findings")
-            target = family + "_conditionally_approved"
 
         elif event == "user-authorization-recorded":
             self.pair(entry, "User", "User")
@@ -616,8 +627,6 @@ class Replay:
                                 "Unknown publishing invocation")
                         require(invocation["attempt"] <= len(self.errors.get(invocation["trigger_event_id"], [])) + 1,
                                 "Recovery refers to an unrecorded producer attempt")
-                        if "configuration_ref" in invocation:
-                            self.config_snapshot(invocation)
                     require(all(i in self.entries for i in attempt["event_ids"]), "Push attempt refers to unrecorded events")
                     require(attempt["remote"] == self.log["branch_context"]["remote"] and attempt["feature_branch"] == self.log["branch_context"]["feature_branch"], "Push attempt target disagrees with feature branch")
             elif kind == "external_operation" and details["operation"] == "continue-role":
@@ -636,7 +645,7 @@ class Replay:
             self.pair(entry, "Coder", "Reviewer" if revision else "Planner")
             require(self.all_approved() and "spec" not in self.assurance_gaps, "Coding requires valid artifact approvals and sufficient spec assurance")
             if revision:
-                require(previous in {"code_changes_requested", "code_conditionally_approved"}, "No code repair is ready")
+                require(previous in {"code_changes_requested"}, "No code repair is ready")
                 require(stage == self.stage(self.current_scope), "Code repair must target the active review scope")
                 require(self.result(stage) != "true", "Code repair requires unresolved findings in the active review scope")
                 require(self.repair_gate(stage) is None, f"Code repair gate: {self.repair_gate(stage)}")
@@ -657,8 +666,8 @@ class Replay:
                                 and work_scope(prior)["plan_ref"] != self.plan_ref,
                                 "Existing phase assignment must be recovered, not restarted")
                     else:
-                        require(details["invocation"]["context_id"] not in self.phase_coders.values(), "Next phase starts in a fresh Coder context")
-                    self.phase_coders[scope["phase_id"]] = details["invocation"]["context_id"]
+                        require(not details["invocation"].get("context_id") or details["invocation"].get("context_id") not in self.phase_coders.values(), "Next phase starts in a fresh Coder context")
+                    self.phase_coders[scope["phase_id"]] = details["invocation"].get("context_id")
                 else:
                     require(scope["kind"] == "feature", "No phased task plan is approved")
             auth = self.authorizations.get(details["authorization_ref"]["event_id"], {})
@@ -673,13 +682,15 @@ class Replay:
             require(previous in {"coding_in_progress", "blocked"}, "Coding output outside implementation")
             start = self.entries[self.starts["Coder"]["trigger_event_id"]]
             self.pair(entry, "Coder", start["requestor"])
-            if event == "coding-updated" and details:
+            if event == "coding-updated":
                 self.context(details["invocation"], "Coder")
                 require(work_scope(details) == self.current_scope, "Coordination scope must retain its assignment")
                 validate_progress(details)
-                independent = any(b["independent_task_ids"] for b in details["blockers"])
-                target = "blocked" if details["blockers"] and not independent else "coding_in_progress"
+                independent = any(b["independent_task_ids"] for b in details.get("blockers", []))
+                target = "blocked" if details.get("blockers") and not independent else "coding_in_progress"
                 self.inflight = None if details.get("yielded", False) else "Coder"
+                if derive_status:
+                    entry["status"] = target
                 require(entry["status"] == target, f"Coordination status must be {target}")
                 self.status = target
                 self.entries[entry_id] = deepcopy(entry)
@@ -693,22 +704,22 @@ class Replay:
             require(scope == self.current_scope or event == "coding-complete" and final_phase and scope["kind"] == "feature",
                     "Coder output must cover its assignment; only the last Coder consolidates the feature")
             self.apply_artifacts(wrapper, entry, coder=True)
-            self.apply_dispositions(wrapper["dispositions"], entry)
+            self.apply_dispositions(wrapper.get("dispositions", []), entry)
             self.outputs[stage] = entry_id
             self.inflight = None
             self.last_error = None
             if event in {"coding-complete", "coding-phase-complete"}:
-                require(wrapper["output_kind"] == "consolidated" and not wrapper["blockers"], "Coding completion requires consolidated unblocked output")
+                require(not wrapper.get("blockers"), "Coding completion requires unblocked output")
                 require(wrapper["task_progress"] and all(t["status"] in {"completed", "dispositioned"} for t in wrapper["task_progress"]), "Required tasks remain incomplete")
                 for task in wrapper["task_progress"]:
                     if task["status"] == "dispositioned":
-                        auth = self.authorizations.get((task["disposition_ref"] or {}).get("event_id"), {})
+                        auth = self.authorizations.get((task.get("disposition_ref") or {}).get("event_id"), {})
                         require(auth.get("decision") == "granted" and auth.get("kind") == "external_operation"
                                 and auth.get("operation") == "accept-task-result" and auth.get("scope") == task["task_id"]
                                 and auth.get("scope_epoch") == self.scope_epoch,
                                 "Incomplete task needs explicit accept-task-result authority for that task")
-                require(wrapper["checks"], "Coding completion requires verification evidence")
-                self.check_checks(wrapper["checks"])
+                require(wrapper.get("checks", []), "Coding completion requires verification evidence")
+                self.check_checks(wrapper.get("checks", []))
                 if event == "coding-phase-complete":
                     require(scope["kind"] == "phase" and not final_phase, "Only a nonfinal phase uses coding-phase-complete")
                     phase = next(p for p in self.phases if p["id"] == scope["phase_id"])
@@ -727,24 +738,19 @@ class Replay:
                         self.completed_phases.add(self.phases[-1]["id"])
                     self.current_scope = {"kind": "feature"}
                     target = "coding_complete"
-            else:
-                require(wrapper["output_kind"] == "incremental", "Interim coding updates must be incremental")
-                independent = any(b["independent_task_ids"] for b in wrapper["blockers"])
-                target = "blocked" if wrapper["blockers"] and not independent else "coding_in_progress"
 
         elif event == "review-evidence-assessed":
             phase = self.review_stage(details["review_ref"])
             role = "Architect" if phase == "spec" else "Reviewer"
             self.pair(entry, role, "Planner" if phase == "spec" else "Coder")
             context = details["invocation"]
-            self.config_snapshot(context)
             original = self.entries[context["trigger_event_id"]]
             require(original["actor"] == role and context["role"] == role and original["event"].endswith("review-started"), "Applicability needs an actual review-role context")
             require(self.inflight in {None, role}, "Obtain a coherent producer yield before assessment")
             require(details["source_ref"] == {"event_id": self.outputs[phase], "kind": "spec_change_wrapper" if phase == "spec" else "change_wrapper"}, "Assessment must identify the current source handoff")
             source = self.source_wrapper(phase)
             require(details["current_commit"] == source["checkpoint_commit"] and details["reviewed_artifacts"] == self.artifacts and work_scope(details) == work_scope(source), "Assessment basis disagrees with current work")
-            require(all(e["freshness"] != "incomplete" and not e["coverage_gaps"] and not e["uncertainty"] for e in details["evidence"]) or details["conclusion"] != "applicable", "Incomplete/uncertain assessment cannot establish applicability")
+            require(all(e.get("freshness", "new") != "incomplete" and not e.get("coverage_gaps") and not e.get("uncertainty") for e in details["evidence"]) or details["conclusion"] != "applicable", "Incomplete/uncertain assessment cannot establish applicability")
             self.assessments.append(deepcopy(details))
 
         elif event == "user-override":
@@ -788,6 +794,8 @@ class Replay:
         else:
             raise ValidationError(f"Unsupported event {event}")
 
+        if derive_status:
+            entry["status"] = target
         require(entry["status"] == target, f"{event}: resulting status must be {target}, got {entry['status']}")
         self.status = target
         self.entries[entry_id] = deepcopy(entry)
@@ -812,10 +820,18 @@ class Replay:
                 break
 
     def known_issues(self):
-        return {fid: {"finding": f, "disposition": self.dispositions[fid]}
-                for fid, f in self.findings.items() if not f.get("resolved") and fid in self.dispositions
-                and self.dispositions[fid]["decision"] in {"defer", "accept_limitation"}
-                and self.disposition_allowed(fid, self.dispositions[fid])}
+        issues = {}
+        for fid, finding in self.findings.items():
+            if finding.get("resolved"):
+                continue
+            disposition = self.dispositions.get(fid)
+            if finding["severity"] == "nit" and disposition is None:
+                disposition = {"decision": "defer", "authority": "policy",
+                               "rationale": "Nonblocking nit; revisit with relevant work or user direction."}
+            if disposition and disposition["decision"] in {"defer", "accept_limitation"} and (
+                    finding["severity"] == "nit" or self.disposition_allowed(fid, disposition)):
+                issues[fid] = {"finding": finding, "disposition": disposition}
+        return issues
 
     def next_action(self):
         if self.status == "implementation_complete":
@@ -829,9 +845,11 @@ class Replay:
         if self.inflight == "Coder" and any(p["id"] in self.completed_phases and
                 p["id"] != self.current_scope.get("phase_id") and not self.phase_ready(p["id"]) for p in self.phases[:-1]):
             return "yield_coder_for_phase_review"
+        if self.status == "blocked":
+            return "resolve_scoped_blocker"
         if self.inflight:
             return "recover_invocation_or_output"
-        if "spec" in self.assurance_gaps and self.status not in {"spec_in_progress", "spec_changes_requested", "spec_conditionally_approved", "spec_created", "spec_updated"}:
+        if "spec" in self.assurance_gaps and self.status not in {"spec_in_progress", "spec_changes_requested", "spec_ready"}:
             return "review_assurance_gap_spec"
         if self.status in {"spec_approved", "coding_in_progress", "coding_complete", "code_approved"}:
             for phase in self.phases[:-1]:
@@ -845,7 +863,7 @@ class Replay:
         if self.status == "spec_in_progress":
             if self.feedback_ref:
                 return "continue_planner_" + self.earliest_artifact
-            if not any(self.artifacts.values()) and "spec" in self.outputs and self.source_wrapper("spec")["questions"]:
+            if not any(self.artifacts.values()) and "spec" in self.outputs and self.source_wrapper("spec").get("questions"):
                 return "obtain_planner_clarification"
             for name in ARTIFACTS:
                 if self.artifacts[name] and name not in self.approvals:
@@ -853,7 +871,7 @@ class Replay:
                 if not self.artifacts[name]:
                     return "continue_planner_" + name
             return "obtain_consolidated_spec_output"
-        if self.status in {"spec_created", "spec_updated"}:
+        if self.status in {"spec_ready"}:
             return "start_architect_review"
         if self.status == "spec_approved":
             if "spec" in self.assurance_gaps:
@@ -864,7 +882,7 @@ class Replay:
             return "obtain_final_user_acceptance"
         for phase in (("spec",) if self.status.startswith("spec_") else (self.stage(self.current_scope),)):
             family = self.family(phase)
-            if self.status in {family + "_changes_requested", family + "_conditionally_approved"}:
+            if self.status in {family + "_changes_requested"}:
                 if phase == "spec" and self.user_revision_pending:
                     return "start_planner_revision"
                 if any(d["decision"] in {"reconsider", "clarify"} for fid, d in self.dispositions.items() if self.findings[fid]["phase"] == phase and not self.findings[fid].get("resolved")):
@@ -937,7 +955,16 @@ def resume_action(log, observations=None, reader_version=None):
                 action = "recover_cumulative_coder_output"
     elif observations.get("artifact_handoff_pending"):
         action = "recover_required_role_return"
+    if (delivery == "delivered" and state.last_error and state.inflight
+            and not observations.get("unrecorded_output") and not observations.get("unrecorded_approval")
+            and observations.get("invocation") in {"completed", "paused", "not_started"}
+            and state.role_recovery_gate(state.last_error["invocation"]) is None):
+        action = "retry_role"
+    role = state.inflight or ({"spec_in_progress": "Planner", "coding_in_progress": "Coder", "blocked": "Coder"}.get(state.status))
+    active = state.active_context(role) if role in state.starts else None
     return {"status": state.status, "action": action, "workflow_action": state.next_action(),
+            "active_assignment": deepcopy(active),
+            "capability": state.assignment(state.config, role, active) if active else None,
             "configuration": state.config, "configuration_ref": state.config_ref,
             "artifacts": state.artifacts, "approval_bases": state.approvals, "repair_cycles": state.cycles,
             "assurance_gaps": sorted(state.assurance_gaps), "known_issues": state.known_issues(),

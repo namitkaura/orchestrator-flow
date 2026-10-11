@@ -14,15 +14,6 @@
         }
       ]
     },
-    "notes": {
-      "type": "string"
-    },
-    "output_kind": {
-      "enum": [
-        "incremental",
-        "consolidated"
-      ]
-    },
     "artifacts": {
       "$ref": "urn:orchestrator-flow:common#/$defs/artifacts"
     },
@@ -60,27 +51,12 @@
       },
       "minItems": 0
     },
-    "cli_runs": {
-      "type": "array",
-      "items": {
-        "type": "string",
-        "minLength": 1
-      },
-      "minItems": 0
-    },
-    "test_results": {
-      "$ref": "urn:orchestrator-flow:common#/$defs/test_results"
-    },
     "checks": {
       "type": "array",
       "items": {
         "$ref": "urn:orchestrator-flow:common#/$defs/check"
       },
       "minItems": 0
-    },
-    "implementation_details": {
-      "type": "string",
-      "minLength": 1
     },
     "task_progress": {
       "type": "array",
@@ -110,15 +86,6 @@
       },
       "minItems": 0
     },
-    "cumulative_scope": {
-      "type": "array",
-      "items": {
-        "type": "string",
-        "minLength": 1,
-        "pattern": "^(?!/)(?![A-Za-z]:)(?!.*\\\\)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
-      },
-      "minItems": 0
-    },
     "evidence": {
       "type": "array",
       "items": {
@@ -138,27 +105,18 @@
     },
     "work_scope": {
       "$ref": "urn:orchestrator-flow:common#/$defs/work_scope"
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1
     }
   },
   "required": [
     "context",
-    "notes",
-    "output_kind",
+    "summary",
     "artifacts",
-    "artifact_changes",
-    "changed_files",
-    "new_files",
-    "deleted_files",
-    "cli_runs",
-    "test_results",
-    "checks",
-    "implementation_details",
+    "checkpoint_commit",
     "task_progress",
-    "blockers",
-    "dispositions",
-    "causes",
-    "cumulative_scope",
-    "evidence",
-    "checkpoint_commit"
+    "checks"
   ]
 }

@@ -77,7 +77,12 @@ class PhasedFlow(Flow):
 
 class PhaseTests(unittest.TestCase):
     def test_consolidation_cannot_replace_the_approved_phase_plan(self):
-        flow = PhasedFlow()
+        flow = Flow()
+        flow.implementation_phases = PhasedFlow().implementation_phases
+        for name in flow.artifacts:
+            flow.spec_output(name)
+            flow.approve(name)
+        flow.spec_output(consolidated=True)
         self.assertEqual(replay(flow.log).phases, flow.implementation_phases)
         replacement = deepcopy(flow.implementation_phases)
         replacement[0]["task_ids"] = ["1"]
@@ -85,7 +90,7 @@ class PhaseTests(unittest.TestCase):
         for phases in ([], replacement):
             with self.subTest(phases=phases):
                 broken = deepcopy(flow.log)
-                handoff = next(e for e in broken["history"] if e["event"] == "spec-created")
+                handoff = broken["history"][-1]
                 handoff["spec_change_wrapper"]["implementation_phases"] = phases
                 with self.assertRaisesRegex(ValidationError, "tasks.*phase plan"):
                     replay(broken)
@@ -106,7 +111,9 @@ class PhaseTests(unittest.TestCase):
         flow.log["history"][-1]["spec_change_wrapper"]["causes"] = [reference(request)]
         before_approval = deepcopy(flow)
         before_approval.spec_output(consolidated=True)
-        with self.assertRaisesRegex(ValidationError, "approvals"):
+        self.assertEqual(replay(before_approval.log).status, "spec_in_progress")
+        before_approval.start_review("spec")
+        with self.assertRaises(ValidationError):
             replay(before_approval.log)
         flow.approve("tasks")
         flow.spec_output(consolidated=True)
@@ -176,7 +183,7 @@ class PhaseTests(unittest.TestCase):
                 flow.start_phase("P2")
                 original_context = flow.context("Coder")
                 flow.add("coding-updated", "Coder", "Planner", "coding_in_progress", details={
-                    "kind": "coordination", "invocation": original_context, "work_scope": flow.scope("P2"), "yielded": True,
+                    "invocation": original_context, "work_scope": flow.scope("P2"), "yielded": True,
                     "summary": "Yield for a user-selected revision to remaining integration work.", "task_progress": [], "blockers": [], "references": []})
                 request = flow.add("user-change-requested", "Orchestrator", "User", "spec_changes_requested", details={
                     "request": "Add the approved final verification task.", "earliest_artifact": "tasks", "references": []})
@@ -251,7 +258,7 @@ class PhaseTests(unittest.TestCase):
         active = flow.context("Coder")
         flow.override("/assurance_level", "maximum")
         flow.add("coding-updated", "Coder", "Planner", "coding_in_progress", details={
-            "kind": "coordination", "invocation": active, "work_scope": flow.scope("P3"), "yielded": True,
+            "invocation": active, "work_scope": flow.scope("P3"), "yielded": True,
             "summary": "Coherent yield for required earlier phase reviews.", "task_progress": [], "blockers": [], "references": []})
         flow.phase_review("P1")
         state = replay(flow.log)
@@ -287,8 +294,9 @@ class PhaseTests(unittest.TestCase):
         p2_context = flow.context("Coder")
         flow.override("/assurance_level", "maximum")
         self.assertEqual(replay(flow.log).next_action(), "yield_coder_for_phase_review")
+        self.assertEqual(resume_action(flow.log, {"delivery": "delivered", "invocation": "paused"})["action"], "yield_coder_for_phase_review")
         flow.add("coding-updated", "Coder", "Planner", "coding_in_progress", details={
-            "kind": "coordination", "invocation": p2_context, "work_scope": flow.scope("P2"), "yielded": True,
+            "invocation": p2_context, "work_scope": flow.scope("P2"), "yielded": True,
             "summary": "Paused at a coherent boundary for earlier-phase assurance catch-up.", "task_progress": [], "blockers": [], "references": []})
         self.assertIsNone(replay(flow.log).inflight)
         fid = "C-" + flow.next_id + "-1"
@@ -304,6 +312,10 @@ class PhaseTests(unittest.TestCase):
         self.assertEqual(resume_action(flow.log, {"delivery": "delivered", "invocation": "paused"})["action"], "continue_existing_role_context")
         flow.contexts["Coder"] = p2_context
         flow.code_requestor = "Planner"
+        continued = replay(flow.log)
+        self.assertEqual(continued.active_context("Coder")["trigger_event_id"], p2_context["trigger_event_id"])
+        self.assertEqual(continued.active_context("Coder")["context_id"], p2_context["context_id"])
+        self.assertEqual(continued.cycles, state.cycles)
         flow.finish_phase("P2")
         self.assertEqual(replay(flow.log).status, "coding_complete")
 
@@ -323,7 +335,7 @@ class PhaseTests(unittest.TestCase):
                 flow.finish_phase("P2")
                 self.assertEqual(replay(flow.log).next_action(), "start_reviewer_review")
                 flow.review("code")
-                self.assertEqual(flow.log["history"][-1]["review_wrapper"]["review_kind"], "initial")
+                self.assertEqual(flow.log["history"][-2]["details"]["review_kind"], "initial")
                 flow.complete()
                 self.assertEqual(replay(flow.log).status, "implementation_complete")
 
@@ -429,7 +441,7 @@ class PhaseTests(unittest.TestCase):
         flow.finish_phase("P2")
         flow.review("code", issues=issues, dispositions=[choice], accepted="conditional")
         state = replay(flow.log)
-        self.assertEqual(state.status, "code_conditionally_approved")
+        self.assertEqual(state.status, "code_changes_requested")
         self.assertEqual(state.findings[fid]["phase"], "phase:P1")
         self.assertIn(fid, state.open_findings("code"))
         flow.start_coding(revision=True)

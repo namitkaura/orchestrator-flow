@@ -3,39 +3,23 @@
     "trigger_event_id": "1",
     "role": "Planner",
     "attempt": 1,
-    "context_id": "planner-session",
-    "configuration_ref": "1"
+    "context_id": "planner-session"
   },
   "checkpoint_commit": null,
-  "implementation_phases": [],
-  "notes": "No hidden decisions.",
-  "feature": "example",
-  "feature_dir": ".docs/specs/example",
-  "requirements_ref": null,
-  "design_ref": null,
-  "tasks_ref": null,
-  "user_request": {
-    "original_request": "Support the agreed local input behavior.",
-    "additional_context": ""
-  },
   "output_kind": "incremental",
   "artifacts": {
     "requirements": null,
     "design": null,
     "tasks": null
   },
-  "artifact_changes": [],
-  "causes": [],
   "decisions": [
     "Manual retry is adequate for the accepted deployment."
   ],
   "constraints": [
     "Preserve existing nonempty-input behavior."
   ],
-  "downstream_impacts": [],
-  "dispositions": [],
   "questions": [
     "The referenced input is inaccessible; provide its intended project context."
   ],
-  "research_updates": []
+  "summary": "No hidden decisions."
 }

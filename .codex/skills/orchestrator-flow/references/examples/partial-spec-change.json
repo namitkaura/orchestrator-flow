@@ -1,15 +1,5 @@
 {
   "context": null,
-  "notes": "No hidden decisions.",
-  "feature": "example",
-  "feature_dir": ".docs/specs/example",
-  "requirements_ref": ".docs/specs/example/requirements.md",
-  "design_ref": null,
-  "tasks_ref": null,
-  "user_request": {
-    "original_request": "Support the agreed local input behavior.",
-    "additional_context": ""
-  },
   "output_kind": "incremental",
   "artifacts": {
     "requirements": {
@@ -26,21 +16,15 @@
       "current_version": 1,
       "change_kind": "material",
       "summary": "Record the current approved behavior and its rationale.",
-      "rationale": "Make this artifact actionable for its downstream consumer.",
-      "approval_basis_ref": null
+      "rationale": "Make this artifact actionable for its downstream consumer."
     }
   ],
-  "causes": [],
   "decisions": [
     "Manual retry is adequate for the accepted deployment."
   ],
   "constraints": [
     "Preserve existing nonempty-input behavior."
   ],
-  "downstream_impacts": [],
-  "dispositions": [],
-  "questions": [],
-  "research_updates": [],
   "checkpoint_commit": null,
-  "implementation_phases": []
+  "summary": "No hidden decisions."
 }

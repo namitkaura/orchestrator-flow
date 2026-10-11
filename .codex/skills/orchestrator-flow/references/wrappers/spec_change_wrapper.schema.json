@@ -14,71 +14,6 @@
         }
       ]
     },
-    "notes": {
-      "type": "string"
-    },
-    "feature": {
-      "type": "string",
-      "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
-    },
-    "feature_dir": {
-      "type": "string",
-      "minLength": 1,
-      "pattern": "^(?!/)(?![A-Za-z]:)(?!.*\\\\)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
-    },
-    "requirements_ref": {
-      "anyOf": [
-        {
-          "type": "string",
-          "minLength": 1,
-          "pattern": "^(?!/)(?![A-Za-z]:)(?!.*\\\\)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
-        },
-        {
-          "type": "null"
-        }
-      ]
-    },
-    "design_ref": {
-      "anyOf": [
-        {
-          "type": "string",
-          "minLength": 1,
-          "pattern": "^(?!/)(?![A-Za-z]:)(?!.*\\\\)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
-        },
-        {
-          "type": "null"
-        }
-      ]
-    },
-    "tasks_ref": {
-      "anyOf": [
-        {
-          "type": "string",
-          "minLength": 1,
-          "pattern": "^(?!/)(?![A-Za-z]:)(?!.*\\\\)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
-        },
-        {
-          "type": "null"
-        }
-      ]
-    },
-    "user_request": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "original_request": {
-          "type": "string",
-          "minLength": 1
-        },
-        "additional_context": {
-          "type": "string"
-        }
-      },
-      "required": [
-        "original_request",
-        "additional_context"
-      ]
-    },
     "output_kind": {
       "enum": [
         "incremental",
@@ -192,28 +127,17 @@
       "items": {
         "$ref": "urn:orchestrator-flow:common#/$defs/implementation_phase"
       }
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1
     }
   },
   "required": [
     "context",
-    "notes",
-    "feature",
-    "feature_dir",
-    "requirements_ref",
-    "design_ref",
-    "tasks_ref",
-    "user_request",
     "output_kind",
+    "summary",
     "artifacts",
-    "artifact_changes",
-    "causes",
-    "decisions",
-    "constraints",
-    "downstream_impacts",
-    "dispositions",
-    "questions",
-    "research_updates",
-    "checkpoint_commit",
-    "implementation_phases"
+    "checkpoint_commit"
   ]
 }

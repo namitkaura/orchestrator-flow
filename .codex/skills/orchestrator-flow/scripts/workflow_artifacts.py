@@ -96,10 +96,11 @@ def work_scope(value):
 
 
 def validate_progress(value):
-    progress = {task["task_id"]: task for task in value["task_progress"]}
-    require(len(progress) == len(value["task_progress"]), "Duplicate task progress identity")
-    blocked = {task_id for blocker in value["blockers"] for task_id in blocker["task_ids"]}
-    independent = {task_id for blocker in value["blockers"] for task_id in blocker["independent_task_ids"]}
+    tasks = value.get("task_progress", [])
+    progress = {task["task_id"]: task for task in tasks}
+    require(len(progress) == len(tasks), "Duplicate task progress identity")
+    blocked = {task_id for blocker in value.get("blockers", []) for task_id in blocker["task_ids"]}
+    independent = {task_id for blocker in value.get("blockers", []) for task_id in blocker["independent_task_ids"]}
     require((blocked | independent).issubset(progress), "Blocker reports must include progress for referenced tasks")
     require(not blocked.intersection(independent), "A blocked task cannot also be independent work")
     require(all(progress[task_id]["status"] in {"pending", "in_progress"} for task_id in independent),
@@ -114,12 +115,10 @@ def all_findings(wrapper):
 def validate_wrapper(kind, value):
     validate_shape(kind, value)
     artifacts = value.get("artifacts", value.get("reviewed_artifacts"))
-    if "output_kind" in value and value["output_kind"] == "consolidated" or "reviewed_artifacts" in value:
+    if kind == "change-wrapper" or value.get("output_kind") == "consolidated" or "reviewed_artifacts" in value:
         require(all(artifacts.values()), "Consolidated/review output requires all three artifacts")
     if kind == "spec-change-wrapper":
-        for name, artifact in artifacts.items():
-            require(value[name + "_ref"] == (artifact["ref"] if artifact else None), f"{name}_ref disagrees with artifact snapshot")
-        phases = value["implementation_phases"]
+        phases = value.get("implementation_phases", [])
         require(not phases or len(phases) >= 2, "Implementation phases require at least two phases")
         require(len({p["id"] for p in phases}) == len(phases), "Duplicate phase identity")
         tasks = [t for p in phases for t in p["task_ids"]]
@@ -130,7 +129,7 @@ def validate_wrapper(kind, value):
     for change in changes:
         old = change["previous_version"] or 0
         if change["change_kind"] == "progress":
-            require(change["artifact"] == "tasks" and old > 0 and change["approval_basis_ref"] is not None,
+            require(change["artifact"] == "tasks" and old > 0 and change.get("approval_basis_ref") is not None,
                     "Progress requires existing tasks and their approval basis")
             require(change["current_version"] == old, "Task progress preserves its content version")
         else:
@@ -141,46 +140,72 @@ def validate_wrapper(kind, value):
         validate_progress(value)
     if value["context"] is not None:
         if "checkpoint_commit" in value:
-            no_artifacts = kind == "spec-change-wrapper" and not any(artifacts.values()) and not value["research_updates"]
+            no_artifacts = kind == "spec-change-wrapper" and not any(artifacts.values()) and not value.get("research_updates")
             require(value["checkpoint_commit"] is not None or no_artifacts and value["output_kind"] == "incremental",
                     "Artifact-bearing handoff requires its published checkpoint")
-        else:
-            require(value["reviewed_commit"] is not None, "Embedded review requires the artifact commit reviewed")
     if "issue_details" in value:
         findings = all_findings(value)
         require(len(findings) == sum(map(len, value["issue_details"].values())), "Duplicate finding ID")
-        resolved = value["resolved_findings"]
+        resolved = value.get("resolved_findings", [])
         require(len(set(resolved)) == len(resolved) and not set(resolved).intersection(findings),
                 "Current and resolved finding identities must be unique and disjoint")
-        require(all(d["finding_id"] in findings for d in value["dispositions"]),
-                "Dispositions belong to current findings; preserve resolved decisions in notes/evidence")
-        if value["context"] is not None or value["review_kind"] == "initial":
-            require((value["review_kind"] == "initial") == (value["prior_review_ref"] is None), "Review kind/prior reference mismatch")
-        if value["review_kind"] == "initial" or value["assurance_level"] == "maximum":
-            require(value["review_scope"] == "full", "Initial and Maximum reviews require complete coverage")
-        if value["review_kind"] == "follow_up":
-            require(value["repair_class"] is not None, "Follow-up requires repair class")
-            if value["repair_class"] == "architectural_systemic":
-                require(value["review_scope"] == "full", "Architectural/systemic changes require full review")
-            if value["assurance_level"] == "standard" and value["repair_class"] == "bounded_correctness":
-                require(value["review_scope"] in {"affected", "full"}, "Standard correctness repair includes neighboring contracts")
-        for report in value["evidence"]:
+        require(all(d["finding_id"] in findings for d in value.get("dispositions", [])),
+                "Dispositions belong to current findings; preserve resolved decisions in summary/evidence")
+        validate_review_scope(value, initial=value.get("review_kind") == "initial",
+                              repaired=value.get("review_kind") == "follow_up" and any(
+                                  value.get(key) for key in ("repair_class", "changed_surfaces")))
+        for report in value.get("evidence", []):
+            if report.get("freshness") in {"reused", "revalidated"}:
+                require(report.get("applicability_check"), "Reused/revalidated evidence needs an applicability check")
             if value["assurance_level"] == "maximum":
-                require(report["freshness"] in {"new", "revalidated", "incomplete"}, "Maximum cannot merely reuse decision-critical evidence")
+                require(report.get("freshness", "new") in {"new", "revalidated", "incomplete"}, "Maximum cannot merely reuse decision-critical evidence")
         if value["context"] is None:
             # Standalone user decisions are supplied directly. Embedding the same
             # result in a log later requires real historical authority in replay.
-            responses = {d["finding_id"]: d for d in value["dispositions"]}
-            require(len(responses) == len(value["dispositions"]) and set(responses).issubset(findings),
+            responses = {d["finding_id"]: d for d in value.get("dispositions", [])}
+            require(len(responses) == len(value.get("dispositions", [])) and set(responses).issubset(findings),
                     "Standalone dispositions must identify current unique findings")
             unresolved = []
             for fid, finding in findings.items():
                 response = responses.get(fid, {})
+                user_followup = (response.get("authority") == "user"
+                                 and response.get("decision") in {"fix", "clarify", "reconsider"})
+                if finding["severity"] == "nit" and not user_followup:
+                    continue
                 settled = response.get("decision") in {"defer", "accept_limitation", "reject"}
                 permitted = response.get("authority") == "user" or (finding["severity"] != "must_fix"
-                    and value["assurance_level"] != "maximum" and response.get("decision") in {"defer", "accept_limitation"})
+                    and value["assurance_level"] != "maximum" and response.get("authority") == "policy"
+                    and response.get("decision") in {"defer", "accept_limitation"})
                 if not settled or not permitted:
                     unresolved.append(finding)
             expected = "false" if any(f["severity"] == "must_fix" for f in unresolved) else "conditional" if unresolved else "true"
             require(value["accepted"] == expected, f"Standalone acceptance must be {expected} under supplied decisions")
+        if value["accepted"] == "true":
+            require(all(not c["required"] or c["status"] == "pass" or c.get("disposition_ref")
+                        for c in value.get("checks", [])), "Accepted review has an unresolved required check")
     return value
+
+
+def validate_review_scope(value, *, initial, repaired=False):
+    """Embedded review kind comes from its start; standalone reviews supply it."""
+    if initial or value["assurance_level"] == "maximum":
+        require(value["review_scope"] == "full", "Initial and Maximum reviews require complete coverage")
+    if repaired:
+        require(all(k in value for k in ("repair_class", "changed_surfaces", "scope_reason", "meaningful_change"))
+                and value["repair_class"] is not None and value["changed_surfaces"] and value["scope_reason"],
+                "Repair follow-up requires repair class, changed surfaces, scope reason and meaningful progress")
+    if value.get("repair_class") == "architectural_systemic":
+        require(value["review_scope"] == "full", "Architectural/systemic changes require full review")
+    if value["assurance_level"] == "standard" and value.get("repair_class") == "bounded_correctness":
+        require(value["review_scope"] in {"affected", "full"}, "Standard correctness repair includes neighboring contracts")
+
+
+def json_values_equal(left, right):
+    """Compare decoded JSON exactly, without bool/number coercion or Unicode normalization."""
+    if type(left) is not type(right):
+        return False
+    if isinstance(left, dict):
+        return left.keys() == right.keys() and all(json_values_equal(left[k], right[k]) for k in left)
+    if isinstance(left, list):
+        return len(left) == len(right) and all(json_values_equal(a, b) for a, b in zip(left, right))
+    return left == right

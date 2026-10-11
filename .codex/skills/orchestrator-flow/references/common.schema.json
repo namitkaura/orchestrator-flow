@@ -215,18 +215,12 @@
         "context_id": {
           "type": "string",
           "minLength": 1
-        },
-        "configuration_ref": {
-          "type": "string",
-          "pattern": "^[1-9][0-9]*$"
         }
       },
       "required": [
         "trigger_event_id",
         "role",
-        "attempt",
-        "context_id",
-        "configuration_ref"
+        "attempt"
       ]
     },
     "checkpoint_invocation": {
@@ -234,13 +228,27 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "trigger_event_id": {"$ref": "urn:orchestrator-flow:common#/$defs/invocation/properties/trigger_event_id"},
-        "role": {"enum": ["Planner", "Coder"]},
-        "attempt": {"$ref": "urn:orchestrator-flow:common#/$defs/invocation/properties/attempt"},
-        "context_id": {"$ref": "urn:orchestrator-flow:common#/$defs/invocation/properties/context_id"},
-        "configuration_ref": {"$ref": "urn:orchestrator-flow:common#/$defs/invocation/properties/configuration_ref"}
+        "trigger_event_id": {
+          "$ref": "urn:orchestrator-flow:common#/$defs/invocation/properties/trigger_event_id"
+        },
+        "role": {
+          "enum": [
+            "Planner",
+            "Coder"
+          ]
+        },
+        "attempt": {
+          "$ref": "urn:orchestrator-flow:common#/$defs/invocation/properties/attempt"
+        },
+        "context_id": {
+          "$ref": "urn:orchestrator-flow:common#/$defs/invocation/properties/context_id"
+        }
       },
-      "required": ["trigger_event_id", "role", "attempt"]
+      "required": [
+        "trigger_event_id",
+        "role",
+        "attempt"
+      ]
     },
     "artifact": {
       "type": "object",
@@ -360,8 +368,7 @@
         "current_version",
         "change_kind",
         "summary",
-        "rationale",
-        "approval_basis_ref"
+        "rationale"
       ]
     },
     "evidence": {
@@ -445,13 +452,7 @@
       },
       "required": [
         "sources",
-        "observations",
-        "inferences",
-        "coverage_gaps",
-        "uncertainty",
-        "assumptions",
-        "freshness",
-        "applicability_check"
+        "observations"
       ]
     },
     "finding": {
@@ -518,8 +519,7 @@
         "triggering_conditions",
         "practical_consequences",
         "basis",
-        "source_refs",
-        "reconsideration_reason"
+        "source_refs"
       ]
     },
     "disposition": {
@@ -586,49 +586,7 @@
       "required": [
         "finding_id",
         "decision",
-        "rationale",
-        "authority",
-        "authority_ref",
-        "revisit_condition",
-        "workaround"
-      ]
-    },
-    "test_result": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "status": {
-          "enum": [
-            "pass",
-            "fail",
-            "not_run",
-            "skipped"
-          ]
-        },
-        "details": {
-          "type": "string",
-          "minLength": 1
-        }
-      },
-      "required": [
-        "status",
-        "details"
-      ]
-    },
-    "test_results": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "unit_tests": {
-          "$ref": "urn:orchestrator-flow:common#/$defs/test_result"
-        },
-        "integration_tests": {
-          "$ref": "urn:orchestrator-flow:common#/$defs/test_result"
-        }
-      },
-      "required": [
-        "unit_tests",
-        "integration_tests"
+        "rationale"
       ]
     },
     "check": {
@@ -669,8 +627,7 @@
         "name",
         "status",
         "required",
-        "details",
-        "disposition_ref"
+        "details"
       ]
     },
     "blocker": {
@@ -786,9 +743,7 @@
       },
       "required": [
         "task_id",
-        "status",
-        "evidence",
-        "disposition_ref"
+        "status"
       ]
     },
     "uncertain_attempt": {

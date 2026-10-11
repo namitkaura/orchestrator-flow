@@ -52,18 +52,15 @@
     "status": {
       "enum": [
         "spec_in_progress",
-        "spec_created",
-        "spec_updated",
+        "spec_ready",
         "spec_in_review",
         "spec_approved",
-        "spec_conditionally_approved",
         "spec_changes_requested",
         "coding_in_progress",
         "coding_complete",
         "blocked",
         "code_in_review",
         "code_approved",
-        "code_conditionally_approved",
         "code_changes_requested",
         "implementation_complete"
       ]
@@ -107,18 +104,15 @@
               "status": {
                 "enum": [
                   "spec_in_progress",
-                  "spec_created",
-                  "spec_updated",
+                  "spec_ready",
                   "spec_in_review",
                   "spec_approved",
-                  "spec_conditionally_approved",
                   "spec_changes_requested",
                   "coding_in_progress",
                   "coding_complete",
                   "blocked",
                   "code_in_review",
                   "code_approved",
-                  "code_conditionally_approved",
                   "code_changes_requested",
                   "implementation_complete"
                 ]
@@ -218,18 +212,15 @@
               "status": {
                 "enum": [
                   "spec_in_progress",
-                  "spec_created",
-                  "spec_updated",
+                  "spec_ready",
                   "spec_in_review",
                   "spec_approved",
-                  "spec_conditionally_approved",
                   "spec_changes_requested",
                   "coding_in_progress",
                   "coding_complete",
                   "blocked",
                   "code_in_review",
                   "code_approved",
-                  "code_conditionally_approved",
                   "code_changes_requested",
                   "implementation_complete"
                 ]
@@ -366,18 +357,15 @@
               "status": {
                 "enum": [
                   "spec_in_progress",
-                  "spec_created",
-                  "spec_updated",
+                  "spec_ready",
                   "spec_in_review",
                   "spec_approved",
-                  "spec_conditionally_approved",
                   "spec_changes_requested",
                   "coding_in_progress",
                   "coding_complete",
                   "blocked",
                   "code_in_review",
                   "code_approved",
-                  "code_conditionally_approved",
                   "code_changes_requested",
                   "implementation_complete"
                 ]
@@ -460,18 +448,15 @@
               "status": {
                 "enum": [
                   "spec_in_progress",
-                  "spec_created",
-                  "spec_updated",
+                  "spec_ready",
                   "spec_in_review",
                   "spec_approved",
-                  "spec_conditionally_approved",
                   "spec_changes_requested",
                   "coding_in_progress",
                   "coding_complete",
                   "blocked",
                   "code_in_review",
                   "code_approved",
-                  "code_conditionally_approved",
                   "code_changes_requested",
                   "implementation_complete"
                 ]
@@ -555,18 +540,15 @@
               "status": {
                 "enum": [
                   "spec_in_progress",
-                  "spec_created",
-                  "spec_updated",
+                  "spec_ready",
                   "spec_in_review",
                   "spec_approved",
-                  "spec_conditionally_approved",
                   "spec_changes_requested",
                   "coding_in_progress",
                   "coding_complete",
                   "blocked",
                   "code_in_review",
                   "code_approved",
-                  "code_conditionally_approved",
                   "code_changes_requested",
                   "implementation_complete"
                 ]
@@ -654,198 +636,15 @@
               "status": {
                 "enum": [
                   "spec_in_progress",
-                  "spec_created",
-                  "spec_updated",
+                  "spec_ready",
                   "spec_in_review",
                   "spec_approved",
-                  "spec_conditionally_approved",
                   "spec_changes_requested",
                   "coding_in_progress",
                   "coding_complete",
                   "blocked",
                   "code_in_review",
                   "code_approved",
-                  "code_conditionally_approved",
-                  "code_changes_requested",
-                  "implementation_complete"
-                ]
-              },
-              "event": {
-                "const": "spec-approved-with-justifications"
-              },
-              "details": {
-                "type": "object",
-                "additionalProperties": false,
-                "properties": {
-                  "review_ref": {
-                    "$ref": "urn:orchestrator-flow:common#/$defs/reference"
-                  },
-                  "dispositions": {
-                    "type": "array",
-                    "items": {
-                      "$ref": "urn:orchestrator-flow:common#/$defs/disposition"
-                    },
-                    "minItems": 1
-                  },
-                  "rationale": {
-                    "type": "string",
-                    "minLength": 1
-                  }
-                },
-                "required": [
-                  "review_ref",
-                  "dispositions",
-                  "rationale"
-                ]
-              }
-            },
-            "required": [
-              "timestamp",
-              "id",
-              "actor",
-              "requestor",
-              "status",
-              "event",
-              "details"
-            ]
-          },
-          {
-            "type": "object",
-            "additionalProperties": false,
-            "properties": {
-              "timestamp": {
-                "type": "string",
-                "format": "date-time",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
-              },
-              "id": {
-                "type": "string",
-                "pattern": "^[1-9][0-9]*$"
-              },
-              "actor": {
-                "enum": [
-                  "User",
-                  "Planner",
-                  "Architect",
-                  "Coder",
-                  "Reviewer",
-                  "Orchestrator"
-                ]
-              },
-              "requestor": {
-                "enum": [
-                  "User",
-                  "Planner",
-                  "Architect",
-                  "Coder",
-                  "Reviewer"
-                ]
-              },
-              "status": {
-                "enum": [
-                  "spec_in_progress",
-                  "spec_created",
-                  "spec_updated",
-                  "spec_in_review",
-                  "spec_approved",
-                  "spec_conditionally_approved",
-                  "spec_changes_requested",
-                  "coding_in_progress",
-                  "coding_complete",
-                  "blocked",
-                  "code_in_review",
-                  "code_approved",
-                  "code_conditionally_approved",
-                  "code_changes_requested",
-                  "implementation_complete"
-                ]
-              },
-              "event": {
-                "const": "spec-approved-by-user"
-              },
-              "details": {
-                "type": "object",
-                "additionalProperties": false,
-                "properties": {
-                  "review_ref": {
-                    "$ref": "urn:orchestrator-flow:common#/$defs/reference"
-                  },
-                  "decisions": {
-                    "type": "array",
-                    "items": {
-                      "$ref": "urn:orchestrator-flow:common#/$defs/disposition"
-                    },
-                    "minItems": 1
-                  },
-                  "user_statement": {
-                    "type": "string",
-                    "minLength": 1
-                  }
-                },
-                "required": [
-                  "review_ref",
-                  "decisions",
-                  "user_statement"
-                ]
-              }
-            },
-            "required": [
-              "timestamp",
-              "id",
-              "actor",
-              "requestor",
-              "status",
-              "event",
-              "details"
-            ]
-          },
-          {
-            "type": "object",
-            "additionalProperties": false,
-            "properties": {
-              "timestamp": {
-                "type": "string",
-                "format": "date-time",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
-              },
-              "id": {
-                "type": "string",
-                "pattern": "^[1-9][0-9]*$"
-              },
-              "actor": {
-                "enum": [
-                  "User",
-                  "Planner",
-                  "Architect",
-                  "Coder",
-                  "Reviewer",
-                  "Orchestrator"
-                ]
-              },
-              "requestor": {
-                "enum": [
-                  "User",
-                  "Planner",
-                  "Architect",
-                  "Coder",
-                  "Reviewer"
-                ]
-              },
-              "status": {
-                "enum": [
-                  "spec_in_progress",
-                  "spec_created",
-                  "spec_updated",
-                  "spec_in_review",
-                  "spec_approved",
-                  "spec_conditionally_approved",
-                  "spec_changes_requested",
-                  "coding_in_progress",
-                  "coding_complete",
-                  "blocked",
-                  "code_in_review",
-                  "code_approved",
-                  "code_conditionally_approved",
                   "code_changes_requested",
                   "implementation_complete"
                 ]
@@ -936,198 +735,15 @@
               "status": {
                 "enum": [
                   "spec_in_progress",
-                  "spec_created",
-                  "spec_updated",
+                  "spec_ready",
                   "spec_in_review",
                   "spec_approved",
-                  "spec_conditionally_approved",
                   "spec_changes_requested",
                   "coding_in_progress",
                   "coding_complete",
                   "blocked",
                   "code_in_review",
                   "code_approved",
-                  "code_conditionally_approved",
-                  "code_changes_requested",
-                  "implementation_complete"
-                ]
-              },
-              "event": {
-                "const": "code-approved-with-justifications"
-              },
-              "details": {
-                "type": "object",
-                "additionalProperties": false,
-                "properties": {
-                  "review_ref": {
-                    "$ref": "urn:orchestrator-flow:common#/$defs/reference"
-                  },
-                  "dispositions": {
-                    "type": "array",
-                    "items": {
-                      "$ref": "urn:orchestrator-flow:common#/$defs/disposition"
-                    },
-                    "minItems": 1
-                  },
-                  "rationale": {
-                    "type": "string",
-                    "minLength": 1
-                  }
-                },
-                "required": [
-                  "review_ref",
-                  "dispositions",
-                  "rationale"
-                ]
-              }
-            },
-            "required": [
-              "timestamp",
-              "id",
-              "actor",
-              "requestor",
-              "status",
-              "event",
-              "details"
-            ]
-          },
-          {
-            "type": "object",
-            "additionalProperties": false,
-            "properties": {
-              "timestamp": {
-                "type": "string",
-                "format": "date-time",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
-              },
-              "id": {
-                "type": "string",
-                "pattern": "^[1-9][0-9]*$"
-              },
-              "actor": {
-                "enum": [
-                  "User",
-                  "Planner",
-                  "Architect",
-                  "Coder",
-                  "Reviewer",
-                  "Orchestrator"
-                ]
-              },
-              "requestor": {
-                "enum": [
-                  "User",
-                  "Planner",
-                  "Architect",
-                  "Coder",
-                  "Reviewer"
-                ]
-              },
-              "status": {
-                "enum": [
-                  "spec_in_progress",
-                  "spec_created",
-                  "spec_updated",
-                  "spec_in_review",
-                  "spec_approved",
-                  "spec_conditionally_approved",
-                  "spec_changes_requested",
-                  "coding_in_progress",
-                  "coding_complete",
-                  "blocked",
-                  "code_in_review",
-                  "code_approved",
-                  "code_conditionally_approved",
-                  "code_changes_requested",
-                  "implementation_complete"
-                ]
-              },
-              "event": {
-                "const": "code-approved-by-user"
-              },
-              "details": {
-                "type": "object",
-                "additionalProperties": false,
-                "properties": {
-                  "review_ref": {
-                    "$ref": "urn:orchestrator-flow:common#/$defs/reference"
-                  },
-                  "decisions": {
-                    "type": "array",
-                    "items": {
-                      "$ref": "urn:orchestrator-flow:common#/$defs/disposition"
-                    },
-                    "minItems": 1
-                  },
-                  "user_statement": {
-                    "type": "string",
-                    "minLength": 1
-                  }
-                },
-                "required": [
-                  "review_ref",
-                  "decisions",
-                  "user_statement"
-                ]
-              }
-            },
-            "required": [
-              "timestamp",
-              "id",
-              "actor",
-              "requestor",
-              "status",
-              "event",
-              "details"
-            ]
-          },
-          {
-            "type": "object",
-            "additionalProperties": false,
-            "properties": {
-              "timestamp": {
-                "type": "string",
-                "format": "date-time",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
-              },
-              "id": {
-                "type": "string",
-                "pattern": "^[1-9][0-9]*$"
-              },
-              "actor": {
-                "enum": [
-                  "User",
-                  "Planner",
-                  "Architect",
-                  "Coder",
-                  "Reviewer",
-                  "Orchestrator"
-                ]
-              },
-              "requestor": {
-                "enum": [
-                  "User",
-                  "Planner",
-                  "Architect",
-                  "Coder",
-                  "Reviewer"
-                ]
-              },
-              "status": {
-                "enum": [
-                  "spec_in_progress",
-                  "spec_created",
-                  "spec_updated",
-                  "spec_in_review",
-                  "spec_approved",
-                  "spec_conditionally_approved",
-                  "spec_changes_requested",
-                  "coding_in_progress",
-                  "coding_complete",
-                  "blocked",
-                  "code_in_review",
-                  "code_approved",
-                  "code_conditionally_approved",
                   "code_changes_requested",
                   "implementation_complete"
                 ]
@@ -1206,18 +822,15 @@
               "status": {
                 "enum": [
                   "spec_in_progress",
-                  "spec_created",
-                  "spec_updated",
+                  "spec_ready",
                   "spec_in_review",
                   "spec_approved",
-                  "spec_conditionally_approved",
                   "spec_changes_requested",
                   "coding_in_progress",
                   "coding_complete",
                   "blocked",
                   "code_in_review",
                   "code_approved",
-                  "code_conditionally_approved",
                   "code_changes_requested",
                   "implementation_complete"
                 ]
@@ -1294,18 +907,15 @@
               "status": {
                 "enum": [
                   "spec_in_progress",
-                  "spec_created",
-                  "spec_updated",
+                  "spec_ready",
                   "spec_in_review",
                   "spec_approved",
-                  "spec_conditionally_approved",
                   "spec_changes_requested",
                   "coding_in_progress",
                   "coding_complete",
                   "blocked",
                   "code_in_review",
                   "code_approved",
-                  "code_conditionally_approved",
                   "code_changes_requested",
                   "implementation_complete"
                 ]
@@ -1382,18 +992,15 @@
               "status": {
                 "enum": [
                   "spec_in_progress",
-                  "spec_created",
-                  "spec_updated",
+                  "spec_ready",
                   "spec_in_review",
                   "spec_approved",
-                  "spec_conditionally_approved",
                   "spec_changes_requested",
                   "coding_in_progress",
                   "coding_complete",
                   "blocked",
                   "code_in_review",
                   "code_approved",
-                  "code_conditionally_approved",
                   "code_changes_requested",
                   "implementation_complete"
                 ]
@@ -1633,18 +1240,15 @@
               "status": {
                 "enum": [
                   "spec_in_progress",
-                  "spec_created",
-                  "spec_updated",
+                  "spec_ready",
                   "spec_in_review",
                   "spec_approved",
-                  "spec_conditionally_approved",
                   "spec_changes_requested",
                   "coding_in_progress",
                   "coding_complete",
                   "blocked",
                   "code_in_review",
                   "code_approved",
-                  "code_conditionally_approved",
                   "code_changes_requested",
                   "implementation_complete"
                 ]
@@ -1806,18 +1410,15 @@
               "status": {
                 "enum": [
                   "spec_in_progress",
-                  "spec_created",
-                  "spec_updated",
+                  "spec_ready",
                   "spec_in_review",
                   "spec_approved",
-                  "spec_conditionally_approved",
                   "spec_changes_requested",
                   "coding_in_progress",
                   "coding_complete",
                   "blocked",
                   "code_in_review",
                   "code_approved",
-                  "code_conditionally_approved",
                   "code_changes_requested",
                   "implementation_complete"
                 ]
@@ -1948,18 +1549,15 @@
               "status": {
                 "enum": [
                   "spec_in_progress",
-                  "spec_created",
-                  "spec_updated",
+                  "spec_ready",
                   "spec_in_review",
                   "spec_approved",
-                  "spec_conditionally_approved",
                   "spec_changes_requested",
                   "coding_in_progress",
                   "coding_complete",
                   "blocked",
                   "code_in_review",
                   "code_approved",
-                  "code_conditionally_approved",
                   "code_changes_requested",
                   "implementation_complete"
                 ]
@@ -2044,86 +1642,15 @@
               "status": {
                 "enum": [
                   "spec_in_progress",
-                  "spec_created",
-                  "spec_updated",
+                  "spec_ready",
                   "spec_in_review",
                   "spec_approved",
-                  "spec_conditionally_approved",
                   "spec_changes_requested",
                   "coding_in_progress",
                   "coding_complete",
                   "blocked",
                   "code_in_review",
                   "code_approved",
-                  "code_conditionally_approved",
-                  "code_changes_requested",
-                  "implementation_complete"
-                ]
-              },
-              "event": {
-                "const": "spec-created"
-              },
-              "spec_change_wrapper": {
-                "$ref": "urn:orchestrator-flow:spec-change-wrapper"
-              }
-            },
-            "required": [
-              "timestamp",
-              "id",
-              "actor",
-              "requestor",
-              "status",
-              "event",
-              "spec_change_wrapper"
-            ]
-          },
-          {
-            "type": "object",
-            "additionalProperties": false,
-            "properties": {
-              "timestamp": {
-                "type": "string",
-                "format": "date-time",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
-              },
-              "id": {
-                "type": "string",
-                "pattern": "^[1-9][0-9]*$"
-              },
-              "actor": {
-                "enum": [
-                  "User",
-                  "Planner",
-                  "Architect",
-                  "Coder",
-                  "Reviewer",
-                  "Orchestrator"
-                ]
-              },
-              "requestor": {
-                "enum": [
-                  "User",
-                  "Planner",
-                  "Architect",
-                  "Coder",
-                  "Reviewer"
-                ]
-              },
-              "status": {
-                "enum": [
-                  "spec_in_progress",
-                  "spec_created",
-                  "spec_updated",
-                  "spec_in_review",
-                  "spec_approved",
-                  "spec_conditionally_approved",
-                  "spec_changes_requested",
-                  "coding_in_progress",
-                  "coding_complete",
-                  "blocked",
-                  "code_in_review",
-                  "code_approved",
-                  "code_conditionally_approved",
                   "code_changes_requested",
                   "implementation_complete"
                 ]
@@ -2180,18 +1707,15 @@
               "status": {
                 "enum": [
                   "spec_in_progress",
-                  "spec_created",
-                  "spec_updated",
+                  "spec_ready",
                   "spec_in_review",
                   "spec_approved",
-                  "spec_conditionally_approved",
                   "spec_changes_requested",
                   "coding_in_progress",
                   "coding_complete",
                   "blocked",
                   "code_in_review",
                   "code_approved",
-                  "code_conditionally_approved",
                   "code_changes_requested",
                   "implementation_complete"
                 ]
@@ -2248,86 +1772,15 @@
               "status": {
                 "enum": [
                   "spec_in_progress",
-                  "spec_created",
-                  "spec_updated",
+                  "spec_ready",
                   "spec_in_review",
                   "spec_approved",
-                  "spec_conditionally_approved",
                   "spec_changes_requested",
                   "coding_in_progress",
                   "coding_complete",
                   "blocked",
                   "code_in_review",
                   "code_approved",
-                  "code_conditionally_approved",
-                  "code_changes_requested",
-                  "implementation_complete"
-                ]
-              },
-              "event": {
-                "const": "coding-updated"
-              },
-              "change_wrapper": {
-                "$ref": "urn:orchestrator-flow:change-wrapper"
-              }
-            },
-            "required": [
-              "timestamp",
-              "id",
-              "actor",
-              "requestor",
-              "status",
-              "event",
-              "change_wrapper"
-            ]
-          },
-          {
-            "type": "object",
-            "additionalProperties": false,
-            "properties": {
-              "timestamp": {
-                "type": "string",
-                "format": "date-time",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
-              },
-              "id": {
-                "type": "string",
-                "pattern": "^[1-9][0-9]*$"
-              },
-              "actor": {
-                "enum": [
-                  "User",
-                  "Planner",
-                  "Architect",
-                  "Coder",
-                  "Reviewer",
-                  "Orchestrator"
-                ]
-              },
-              "requestor": {
-                "enum": [
-                  "User",
-                  "Planner",
-                  "Architect",
-                  "Coder",
-                  "Reviewer"
-                ]
-              },
-              "status": {
-                "enum": [
-                  "spec_in_progress",
-                  "spec_created",
-                  "spec_updated",
-                  "spec_in_review",
-                  "spec_approved",
-                  "spec_conditionally_approved",
-                  "spec_changes_requested",
-                  "coding_in_progress",
-                  "coding_complete",
-                  "blocked",
-                  "code_in_review",
-                  "code_approved",
-                  "code_conditionally_approved",
                   "code_changes_requested",
                   "implementation_complete"
                 ]
@@ -2384,18 +1837,15 @@
               "status": {
                 "enum": [
                   "spec_in_progress",
-                  "spec_created",
-                  "spec_updated",
+                  "spec_ready",
                   "spec_in_review",
                   "spec_approved",
-                  "spec_conditionally_approved",
                   "spec_changes_requested",
                   "coding_in_progress",
                   "coding_complete",
                   "blocked",
                   "code_in_review",
                   "code_approved",
-                  "code_conditionally_approved",
                   "code_changes_requested",
                   "implementation_complete"
                 ]
@@ -2452,18 +1902,15 @@
               "status": {
                 "enum": [
                   "spec_in_progress",
-                  "spec_created",
-                  "spec_updated",
+                  "spec_ready",
                   "spec_in_review",
                   "spec_approved",
-                  "spec_conditionally_approved",
                   "spec_changes_requested",
                   "coding_in_progress",
                   "coding_complete",
                   "blocked",
                   "code_in_review",
                   "code_approved",
-                  "code_conditionally_approved",
                   "code_changes_requested",
                   "implementation_complete"
                 ]
@@ -2475,9 +1922,6 @@
                 "type": "object",
                 "additionalProperties": false,
                 "properties": {
-                  "kind": {
-                    "const": "coordination"
-                  },
                   "invocation": {
                     "$ref": "urn:orchestrator-flow:common#/$defs/invocation"
                   },
@@ -2512,12 +1956,8 @@
                   }
                 },
                 "required": [
-                  "kind",
                   "invocation",
-                  "summary",
-                  "task_progress",
-                  "blockers",
-                  "references"
+                  "summary"
                 ]
               }
             },
@@ -2566,18 +2006,15 @@
               "status": {
                 "enum": [
                   "spec_in_progress",
-                  "spec_created",
-                  "spec_updated",
+                  "spec_ready",
                   "spec_in_review",
                   "spec_approved",
-                  "spec_conditionally_approved",
                   "spec_changes_requested",
                   "coding_in_progress",
                   "coding_complete",
                   "blocked",
                   "code_in_review",
                   "code_approved",
-                  "code_conditionally_approved",
                   "code_changes_requested",
                   "implementation_complete"
                 ]
@@ -2634,18 +2071,15 @@
               "status": {
                 "enum": [
                   "spec_in_progress",
-                  "spec_created",
-                  "spec_updated",
+                  "spec_ready",
                   "spec_in_review",
                   "spec_approved",
-                  "spec_conditionally_approved",
                   "spec_changes_requested",
                   "coding_in_progress",
                   "coding_complete",
                   "blocked",
                   "code_in_review",
                   "code_approved",
-                  "code_conditionally_approved",
                   "code_changes_requested",
                   "implementation_complete"
                 ]

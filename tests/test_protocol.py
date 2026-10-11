@@ -10,6 +10,114 @@ from flow_fixtures import Flow, complete_flow, disposition, finding, reference
 
 
 class ProtocolTests(unittest.TestCase):
+    def test_optional_collections_default_without_changing_captured_returns(self):
+        from workflow_artifacts import load_schemas
+        flow = complete_flow()
+        schemas, _ = load_schemas()
+        for entry in flow.log["history"]:
+            for key in ("spec_change_wrapper", "change_wrapper", "spec_review_wrapper", "review_wrapper"):
+                if key not in entry:
+                    continue
+                wrapper = entry[key]
+                required = schemas[key.replace("_", "-")]["required"]
+                for name in list(wrapper):
+                    if name not in required and wrapper[name] in (None, []):
+                        del wrapper[name]
+                if "issue_details" in wrapper:
+                    wrapper["issue_details"] = {}
+                if entry["event"] in {"spec-reviewed", "code-reviewed"}:
+                    for name in ("evidence", "repair_class", "scope_reason", "meaningful_change", "changed_surfaces"):
+                        wrapper.pop(name, None)
+        captured = deepcopy(flow.log)
+        self.assertEqual(replay(flow.log).status, "implementation_complete")
+        self.assertEqual(flow.log, captured)
+
+    def test_consolidated_tasks_need_approval_and_current_decision_context(self):
+        from test_recovery_and_reviews import feedback
+        flow = Flow()
+        for name in ("requirements", "design"):
+            flow.spec_output(name)
+            flow.approve(name)
+        flow.spec_output("tasks", consolidated=True)
+        pending = deepcopy(flow.log)
+        flow.start_review("spec")
+        self.rejected(flow, "no completed handoff")
+        flow.log = pending
+        request = feedback(flow)
+        flow.approve("tasks")
+        flow.log["status"] = flow.log["history"][-1]["status"] = "spec_in_progress"
+        self.assertEqual(replay(flow.log).status, "spec_in_progress")
+        self.assertEqual(replay(flow.log).next_action(), "continue_planner_requirements")
+        # A revised handoff must carry the actual decision, not reuse stale consolidation.
+        flow.spec_output("requirements")
+        flow.log["history"][-1]["spec_change_wrapper"]["causes"] = [reference(request)]
+        self.assertEqual(replay(flow.log).next_action(), "obtain_requirements_approval")
+
+    def test_resume_uses_relevant_policy_and_assurance_at_planner_boundary(self):
+        for target, value in (("/assurance_level", "maximum"), ("/review_disposition_policy", "all_user")):
+            with self.subTest(target=target):
+                flow = Flow("basic")
+                flow.spec_output("requirements")
+                flow.approve("requirements")
+                original = deepcopy(flow.log["history"])
+                flow.override(target, value)
+                result = resume_action(flow.log, {"delivery": "delivered", "invocation": "paused"})
+                self.assertEqual(result["action"], "continue_planner_design")
+                flow.spec_output("design")
+                state = replay(flow.log)
+                self.assertEqual(state.config, flow.configuration())
+                self.assertEqual(flow.log["history"][:len(original)], original)
+                self.assertEqual(state.cycles["spec"], 0)
+                # An override does not bypass an outstanding document approval.
+                waiting = Flow("basic")
+                waiting.spec_output("requirements")
+                waiting.override(target, value)
+                result = resume_action(waiting.log, {"delivery": "delivered", "invocation": "paused"})
+                self.assertEqual(result["action"], "obtain_requirements_approval")
+
+    def test_approved_planner_document_continues_under_new_effort(self):
+        flow = Flow("basic")
+        flow.log["capability"]["roles"]["planner"]["reasoning_effort"] = "medium"
+        flow.log["history"][0]["details"]["initial_configuration"] = flow.configuration()
+        flow.spec_output("requirements")
+        flow.spec_output("requirements")
+        flow.approve("requirements")
+        original = deepcopy(flow.log["history"])
+        flow.override("/capability/roles/planner", {"model": "example-model", "reasoning_effort": "high"})
+        action = resume_action(flow.log, {"delivery": "delivered", "invocation": "paused"})
+        self.assertEqual(action["action"], "continue_planner_design")
+        flow.spec_output("design")
+        state = replay(flow.log)
+        self.assertEqual(state.artifacts["requirements"]["version"], 2)
+        self.assertEqual(state.approvals["requirements"]["event_id"], flow.approvals["requirements"])
+        self.assertEqual(state.config, flow.configuration())
+        self.assertEqual(state.active_context("Planner")["trigger_event_id"], "1")
+        self.assertEqual(state.cycles["spec"], 0)
+        self.assertEqual(state.errors, {})
+        self.assertEqual(flow.log["history"][:len(original)], original)
+
+
+
+    def test_helper_override_preserves_lead_and_changes_subsequent_assignment(self):
+        flow = Flow()
+        owner = flow.context("Planner")
+        flow.override("/capability/roles/helpers", {"model": "helper-next", "reasoning_effort": "medium"})
+        wrapper = flow.spec_output("requirements")
+        state = replay(flow.log)
+        self.assertEqual(state.active_context("Planner"), owner)
+        self.assertEqual(state.config["capability"]["roles"]["helpers"]["model"], "helper-next")
+        self.assertEqual(state.errors, {})
+
+    def test_inflight_review_survives_capability_change(self):
+        flow = Flow("basic").finish_spec()
+        flow.start_review("spec")
+        original = flow.context("Architect")
+        flow.override("/capability/roles/architect", {"model": "next-model", "reasoning_effort": "high"})
+        flow.review_output("spec")
+        self.assertEqual(replay(flow.log).active_context("Architect"), original)
+        self.assertEqual(replay(flow.log).status, "spec_approved")
+
+
     def rejected(self, flow, message=None):
         with self.assertRaises(ValidationError) as caught:
             replay(flow.log)
@@ -36,8 +144,7 @@ class ProtocolTests(unittest.TestCase):
             ("design draft", "obtain_design_approval"),
             ("design approval", "continue_planner_tasks"),
             ("tasks draft", "obtain_tasks_approval"),
-            ("tasks approval", "obtain_consolidated_spec_output"),
-            ("consolidated specification", "start_architect_review"),
+            ("tasks approval", "start_architect_review"),
             ("Architect invocation", "invoke_recorded_role"),
             ("Architect acceptance", "obtain_coding_authorization"),
             ("coding authorization", "start_coder"),
@@ -113,6 +220,7 @@ class ProtocolTests(unittest.TestCase):
         self.assertEqual(state.produced, before.produced)
         self.assertEqual(state.approvals, before.approvals)
         self.assertEqual(state.artifacts, before.artifacts)
+        flow.code_output(progress=True)
         flow.log["history"][-1]["change_wrapper"]["artifact_changes"][0]["current_version"] += 1
         self.rejected(flow, "preserves its content version")
 
@@ -125,13 +233,13 @@ class ProtocolTests(unittest.TestCase):
             self.assertEqual(replay(flow.log).assurance_gaps, set())
         self.assertEqual(replay(flow.log).next_action(), "obtain_final_user_acceptance")
 
-    def test_return_cannot_claim_configuration_not_used_at_dispatch(self):
+    def test_return_cannot_claim_higher_assurance_than_its_review(self):
         flow = Flow("basic").finish_spec()
         flow.start_review("spec")
         flow.override("/assurance_level", "maximum")
-        flow.contexts["Architect"]["configuration_ref"] = flow.config_ref
         flow.review_output("spec")
-        self.rejected(flow, "original invocation configuration")
+        flow.log["history"][-1]["spec_review_wrapper"]["assurance_level"] = "maximum"
+        self.rejected(flow, "assurance basis")
 
     def test_coordination_preserves_assignment_without_fabricating_completion(self):
         flow = Flow().finish_spec()
@@ -139,7 +247,7 @@ class ProtocolTests(unittest.TestCase):
         flow.authorize()
         flow.start_coding()
         flow.add("coding-updated", "Coder", "Planner", "coding_in_progress", details={
-            "kind": "coordination", "invocation": flow.context("Coder"), "summary": "The approved offline work can continue.",
+            "invocation": flow.context("Coder"), "summary": "The approved offline work can continue.",
             "task_progress": [], "blockers": [], "references": []})
         result = resume_action(flow.log, {"delivery": "delivered", "invocation": "paused"})
         self.assertEqual(result["action"], "continue_existing_role_context")
@@ -150,7 +258,7 @@ class ProtocolTests(unittest.TestCase):
     def test_partial_artifacts_and_repeat_drafts(self):
         flow = Flow()
         first = flow.spec_output("requirements")
-        self.assertIsNone(first["design_ref"])
+        self.assertIsNone(first["artifacts"]["design"])
         flow.spec_output("requirements", "editorial")
         self.assertEqual(replay(flow.log).artifacts["requirements"]["version"], 2)
         self.assertEqual(resume_action(flow.log, {"delivery": "delivered"})["action"], "obtain_requirements_approval")
@@ -169,7 +277,7 @@ class ProtocolTests(unittest.TestCase):
         flow.log["history"][-1]["details"]["version"] = 1
         self.rejected(flow, "stale")
         flow = Flow().finish_spec()
-        flow.log["history"][-1]["spec_change_wrapper"]["artifacts"]["requirements"]["version"] = 2
+        flow.log["history"][-2]["spec_change_wrapper"]["artifacts"]["requirements"]["version"] = 2
         self.rejected(flow, "Unrecorded")
 
     def test_editorial_and_progress_preserve_real_approval_basis(self):
@@ -290,21 +398,20 @@ class ProtocolTests(unittest.TestCase):
 
     def test_wrong_actor_requestor_and_duplicate_event_id(self):
         flow = complete_flow()
-        flow.log["history"][9]["requestor"] = "User"
+        flow.log["history"][8]["requestor"] = "User"
         self.rejected(flow, "actor/requestor")
         flow = complete_flow()
         flow.log["history"][3]["id"] = "2"
         self.rejected(flow, "contiguous")
 
-    def test_nested_plural_references_check_types(self):
+    def test_only_structured_references_are_validated(self):
         flow = Flow().finish_spec()
-        flow.log["history"][-1]["spec_change_wrapper"]["notes"] = "Source context: history entries 2, 4 and 6."
+        wrapper = flow.log["history"][-2]["spec_change_wrapper"]
+        wrapper["summary"] = "Use spec_review_wrapper from history entries 2, 4; history entry 900 is prose."
         replay(flow.log)
-        flow.log["history"][-1]["spec_change_wrapper"]["notes"] = "Use spec_review_wrapper from history entries 2, 4."
+        wrapper["causes"] = [reference("2", "spec_review_wrapper")]
         self.rejected(flow, "does not contain")
-        flow.log["history"][-1]["spec_change_wrapper"]["notes"] = "Use SPEC_REVIEW_WRAPPER from history entries 2, 4."
-        self.rejected(flow, "does not contain")
-        flow.log["history"][-1]["spec_change_wrapper"]["notes"] = "Use history entry 900."
+        wrapper["causes"] = [reference("900")]
         self.rejected(flow, "Unknown/forward")
 
     def test_history_append_only_and_final_acceptance(self):

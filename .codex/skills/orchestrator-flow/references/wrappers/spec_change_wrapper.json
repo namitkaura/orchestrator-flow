@@ -1,15 +1,5 @@
 {
   "context": null,
-  "notes": "No hidden decisions.",
-  "feature": "example",
-  "feature_dir": ".docs/specs/example",
-  "requirements_ref": ".docs/specs/example/requirements.md",
-  "design_ref": ".docs/specs/example/design.md",
-  "tasks_ref": ".docs/specs/example/tasks.md",
-  "user_request": {
-    "original_request": "Support the agreed local input behavior.",
-    "additional_context": ""
-  },
   "output_kind": "consolidated",
   "artifacts": {
     "requirements": {
@@ -25,18 +15,12 @@
       "version": 1
     }
   },
-  "artifact_changes": [],
-  "causes": [],
   "decisions": [
     "Manual retry is adequate for the accepted deployment."
   ],
   "constraints": [
     "Preserve existing nonempty-input behavior."
   ],
-  "downstream_impacts": [],
-  "dispositions": [],
-  "questions": [],
-  "research_updates": [],
   "checkpoint_commit": null,
-  "implementation_phases": []
+  "summary": "No hidden decisions."
 }

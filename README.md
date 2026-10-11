@@ -105,8 +105,8 @@ description = "Planner for explicitly requested Orchestrator Flow work."
 model = "YOUR_AVAILABLE_MODEL"
 model_reasoning_effort = "high"
 developer_instructions = """
-Follow the complete Planner, workflow-protocol, assurance and engineering
-contracts supplied by Orchestrator. Return bounded structured outputs;
+Follow the Planner contract, common essentials, applicable assurance and
+project guidance supplied by Orchestrator. Return bounded structured outputs;
 Orchestrator owns user gates and the task log; Planner publishes its artifacts.
 """
 ```
@@ -130,13 +130,15 @@ The built-in `review_disposition_policy` is `spec_user_code_auto`: user disposit
 | Remediation | Practical benefit, likelihood, consequences and total workflow cost | Stronger presumption toward robustness/repair | Existing rigorous repair and justified-deferral obligations |
 | Further repair gate | Before a second repair-and-re-review cycle | Before a third | Existing rigorous loops and stalled-loop safeguards |
 
-Classification itself reflects the agreed acceptance standard. Findings explain factual behavior, conditions and actual project consequences, distinguishing demonstrated defects, hardening opportunities and preferences. A personal project's optional improvement need not receive a consequential deployment's completion priority. Facts stay accurate; explicit must-fix exceptions require user disposition. A nonempty known-issues document does not automatically prevent acceptance.
+Classification itself reflects the agreed acceptance standard. Findings explain factual behavior, conditions and actual project consequences, distinguishing demonstrated defects, hardening opportunities and preferences. A personal project's optional improvement need not receive a consequential deployment's completion priority. Facts stay accurate; explicit must-fix exceptions require user disposition. A nonempty known-issues document does not automatically prevent acceptance. Completed nit-only reviews are accepted by default at every assurance, including Maximum; Orchestrator derives their deferral and known issues without a producer response, another approval or a polishing cycle. An explicit user request to repair a nit uses the existing findings-decision and repair path, including its allowances and follow-up review. Nits cannot excuse missing required work, checks or consequential findings. Basic weighs should-fix benefit against total follow-up cost; Standard normally repairs should-fix unless there are concrete exceptional grounds.
 
 Basic/Standard check source/assumption changes, reuse valid completed evidence, and repeat affected or incomplete work. Maximum actively revalidates decision-critical evidence even when sources appear unchanged. Helpers separate observations, inferences, gaps and uncertainty with verifiable references. Leads own synthesis. Preserve ongoing role context across checkpoints where supported; full review obligations concern the work performed, not starting a new agent.
 
+Basic/Standard use targeted Red/Green checks and broader integration/final checks, reusing fresh applicable evidence. Report corrections, checkbox changes and unrelated documentation do not alone invalidate results. Reviewer independently evaluates code/assertions and reruns where useful; Maximum retains comprehensive fresh checks. Coder reuses suitable exploration/test helpers, keeps tested work stable, and reports concise command/status/count/failure evidence once.
+
 If assurance increases while a review is running, record its output against the settings it actually used. Compare that result with the current requirement; any gap requires catch-up review before dependent coding or final completion, including when this was the first review.
 
-See [the full assurance rubric and Maximum checklists](.codex/skills/orchestrator-flow/references/assurance.md) for exact review/remediation and task-category rules.
+See [the assurance rubric](.codex/skills/orchestrator-flow/references/assurance.md) for classification, acceptance, task boundaries and proportionate test execution. [Maximum checklists](.codex/skills/orchestrator-flow/references/maximum-assurance.md), [exceptional phases](.codex/skills/orchestrator-flow/references/implementation-phases.md) and [recovery](.codex/skills/orchestrator-flow/references/workflow-recovery.md) are loaded when applicable.
 
 ## Artifacts and user gates
 
@@ -148,13 +150,13 @@ Required documents have independent integer content versions from the first draf
 
 Task-checkbox progress preserves the tasks version, Revision History, producing Planner reference and approval. Coder changes only actual numbered completion marks; Planner owns wording, numbering, dependencies and editorial revisions. Bounded reader chunks use normalized character offsets, so truncated output can be reread without losing the end of a line. Initial review still covers every current spec body at all assurance levels.
 
-`task_log.json` holds append-only events, effective configuration, requests, actual outputs, approvals, findings/dispositions and recovery authority. Planner returns drafts and a consolidated handoff. Coder normally returns one cumulative wrapper per completed assignment/repair; ordinary artifact checkpoints need no wrapper or acknowledgement. Typed coordination reports preserve blockers without claiming completion. Required returns are complete actual JSON, never file pointers. Normal operation creates no scratch role artifacts; validate directly in memory or through stdin. Optional research has no content version or separate approval gate. Orchestrator maintains current deferred findings/accepted limitations in `known-issues.md`; resolved history remains in the log and review notes/evidence.
+`task_log.json` holds append-only events, effective configuration, requests, actual outputs, approvals, findings/dispositions and recovery authority. Planner returns requirements and design drafts at their approval gates, then supplies the consolidated handoff with the final tasks draft. Unchanged tasks approval establishes spec_ready and enables Architect using that same immutable return plus approval context; no extra Planner invocation or duplicate wrapper. Coder normally returns one cumulative wrapper per completed assignment/repair; ordinary artifact checkpoints need no wrapper or acknowledgement. The coding-updated event contains coordination details only, preserving progress and blockers without claiming completion. Required returns are complete actual JSON, never file pointers. Normal operation creates no scratch role artifacts; validate directly in memory or through stdin. Optional research has no content version or separate approval gate. Orchestrator maintains current deferred findings/accepted limitations in `known-issues.md`; resolved history remains in the log and review summaries/evidence.
 
 Exceptionally large tasks plans may propose stable implementation phases through the existing tasks approval. Basic skips intermediate reviews; Standard uses Basic, and Maximum uses Standard, with one/two repair cycles per intermediate stage. Required intermediate capability retains the full Reviewer model with effort `max → high`, `xhigh → medium`, or `high → low`, recorded in feature configuration. Basic needs no unused assignment; unmapped/unsupported settings require explicit direction. Final review always uses full feature settings and its separate allowance. The last Coder integrates and reports the entire feature and owns all final repairs. Natural Markdown checkpoint groups alone do not justify phases.
 
 Assurance changes reuse all applicable accepted evidence: unchanged Maximum evidence remains sufficient after lowering and restoring assurance. Real content/source/assumption gaps require bounded assessment or review, scoped independently to specification, phase or final implementation. Applicability assessments grant neither higher assurance nor new acceptance; required Maximum review work remains comprehensive.
 
-All levels preserve Scaffolding boundaries, Red/Green separation, production-only Refactor, concrete Documentation, Planner-defined final Test-Maintenance and repair-free Verification. Coder may mark task progress, not redesign the plan. Architect approval is distinct from user authorization to begin coding. Reviewer approval is distinct from final feature acceptance.
+All levels preserve Scaffolding boundaries, separate Red/Green tasks sized around coherent behavioral changes, production-only Refactor, concrete Documentation, Planner-defined final Test-Maintenance and repair-free Verification. Planning supplies concrete design, targets, dependencies and requirement mappings. Diagrams are used when useful, without a compulsory diagram at any level. Coder may mark task progress, not redesign the plan. Architect approval is distinct from user authorization to begin coding. Reviewer approval is distinct from final feature acceptance.
 
 ## Checkpoints, interruptions and final merging
 
@@ -168,7 +170,7 @@ If an attempt was recorded but its result is unknown after interruption, inspect
 
 Other blockers pause only affected operations/dependencies while independent approved work can continue. Model unavailability requires user direction; no automatic fallback. Ordinary role failures preserve context and completed evidence, with three total attempts before further direction. Bound external-operation retries to their actual authorization.
 
-After Reviewer acceptance, present delivery, verification and known issues for **explicit user feature acceptance**. Record `implementation_complete`, complete its checkpoint delivery, and then provide one conventional squash-commit message covering the total final change against the baseline. A commit-message request does not itself authorize completion. The user manually merges into `main` or the explicitly selected integration branch. No agent performs that merge or deployment.
+After Reviewer acceptance, present delivery, verification and known issues for **explicit user feature acceptance**. Record `implementation-complete` with status `implementation_complete`, complete its checkpoint delivery, and then provide one conventional squash-commit message covering the total final change against the baseline. A commit-message request does not itself authorize completion. The user manually merges into `main` or the explicitly selected integration branch. No agent performs that merge or deployment.
 
 ## Proposal and bug-report templates
 
@@ -185,6 +187,10 @@ Each template currently has independent integer **template version 2**. These in
 
 ## Compatibility and validation
 
+The workflow applies accepted settings to subsequent affected work while preserving the logical assignment, cumulative baseline, approvals, progress and repair allowances. Reuse the native context where supported; capability-only changes do not invalidate useful in-flight results. Assurance remains a separate gate based on actual review work. Required returns are validated before recording. Small report corrections stay in the same assignment without failure records, empty commits or automatic retesting; genuine failures retain bounded recovery.
+
+The `record-handoff` command takes the actual native wrapper JSON once, derives the event, ID, causal requestor, UTC timestamp and state, and records it unchanged in the selected task log. Internal validation/readback checks preserve the historical prefix and captured values. It never commits or pushes; other validator commands remain read-only. Use UTF-8 stdin. In PowerShell set `$OutputEncoding = [System.Text.UTF8Encoding]::new($false)` before piping literal Unicode. See the [workflow protocol](.codex/skills/orchestrator-flow/references/workflow-protocol.md#compact-returns-and-recording) for the input format, in-memory API and recovery rules.
+
 Version 2.0.0 applies to new work. Pre-2.0/missing-version logs are unsupported; stop and obtain direction rather than migrate or repair automatically. Completed historical features remain untouched. Patch/minor releases preserve older supported logs' execution and approval meaning, with actual documented defaults for compatible additions. Exact-version-only checks must not reject an older supported log under a compatible newer reader. Older readers need not understand newer logs; major changes require an explicit compatibility boundary.
 
 Run these commands from the source checkout. Runtime commands can also use the linked skill's `scripts/` path; the unittest and Git checks are repository development checks:
@@ -197,6 +203,7 @@ python .codex/skills/orchestrator-flow/scripts/validate_orchestrator_artifacts.p
 python .codex/skills/orchestrator-flow/scripts/validate_orchestrator_artifacts.py change-wrapper <WRAPPER>
 python .codex/skills/orchestrator-flow/scripts/validate_orchestrator_artifacts.py review-wrapper <WRAPPER>
 python .codex/skills/orchestrator-flow/scripts/validate_orchestrator_artifacts.py resume-action <TASK_LOG> --observations <OBSERVATIONS_JSON>
+python .codex/skills/orchestrator-flow/scripts/validate_orchestrator_artifacts.py record-handoff - --log <TASK_LOG> --workspace <CONSUMER_ROOT>
 python .codex/skills/orchestrator-flow/scripts/read_spec_body.py <SPEC_DOCUMENT> --offset 0 --max-chars 8000
 python .codex/skills/orchestrator-flow/scripts/checkpoint_state.py inspect <TASK_LOG> --repo <CONSUMER_ROOT>
 python .codex/skills/orchestrator-flow/scripts/checkpoint_state.py recent <TASK_LOG> --repo <CONSUMER_ROOT> --limit 20

@@ -40,6 +40,204 @@ def feedback(flow):
 
 
 class RecoveryAndReviewTests(unittest.TestCase):
+    def test_explicit_user_nit_fix_uses_existing_repair_path(self):
+        for phase in ("spec", "code"):
+            for level in ("basic", "standard", "maximum"):
+                for policy in ("spec_user_code_auto", "all_user", "within_scope_auto"):
+                    with self.subTest(phase=phase, level=level, policy=policy):
+                        flow = Flow(level, policy).finish_spec() if phase == "spec" else coding_flow(level, policy)
+                        if phase == "code":
+                            flow.code_output()
+                        flow.start_review(phase)
+                        fid = ("S" if phase == "spec" else "C") + "-" + flow.log["history"][-1]["id"] + "-1"
+                        nit = finding(fid, "preference")
+                        nit.update(description="A clear label could be shorter.", triggering_conditions="Reading the label.",
+                                   practical_consequences="Minor reading preference; intended behavior is unaffected.",
+                                   rationale="Optional wording improvement under this project's acceptance standard.")
+                        original = flow.review_output(phase, issues={"nit": [nit]})
+                        self.assertEqual(replay(flow.log).status, phase + "_approved")
+                        standalone = deepcopy(original)
+                        standalone.update(context=None, reviewed_output_ref=None, reviewed_artifacts=flow.artifacts,
+                                          reviewed_commit=None, review_kind="initial", dispositions=[disposition(fid, "fix")])
+                        kind = "spec-review-wrapper" if phase == "spec" else "review-wrapper"
+                        with self.assertRaises(ValidationError):
+                            validate_wrapper(kind, standalone)
+                        standalone["accepted"] = "conditional"
+                        validate_wrapper(kind, standalone)
+                        # A proposal or policy response alone still cannot turn
+                        # an optional nit into a mandatory repair.
+                        standalone["accepted"] = "true"
+                        standalone["dispositions"][0]["authority"] = "policy"
+                        validate_wrapper(kind, standalone)
+                        standalone["dispositions"][0].pop("authority")
+                        validate_wrapper(kind, standalone)
+                        decision = flow.user_dispositions(phase, [disposition(fid, "fix")], accepted="conditional")
+                        state = replay(flow.log)
+                        self.assertEqual(state.status, phase + "_changes_requested")
+                        self.assertEqual(state.next_action(), "start_planner_revision" if phase == "spec" else "start_coder_revision")
+                        self.assertIn(fid, state.open_findings(phase))
+                        self.assertEqual(state.cycles[phase], 0)
+                        self.assertEqual(original["accepted"], "true")
+                        blocked = deepcopy(flow)
+                        if phase == "spec":
+                            blocked.authorize()
+                        else:
+                            blocked.complete()
+                        with self.assertRaises(ValidationError):
+                            replay(blocked.log)
+                        # A producer's matching policy response cannot erase the
+                        # actual user instruction while the fix awaits review.
+                        response = disposition(fid, "fix", "policy")
+                        contrary = deepcopy(flow)
+                        if phase == "spec":
+                            contrary.start_spec_revision(earliest="tasks")
+                            contrary.spec_output("tasks", change_kind="editorial", consolidated=True,
+                                                 dispositions=[disposition(fid, "defer", "policy")])
+                        else:
+                            contrary.start_coding(revision=True)
+                            contrary.code_output(dispositions=[disposition(fid, "defer", "policy")])
+                        with self.assertRaisesRegex(ValidationError, "Policy cannot replace"):
+                            replay(contrary.log)
+                        if phase == "spec":
+                            flow.start_spec_revision(earliest="tasks")
+                            flow.spec_output("tasks", change_kind="editorial", consolidated=True, dispositions=[response])
+                        else:
+                            flow.start_coding(revision=True)
+                            flow.code_output(dispositions=[response])
+                        pending = replay(flow.log)
+                        self.assertEqual(pending.dispositions[fid]["recorded_user_event"], decision)
+                        self.assertIn(fid, pending.open_findings(phase))
+                        flow.review(phase, resolved=[fid])
+                        finished = replay(flow.log)
+                        self.assertEqual(finished.status, phase + "_approved")
+                        self.assertEqual(finished.cycles[phase], 1)
+                        self.assertNotIn(fid, finished.known_issues())
+
+    def test_nit_only_initial_and_repair_reviews_accept_without_extra_decisions(self):
+        for phase in ("spec", "code"):
+            for level in ("basic", "standard", "maximum"):
+                for followup in (False, True):
+                    with self.subTest(phase=phase, level=level, followup=followup):
+                        flow = Flow(level, "within_scope_auto").finish_spec() if phase == "spec" else coding_flow(level, "within_scope_auto")
+                        if phase == "code":
+                            flow.code_output()
+                        flow.start_review(phase)
+                        prefix = "S" if phase == "spec" else "C"
+                        start = flow.log["history"][-1]["id"]
+                        nit_id, defect_id = prefix + "-" + start + "-1", prefix + "-" + start + "-2"
+                        nit = finding(nit_id, "preference")
+                        nit.update(description="A label could be shorter.", triggering_conditions="Reading an already clear label.",
+                                   practical_consequences="Minor reading preference; intended behavior is unaffected.",
+                                   rationale="No material effect on this project's acceptance standard.")
+                        issues = {"nit": [nit]}
+                        if followup:
+                            flow.review_output(phase, issues={**issues, "must_fix": [finding(defect_id)]}, accepted="false")
+                            if phase == "spec":
+                                flow.start_spec_revision(earliest="tasks")
+                                flow.spec_output("tasks", consolidated=True)
+                                flow.approve("tasks")
+                            else:
+                                flow.start_coding(revision=True)
+                                flow.code_output()
+                            flow.start_review(phase)
+                        native = flow.review_output(phase, issues=issues, resolved=[defect_id] if followup else [])
+                        state = replay(flow.log)
+                        self.assertEqual(state.status, phase + "_approved")
+                        self.assertEqual(state.next_action(), "obtain_coding_authorization" if phase == "spec" else "obtain_final_user_acceptance")
+                        self.assertEqual(state.known_issues()[nit_id]["disposition"]["authority"], "policy")
+                        self.assertNotIn(nit_id, state.dispositions)
+                        self.assertEqual(state.cycles[phase], int(followup))
+                        # Standalone acceptance uses the same nit rule.
+                        standalone = deepcopy(native)
+                        standalone.update(context=None, reviewed_output_ref=None, reviewed_artifacts=flow.artifacts,
+                                          reviewed_commit=None, review_kind="follow_up" if followup else "initial")
+                        validate_wrapper("spec-review-wrapper" if phase == "spec" else "review-wrapper", standalone)
+                        if followup:
+                            standalone.pop("changed_surfaces")
+                            with self.assertRaisesRegex(ValidationError, "Repair follow-up"):
+                                validate_wrapper("spec-review-wrapper" if phase == "spec" else "review-wrapper", standalone)
+                        # A nit cannot hide a required unsuccessful check.
+                        key = "spec_review_wrapper" if phase == "spec" else "review_wrapper"
+                        flow.log["history"][-1][key]["checks"] = [{"name": "required-check", "status": "not_run", "required": True, "details": "Unavailable."}]
+                        with self.assertRaises(ValidationError):
+                            replay(flow.log)
+
+    def test_disposition_without_authority_is_only_a_proposal(self):
+        flow = Flow("basic").finish_spec()
+        flow.start_review("spec")
+        fid = "S-" + flow.log["history"][-1]["id"] + "-1"
+        proposal = {"finding_id": fid, "decision": "accept_limitation", "rationale": "Ask whether the user accepts this consequence."}
+        wrapper = flow.review_output("spec", issues={"must_fix": [finding(fid)]}, accepted="false", dispositions=[proposal])
+        state = replay(flow.log)
+        self.assertEqual(state.status, "spec_changes_requested")
+        self.assertNotIn(fid, state.dispositions)
+        self.assertFalse(state.known_issues())
+        standalone = deepcopy(wrapper)
+        standalone.update(context=None, reviewed_output_ref=None, reviewed_artifacts=flow.artifacts, reviewed_commit=None, review_kind="initial")
+        validate_wrapper("spec-review-wrapper", standalone)
+        standalone["accepted"] = "true"
+        with self.assertRaises(ValidationError):
+            validate_wrapper("spec-review-wrapper", standalone)
+
+    def test_unusable_output_retry_preserves_assignment_and_failure_count(self):
+        flow = Flow()
+        failed_role(flow, category="invalid_output")
+        flow.override("/capability/roles/planner", {"model": "future-model", "reasoning_effort": "high"})
+        flow.spec_output("requirements")
+        state = replay(flow.log)
+        self.assertEqual(state.active_context("Planner")["attempt"], 2)
+        self.assertEqual(state.cycles["spec"], 0)
+        self.assertEqual(len(state.errors["1"]), 1)
+
+    def test_output_only_review_retry_does_not_upgrade_assurance(self):
+        flow = Flow("basic").finish_spec()
+        flow.start_review("spec")
+        failed_role(flow, "Architect", category="invalid_output")
+        flow.override("/assurance_level", "maximum")
+        flow.review_output("spec", freshness="reused")
+        flow.log["history"][-1]["spec_review_wrapper"]["assurance_level"] = "basic"
+        state = replay(flow.log)
+        self.assertEqual(state.assurance_gaps, {"spec"})
+        self.assertEqual(state.next_action(), "review_assurance_gap_spec")
+        upgraded = deepcopy(flow.log)
+        upgraded["history"][-1]["spec_review_wrapper"].update(assurance_level="maximum", evidence=[evidence("revalidated")])
+        with self.assertRaisesRegex(ValidationError, "assurance basis"):
+            replay(upgraded)
+
+    def test_context_replacement_keeps_coder_assignment_and_authority(self):
+        flow = coding_flow()
+        before = replay(flow.log)
+        flow.override("/capability/roles/coder", {"model": "accepted-coder", "reasoning_effort": "max"})
+        flow.contexts["Coder"]["context_id"] = "replacement-coder"
+        flow.code_output()
+        after = replay(flow.log)
+        self.assertEqual(after.active_context("Coder")["trigger_event_id"], before.starts["Coder"]["trigger_event_id"])
+        self.assertEqual(after.active_context("Coder")["context_id"], "replacement-coder")
+        self.assertEqual(after.coding_authorization, before.coding_authorization)
+        self.assertEqual(after.cycles, before.cycles)
+        self.assertEqual(after.log["branch_context"], before.log["branch_context"])
+        self.assertEqual(after.errors, {})
+
+    def test_explicit_retry_exhaustion_survives_override_and_replacement(self):
+        flow = Flow()
+        for attempt in range(3):
+            failed_role(flow, category="invalid_output")
+            flow.contexts["Planner"]["context_id"] = f"recovery-{attempt}"
+        flow.override("/capability/roles/planner", {"model": "next-model", "reasoning_effort": "medium"})
+        self.assertEqual(replay(flow.log).next_action(), "obtain_role_failure_direction")
+        flow.spec_output("requirements")
+        with self.assertRaisesRegex(ValidationError, "Role retry gate"):
+            replay(flow.log)
+
+    def test_failed_helper_uses_its_own_new_basis_for_direction(self):
+        flow = Flow()
+        flow.override("/capability/roles/helpers", {"model": "new-helper", "reasoning_effort": "medium"})
+        helper = {"id": "native-helper", "model": "new-helper", "reasoning_effort": "medium", "category": "usage_limit"}
+        failed_role(flow, category="helper_failure", helper=helper)
+        self.assertEqual(replay(flow.log).next_action(), "obtain_model_direction")
+        flow.override("/capability/roles/helpers", {"model": "replacement-helper", "reasoning_effort": "medium"})
+        self.assertEqual(replay(flow.log).next_action(), "recover_invocation_or_output")
+
     def test_inflight_acceptance_keeps_original_basis_with_current_gate_separate(self):
         flow = coding_flow("maximum")
         flow.code_output()
@@ -55,7 +253,7 @@ class RecoveryAndReviewTests(unittest.TestCase):
         flow.review_output("code", issues=issues, dispositions=[response])
         entry = flow.log["history"][-1]
         entry["review_wrapper"]["assurance_level"] = "standard"
-        entry["status"] = flow.log["status"] = "code_conditionally_approved"
+        entry["status"] = flow.log["status"] = "code_changes_requested"
         state = replay(flow.log)
         self.assertEqual(entry["review_wrapper"]["accepted"], "true")
         self.assertIn("code", state.assurance_gaps)
@@ -171,7 +369,7 @@ class RecoveryAndReviewTests(unittest.TestCase):
                                            ("architectural_systemic", "affected", False), ("architectural_systemic", "full", True)):
             flow = Flow().finish_spec()
             wrapper = flow.review("spec")
-            wrapper.update(context=None, review_kind="follow_up", prior_review_ref=reference(10, "spec_review"),
+            wrapper.update(context=None, reviewed_output_ref=None, reviewed_artifacts=flow.artifacts, reviewed_commit=flow.checkpoint_commit, review_kind="follow_up",
                            repair_class=repair_class, review_scope=scope)
             with self.subTest(repair_class=repair_class, scope=scope):
                 if valid:
@@ -188,7 +386,6 @@ class RecoveryAndReviewTests(unittest.TestCase):
         flow.override("/capability/roles/planner", {"model": "accepted-other-model", "reasoning_effort": "high"})
         self.assertEqual(replay(flow.log).next_action(), "recover_invocation_or_output")
         self.assertEqual(replay(flow.log).config["assurance_level"], "standard")
-        flow.contexts["Planner"]["configuration_ref"] = flow.config_ref
         flow.spec_output("requirements")
         replay(flow.log)
 
@@ -208,6 +405,7 @@ class RecoveryAndReviewTests(unittest.TestCase):
         self.assertEqual(replay(flow.log).next_action(), "recover_invocation_or_output")
         failed_role(flow)
         self.assertEqual(replay(flow.log).next_action(), "obtain_role_failure_direction")
+        flow.spec_output("requirements")
         flow.spec_output("requirements")
         with self.assertRaisesRegex(ValidationError, "Role retry gate"):
             replay(flow.log)
@@ -229,12 +427,12 @@ class RecoveryAndReviewTests(unittest.TestCase):
                    "independent_task_ids": ["1"], "required_authorization": "One bounded live check."}
         flow.code_output(consolidated=False, blockers=[blocker])
         progress = [{"task_id": str(i), "status": "pending", "evidence": "Recorded pending work.", "disposition_ref": None} for i in (1, 2)]
-        flow.log["history"][-1]["change_wrapper"]["task_progress"] = deepcopy(progress)
-        self.assertEqual(replay(flow.log).next_action(), "continue_coder")
+        flow.log["history"][-1]["details"]["task_progress"] = deepcopy(progress)
+        self.assertEqual(resume_action(flow.log, {"delivery": "delivered", "invocation": "running"})["action"], "recover_running_invocation")
         blocker["independent_task_ids"] = []
         blocker["task_ids"] = ["1", "2"]
         flow.code_output(consolidated=False, blockers=[blocker])
-        flow.log["history"][-1]["change_wrapper"]["task_progress"] = deepcopy(progress)
+        flow.log["history"][-1]["details"]["task_progress"] = deepcopy(progress)
         self.assertEqual(replay(flow.log).next_action(), "resolve_scoped_blocker")
         flow.code_output()
         self.assertEqual(replay(flow.log).next_action(), "start_reviewer_review")
@@ -331,20 +529,11 @@ class RecoveryAndReviewTests(unittest.TestCase):
         with self.assertRaisesRegex(ValidationError, "explicit authorization"):
             replay(flow.log)
 
-    def test_legacy_approval_event_cannot_approve_other_review_loop(self):
-        flow = coding_flow()
-        flow.code_output()
-        flow.start_review("code")
-        fid = "C-" + flow.contexts["Reviewer"]["trigger_event_id"] + "-1"
-        flow.review_output("code", issues={"must_fix": [], "should_fix": [finding(fid)], "nit": []}, accepted="conditional")
-        flow.user_dispositions("code", [disposition(fid, "accept_limitation")], accepted="true")
-        flow.log["history"][-1].update(event="spec-approved-by-user", requestor="Coder")
-        with self.assertRaisesRegex(ValidationError, "other review loop"):
-            replay(flow.log)
 
     def test_catchup_assurance_review_returns_to_interrupted_coding(self):
         flow = coding_flow("basic")
         flow.code_output(consolidated=False)
+        flow.log["history"][-1]["details"]["yielded"] = True
         flow.override("/assurance_level", "maximum")
         self.assertEqual(replay(flow.log).next_action(), "review_assurance_gap_spec")
         flow.review("spec", freshness="revalidated")
@@ -427,7 +616,7 @@ class RecoveryAndReviewTests(unittest.TestCase):
     def test_evidence_requires_verifiable_sources_and_exposed_gaps(self):
         flow = Flow().finish_spec()
         wrapper = flow.review("spec", freshness="reused")
-        for field in ("sources", "observations", "inferences", "coverage_gaps", "uncertainty", "applicability_check"):
+        for field in ("sources", "observations", "applicability_check"):
             invalid = deepcopy(wrapper)
             del invalid["evidence"][0][field]
             with self.subTest(field=field), self.assertRaises(ValidationError):
@@ -441,7 +630,7 @@ class RecoveryAndReviewTests(unittest.TestCase):
                        triggering_conditions="The provider rejects a request temporarily.")
         for level, severity, accepted in (("basic", "nit", "true"), ("maximum", "should_fix", "conditional")):
             wrapper = deepcopy(template)
-            wrapper.update(context=None, reviewed_output_ref=None, assurance_level=level, accepted=accepted)
+            wrapper.update(context=None, reviewed_output_ref=None, reviewed_artifacts=flow.artifacts, reviewed_commit=flow.checkpoint_commit, review_kind="initial", assurance_level=level, accepted=accepted)
             item = deepcopy(concern)
             item["practical_consequences"] = "A local operator reruns the command." if level == "basic" else "Unattended production work remains delayed until intervention."
             item["rationale"] = "Manual retry meets the agreed local acceptance standard." if level == "basic" else "The agreed operational target warrants automated recovery."
@@ -462,7 +651,7 @@ class RecoveryAndReviewTests(unittest.TestCase):
         wrapper = flow.review_output("spec", issues={"must_fix": [finding(fid)], "should_fix": [], "nit": []},
                                      dispositions=[disposition(fid, "accept_limitation")])
         standalone = deepcopy(wrapper)
-        standalone.update(context=None, reviewed_output_ref=None)
+        standalone.update(context=None, reviewed_output_ref=None, reviewed_artifacts=flow.artifacts, reviewed_commit=flow.checkpoint_commit, review_kind="initial")
         validate_wrapper("spec-review-wrapper", standalone)
         with self.assertRaisesRegex(ValidationError, "historical decision"):
             replay(flow.log)
@@ -471,7 +660,7 @@ class RecoveryAndReviewTests(unittest.TestCase):
         flow = Flow("basic").finish_spec()
         flow.start_review("spec")
         fid = "S-" + flow.contexts["Architect"]["trigger_event_id"] + "-1"
-        flow.review_output("spec", issues={"must_fix": [], "should_fix": [], "nit": [finding(fid)]},
+        flow.review_output("spec", issues={"must_fix": [], "should_fix": [finding(fid)], "nit": []},
                            dispositions=[disposition(fid, "defer", "policy")])
         with self.assertRaisesRegex(ValidationError, "not invent"):
             replay(flow.log)

@@ -1,15 +1,15 @@
 {
   "context": {
-    "trigger_event_id": "17",
+    "trigger_event_id": "15",
     "role": "Coder",
     "attempt": 1,
-    "context_id": "coder-P2"
+    "context_id": "coder-session"
   },
   "checkpoint_commit": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
   "artifacts": {
     "requirements": {
       "ref": ".docs/specs/example/requirements.md",
-      "version": 1
+      "version": 2
     },
     "design": {
       "ref": ".docs/specs/example/design.md",
@@ -29,7 +29,7 @@
       "summary": "Mark task 1 complete.",
       "rationale": "The behavioral witness passed.",
       "approval_basis_ref": {
-        "event_id": "8",
+        "event_id": "10",
         "kind": "approval"
       }
     }
@@ -52,33 +52,7 @@
     {
       "task_id": "1",
       "status": "completed",
-      "evidence": "Assigned behavioral and integration checks pass."
-    },
-    {
-      "task_id": "2",
-      "status": "completed",
-      "evidence": "Assigned behavioral and integration checks pass."
-    },
-    {
-      "task_id": "3",
-      "status": "completed",
-      "evidence": "Assigned behavioral and integration checks pass."
-    },
-    {
-      "task_id": "4",
-      "status": "completed",
-      "evidence": "Assigned behavioral and integration checks pass."
-    },
-    {
-      "task_id": "5",
-      "status": "completed",
-      "evidence": "Assigned behavioral and integration checks pass."
-    }
-  ],
-  "causes": [
-    {
-      "event_id": "14",
-      "kind": "change_wrapper"
+      "evidence": "Behavioral witness passes."
     }
   ],
   "evidence": [
@@ -99,8 +73,5 @@
       "applicability_check": "Compared relevant source content and deployment assumptions with the prior inspection."
     }
   ],
-  "work_scope": {
-    "kind": "feature"
-  },
-  "summary": "Implemented and verified the approved input behavior."
+  "summary": "Cumulative implementation and checks from the original assignment, with the task path corrected before recording; no new execution attempt or artifact commit."
 }

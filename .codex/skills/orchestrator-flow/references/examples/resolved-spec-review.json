@@ -1,14 +1,8 @@
 {
   "context": null,
   "reviewed_commit": null,
-  "notes": "Prior standalone report identified the empty-input defect. The user selected repair; the current source and behavioral witness confirm it is fixed. There are no current findings.",
   "accepted": "true",
-  "issue_details": {
-    "must_fix": [],
-    "should_fix": [],
-    "nit": []
-  },
-  "dispositions": [],
+  "issue_details": {},
   "reviewed_artifacts": {
     "requirements": {
       "ref": ".docs/specs/example/requirements.md",
@@ -24,10 +18,8 @@
     }
   },
   "reviewed_output_ref": null,
-  "prior_review_ref": null,
   "review_kind": "follow_up",
   "assurance_level": "standard",
-  "review_disposition_policy": "spec_user_code_auto",
   "repair_class": "bounded_correctness",
   "changed_surfaces": [
     "src/example.py"
@@ -46,9 +38,6 @@
       "observations": [
         "The implemented branch meets the approved acceptance criterion."
       ],
-      "inferences": [],
-      "coverage_gaps": [],
-      "uncertainty": [],
       "assumptions": [
         "The approved deployment remains local."
       ],
@@ -58,5 +47,6 @@
   ],
   "resolved_findings": [
     "S-0-1"
-  ]
+  ],
+  "summary": "Prior standalone report identified the empty-input defect. The user selected repair; the current source and behavioral witness confirm it is fixed. There are no current findings."
 }

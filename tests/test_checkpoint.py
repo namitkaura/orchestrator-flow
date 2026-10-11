@@ -70,6 +70,24 @@ class CheckpointTests(unittest.TestCase):
         self.git("commit", "--only", "-m", "Preserve artifact progress\n\n" + trailers, "--", path)
         return self.git("rev-parse", "HEAD").stdout.strip()
 
+
+    def test_output_only_retry_reuses_published_earlier_artifacts(self):
+        from test_recovery_and_reviews import failed_role
+        from validate_orchestrator_artifacts import validate_workspace
+        self.published_coding()
+        original = self.flow.log["history"].pop()
+        self.flow.log["status"] = "coding_in_progress"
+        failed_role(self.flow, "Coder", category="invalid_output")
+        self.checkpoint(first=13)
+        self.git("push", "origin", "HEAD:refs/heads/feature/example")
+        count = self.git("rev-list", "--count", "HEAD").stdout
+        self.flow.code_output(progress=True)
+        state = replay(self.flow.log)
+        validate_workspace(state, self.repo)
+        self.assertEqual(self.flow.log["history"][-1]["change_wrapper"]["checkpoint_commit"], original["change_wrapper"]["checkpoint_commit"])
+        self.assertEqual(state.cycles["code"], 0)
+        self.assertEqual(self.git("rev-list", "--count", "HEAD").stdout, count)
+
     def test_artifact_delivery_and_uncertain_recovery_after_delivered_log(self):
         log_commit = self.checkpoint()
         self.git("push", "origin", "HEAD:refs/heads/feature/example")

@@ -1,7 +1,5 @@
 {
   "context": null,
-  "notes": "No unrelated changes.",
-  "output_kind": "consolidated",
   "artifacts": {
     "requirements": {
       "ref": ".docs/specs/example/requirements.md",
@@ -16,51 +14,26 @@
       "version": 2
     }
   },
-  "artifact_changes": [],
   "changed_files": [
     "src/example.py"
   ],
   "new_files": [
     "tests/test_example.py"
   ],
-  "deleted_files": [],
-  "cli_runs": [
-    "python -m unittest"
-  ],
-  "test_results": {
-    "unit_tests": {
-      "status": "pass",
-      "details": "The relevant behavioral checks passed."
-    },
-    "integration_tests": {
-      "status": "pass",
-      "details": "The relevant behavioral checks passed."
-    }
-  },
   "checks": [
     {
       "name": "behavioral-tests",
       "status": "pass",
       "required": true,
-      "details": "Expected result and preservation witness passed.",
-      "disposition_ref": null
+      "details": "Expected result and preservation witness passed."
     }
   ],
-  "implementation_details": "Implemented and verified the approved input behavior.",
   "task_progress": [
     {
       "task_id": "1",
       "status": "completed",
-      "evidence": "Behavioral witness passes.",
-      "disposition_ref": null
+      "evidence": "Behavioral witness passes."
     }
-  ],
-  "blockers": [],
-  "dispositions": [],
-  "causes": [],
-  "cumulative_scope": [
-    "src/example.py",
-    "tests/test_example.py"
   ],
   "evidence": [
     {
@@ -73,9 +46,6 @@
       "observations": [
         "The implemented branch meets the approved acceptance criterion."
       ],
-      "inferences": [],
-      "coverage_gaps": [],
-      "uncertainty": [],
       "assumptions": [
         "The approved deployment remains local."
       ],
@@ -83,5 +53,6 @@
       "applicability_check": "Compared relevant source content and deployment assumptions with the prior inspection."
     }
   ],
-  "checkpoint_commit": null
+  "checkpoint_commit": null,
+  "summary": "Implemented and verified the approved input behavior."
 }
