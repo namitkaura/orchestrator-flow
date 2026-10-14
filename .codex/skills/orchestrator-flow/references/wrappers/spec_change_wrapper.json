@@ -1,12 +1,26 @@
 {
-  "feature": "kebab-case-feature",
-  "feature_dir": ".docs/specs/kebab-case-feature",
-  "requirements_ref": ".docs/specs/kebab-case-feature/requirements.md",
-  "design_ref": ".docs/specs/kebab-case-feature/design.md",
-  "tasks_ref": ".docs/specs/kebab-case-feature/tasks.md",
-  "notes": "Created or revised requirements/design/tasks and resolved prior review feedback.",
-  "user_request": {
-    "original_request": "<original user proposal or change request>",
-    "additional_context": "<optional clarifications from the user/session>"
-  }
+  "context": null,
+  "output_kind": "consolidated",
+  "artifacts": {
+    "requirements": {
+      "ref": ".docs/specs/example/requirements.md",
+      "version": 1
+    },
+    "design": {
+      "ref": ".docs/specs/example/design.md",
+      "version": 1
+    },
+    "tasks": {
+      "ref": ".docs/specs/example/tasks.md",
+      "version": 1
+    }
+  },
+  "decisions": [
+    "Manual retry is adequate for the accepted deployment."
+  ],
+  "constraints": [
+    "Preserve existing nonempty-input behavior."
+  ],
+  "checkpoint_commit": null,
+  "summary": "No hidden decisions."
 }

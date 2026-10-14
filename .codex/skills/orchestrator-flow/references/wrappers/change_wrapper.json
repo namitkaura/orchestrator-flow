@@ -1,26 +1,58 @@
 {
-  "changed_files": [
-    "src/feature/service.ts",
-    "src/feature/service.test.ts"
-  ],
-  "new_files": [
-    "src/feature/types.ts"
-  ],
-  "deleted_files": [],
-  "cli_runs": [
-    "npm run test",
-    "npm run lint"
-  ],
-  "test_results": {
-    "unit_tests": {
-      "status": "pass",
-      "details": "All unit tests passed."
+  "context": null,
+  "artifacts": {
+    "requirements": {
+      "ref": ".docs/specs/example/requirements.md",
+      "version": 1
     },
-    "integration_tests": {
-      "status": "pass",
-      "details": "Relevant integration tests passed."
+    "design": {
+      "ref": ".docs/specs/example/design.md",
+      "version": 1
+    },
+    "tasks": {
+      "ref": ".docs/specs/example/tasks.md",
+      "version": 2
     }
   },
-  "implementation_details": "Implemented tasks in tasks.md and updated tests/docs.",
-  "notes": "No blockers; all must-fix items addressed."
+  "changed_files": [
+    "src/example.py"
+  ],
+  "new_files": [
+    "tests/test_example.py"
+  ],
+  "checks": [
+    {
+      "name": "behavioral-tests",
+      "status": "pass",
+      "required": true,
+      "details": "Expected result and preservation witness passed."
+    }
+  ],
+  "task_progress": [
+    {
+      "task_id": "1",
+      "status": "completed",
+      "evidence": "Behavioral witness passes."
+    }
+  ],
+  "evidence": [
+    {
+      "sources": [
+        {
+          "ref": "src/example.py",
+          "context": "Feature baseline and current working changes inspected"
+        }
+      ],
+      "observations": [
+        "The implemented branch meets the approved acceptance criterion."
+      ],
+      "assumptions": [
+        "The approved deployment remains local."
+      ],
+      "freshness": "new",
+      "applicability_check": "Compared relevant source content and deployment assumptions with the prior inspection."
+    }
+  ],
+  "checkpoint_commit": null,
+  "summary": "Implemented and verified the approved input behavior."
 }

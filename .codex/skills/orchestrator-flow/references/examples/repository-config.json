@@ -1,0 +1,27 @@
+{
+  "assurance_level": "standard",
+  "capability_defaults": {
+    "codex": {
+      "planner": {
+        "model": "example-model",
+        "reasoning_effort": "high"
+      },
+      "architect": {
+        "model": "example-model",
+        "reasoning_effort": "high"
+      },
+      "coder": {
+        "model": "example-model",
+        "reasoning_effort": "high"
+      },
+      "reviewer": {
+        "model": "example-model",
+        "reasoning_effort": "high"
+      },
+      "helpers": {
+        "model": "example-model",
+        "reasoning_effort": "high"
+      }
+    }
+  }
+}

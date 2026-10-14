@@ -1,37 +1,56 @@
 {
-  "accepted": "false",
-  "issue_details": {
-    "must_fix": [
-      {
-        "file": "src/feature/service.ts",
-        "description": "Input validation is missing for empty payloads.",
-        "rationale": "Violates error-handling and security requirements."
-      }
-    ],
-    "should_fix": [
-      {
-        "file": "src/feature/service.test.ts",
-        "description": "Add a negative-path integration test for timeout behavior.",
-        "rationale": "Improves confidence in resilience behavior."
-      }
-    ],
-    "nit": [
-      {
-        "file": "src/feature/types.ts",
-        "description": "Rename a type alias for clarity.",
-        "rationale": "Improves readability."
-      }
-    ]
-  },
-  "test_results": {
-    "unit_tests": {
-      "status": "pass",
-      "details": "Current unit suite passes."
+  "context": null,
+  "accepted": "true",
+  "issue_details": {},
+  "reviewed_artifacts": {
+    "requirements": {
+      "ref": ".docs/specs/example/requirements.md",
+      "version": 1
     },
-    "integration_tests": {
-      "status": "fail",
-      "details": "One regression scenario is failing."
+    "design": {
+      "ref": ".docs/specs/example/design.md",
+      "version": 1
+    },
+    "tasks": {
+      "ref": ".docs/specs/example/tasks.md",
+      "version": 2
     }
   },
-  "notes": "Implementation is not yet acceptable due to must-fix issues."
+  "reviewed_output_ref": null,
+  "review_kind": "initial",
+  "assurance_level": "standard",
+  "changed_surfaces": [
+    "src/example.py"
+  ],
+  "review_scope": "full",
+  "scope_reason": "Cover the complete relevant work on the initial pass; verify affected contracts on repair.",
+  "meaningful_change": true,
+  "evidence": [
+    {
+      "sources": [
+        {
+          "ref": "src/example.py",
+          "context": "Feature baseline and current working changes inspected"
+        }
+      ],
+      "observations": [
+        "The implemented branch meets the approved acceptance criterion."
+      ],
+      "assumptions": [
+        "The approved deployment remains local."
+      ],
+      "freshness": "new",
+      "applicability_check": "Compared relevant source content and deployment assumptions with the prior inspection."
+    }
+  ],
+  "checks": [
+    {
+      "name": "behavioral-tests",
+      "status": "pass",
+      "required": true,
+      "details": "Expected result and preservation witness passed."
+    }
+  ],
+  "reviewed_commit": null,
+  "summary": "Inspected current sources and applicable prior decisions."
 }

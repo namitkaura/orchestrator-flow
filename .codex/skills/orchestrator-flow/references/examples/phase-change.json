@@ -1,0 +1,90 @@
+{
+  "context": {
+    "trigger_event_id": "13",
+    "role": "Coder",
+    "attempt": 1,
+    "context_id": "coder-P1"
+  },
+  "checkpoint_commit": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "artifacts": {
+    "requirements": {
+      "ref": ".docs/specs/example/requirements.md",
+      "version": 1
+    },
+    "design": {
+      "ref": ".docs/specs/example/design.md",
+      "version": 1
+    },
+    "tasks": {
+      "ref": ".docs/specs/example/tasks.md",
+      "version": 1
+    }
+  },
+  "artifact_changes": [
+    {
+      "artifact": "tasks",
+      "previous_version": 1,
+      "current_version": 1,
+      "change_kind": "progress",
+      "summary": "Mark task 1 complete.",
+      "rationale": "The behavioral witness passed.",
+      "approval_basis_ref": {
+        "event_id": "8",
+        "kind": "approval"
+      }
+    }
+  ],
+  "changed_files": [
+    "src/example.py"
+  ],
+  "new_files": [
+    "tests/test_example.py"
+  ],
+  "checks": [
+    {
+      "name": "behavioral-tests",
+      "status": "pass",
+      "required": true,
+      "details": "Expected result and preservation witness passed."
+    }
+  ],
+  "task_progress": [
+    {
+      "task_id": "1",
+      "status": "completed",
+      "evidence": "Assigned behavioral and integration checks pass."
+    },
+    {
+      "task_id": "2",
+      "status": "completed",
+      "evidence": "Assigned behavioral and integration checks pass."
+    }
+  ],
+  "evidence": [
+    {
+      "sources": [
+        {
+          "ref": "src/example.py",
+          "context": "Feature baseline and current working changes inspected"
+        }
+      ],
+      "observations": [
+        "The implemented branch meets the approved acceptance criterion."
+      ],
+      "assumptions": [
+        "The approved deployment remains local."
+      ],
+      "freshness": "new",
+      "applicability_check": "Compared relevant source content and deployment assumptions with the prior inspection."
+    }
+  ],
+  "work_scope": {
+    "kind": "phase",
+    "phase_id": "P1",
+    "plan_ref": {
+      "event_id": "9",
+      "kind": "spec_change_wrapper"
+    }
+  },
+  "summary": "Implemented and verified the approved input behavior."
+}

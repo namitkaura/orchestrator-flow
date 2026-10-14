@@ -1,0 +1,25 @@
+{
+  "context": {
+    "trigger_event_id": "1",
+    "role": "Planner",
+    "attempt": 1,
+    "context_id": "planner-session"
+  },
+  "checkpoint_commit": null,
+  "output_kind": "incremental",
+  "artifacts": {
+    "requirements": null,
+    "design": null,
+    "tasks": null
+  },
+  "decisions": [
+    "Manual retry is adequate for the accepted deployment."
+  ],
+  "constraints": [
+    "Preserve existing nonempty-input behavior."
+  ],
+  "questions": [
+    "The referenced input is inaccessible; provide its intended project context."
+  ],
+  "summary": "No hidden decisions."
+}
