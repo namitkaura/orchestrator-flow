@@ -1,0 +1,81 @@
+{
+  "context": null,
+  "accepted": "true",
+  "issue_details": {
+    "nit": [
+      {
+        "id": "C-0-1",
+        "file": "src/example.py",
+        "description": "Transient provider failures require a manual retry; there is no automatic background retry.",
+        "rationale": "Manual recovery meets the agreed Basic acceptance standard; automatic retry is optional hardening.",
+        "triggering_conditions": "The external provider temporarily rejects a request.",
+        "practical_consequences": "The local operator reruns the command for this small private deployment.",
+        "basis": "hardening_opportunity",
+        "source_refs": [
+          "design.md manual retry decision",
+          "src/example.py provider-error handling"
+        ]
+      }
+    ]
+  },
+  "dispositions": [
+    {
+      "finding_id": "C-0-1",
+      "decision": "accept_limitation",
+      "rationale": "Manual retry is adequate for the accepted local use; a background retry loop is not worthwhile.",
+      "authority": "policy",
+      "revisit_condition": "Revisit if the feature becomes unattended or serves consequential production users."
+    }
+  ],
+  "reviewed_artifacts": {
+    "requirements": {
+      "ref": ".docs/specs/example/requirements.md",
+      "version": 1
+    },
+    "design": {
+      "ref": ".docs/specs/example/design.md",
+      "version": 1
+    },
+    "tasks": {
+      "ref": ".docs/specs/example/tasks.md",
+      "version": 2
+    }
+  },
+  "reviewed_output_ref": null,
+  "review_kind": "initial",
+  "assurance_level": "basic",
+  "changed_surfaces": [
+    "src/example.py"
+  ],
+  "review_scope": "full",
+  "scope_reason": "Cover the complete relevant work on the initial pass; verify affected contracts on repair.",
+  "meaningful_change": true,
+  "evidence": [
+    {
+      "sources": [
+        {
+          "ref": "src/example.py",
+          "context": "Feature baseline and current working changes inspected"
+        }
+      ],
+      "observations": [
+        "The implemented branch meets the approved acceptance criterion."
+      ],
+      "assumptions": [
+        "The approved deployment remains local."
+      ],
+      "freshness": "new",
+      "applicability_check": "Compared relevant source content and deployment assumptions with the prior inspection."
+    }
+  ],
+  "checks": [
+    {
+      "name": "behavioral-tests",
+      "status": "pass",
+      "required": true,
+      "details": "Expected result and preservation witness passed."
+    }
+  ],
+  "reviewed_commit": null,
+  "summary": "Inspected current sources and applicable prior decisions."
+}

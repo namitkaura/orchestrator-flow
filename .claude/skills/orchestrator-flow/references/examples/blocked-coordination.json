@@ -1,0 +1,61 @@
+{
+  "id": "12",
+  "timestamp": "2026-09-30T12:00:00Z",
+  "event": "coding-updated",
+  "actor": "Coder",
+  "requestor": "Planner",
+  "status": "coding_in_progress",
+  "details": {
+    "invocation": {
+      "trigger_event_id": "11",
+      "role": "Coder",
+      "attempt": 1,
+      "context_id": "coder-session"
+    },
+    "summary": "Report scoped progress and outstanding work.",
+    "task_progress": [
+      {
+        "task_id": "1",
+        "status": "completed",
+        "evidence": "Approved offline parsing and its behavioral witness are complete.",
+        "disposition_ref": null
+      },
+      {
+        "task_id": "2",
+        "status": "pending",
+        "evidence": "Waiting for live request authority.",
+        "disposition_ref": null
+      },
+      {
+        "task_id": "3",
+        "status": "in_progress",
+        "evidence": "Approved offline repair can continue.",
+        "disposition_ref": null
+      }
+    ],
+    "blockers": [
+      {
+        "id": "provider-live-check",
+        "operation": "live provider verification",
+        "task_ids": [
+          "2"
+        ],
+        "reason": "A further live request requires separate authorization.",
+        "attempts": [
+          "One authorized request failed."
+        ],
+        "evidence": [
+          "Recorded timeout from the authorized request."
+        ],
+        "depends_on": [
+          "live response"
+        ],
+        "independent_task_ids": [
+          "3"
+        ],
+        "required_authorization": "One additional bounded live request."
+      }
+    ],
+    "references": []
+  }
+}
