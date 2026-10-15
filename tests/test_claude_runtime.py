@@ -318,5 +318,49 @@ class ClaudeStartupCheckTests(unittest.TestCase):
         self.assertIn("Per-call overrides: CLAUDE_CODE_SUBAGENT_MODEL_FORCE=1, CLAUDE_CODE_SUBAGENT_MODEL=sonnet, CLAUDE_CODE_EFFORT_LEVEL=low", lines)
 
 
+def frontmatter(path):
+    """Return simple `key: value` frontmatter fields and the body of a skill or agent file."""
+    lines = path.read_text(encoding="utf-8").splitlines()
+    if not lines or lines[0] != "---" or "---" not in lines[1:]:
+        raise AssertionError(f"{path} needs frontmatter starting on line 1")
+    end = lines.index("---", 1)
+    fields = {}
+    for line in lines[1:end]:
+        key, _, value = line.partition(":")
+        fields[key.strip()] = value.strip().strip('"')
+    return fields, "\n".join(lines[end + 1:])
+
+
+class ClaudeConfigurationTests(unittest.TestCase):
+    """Native settings that keep maintenance sessions from starting the workflow and keep review roles read-only."""
+
+    def test_skill_is_explicit_only_and_preapproves_only_its_inline_check(self):
+        fields, body = frontmatter(CLAUDE / "SKILL.md")
+        self.assertEqual(fields["name"], "orchestrator-flow")
+        self.assertEqual(fields["disable-model-invocation"], "true")
+        self.assertFalse({"model", "effort", "context"} & set(fields), "Orchestrator runs on the session's own model")
+        rule = fields["allowed-tools"]
+        self.assertTrue(rule.startswith("Bash(") and rule.endswith(")"))
+        self.assertIn(f"!`{rule[len('Bash('):-1]}`", body, "The inline startup check must match its pre-approval exactly")
+
+    def test_agents_are_namespaced_and_carry_native_restrictions(self):
+        read_only = {"Edit", "Write", "NotebookEdit"}
+        expected = {"flow-planner": set(), "flow-coder": set(), "flow-architect": read_only, "flow-reviewer": read_only,
+                    "flow-explorer": read_only | {"Agent"}, "flow-runner": read_only | {"Agent"}}
+        agents = {}
+        for path in sorted((ROOT / ".claude/agents/orchestrator-flow").glob("*.md")):
+            fields, body = frontmatter(path)
+            agents[fields["name"]] = (fields, body)
+        self.assertEqual(set(agents), set(expected))
+        for name, (fields, body) in agents.items():
+            with self.subTest(agent=name):
+                self.assertIn("Orchestrator Flow", fields["description"])
+                self.assertFalse({"model", "effort", "memory", "isolation", "permissionMode", "tools"} & set(fields),
+                                 "Orchestrator supplies model and effort; agents keep inherited tools and no memory or isolation")
+                denied = {tool.strip() for tool in fields.get("disallowedTools", "").split(",") if tool.strip()}
+                self.assertLessEqual(expected[name] | {"EnterWorktree", "ExitWorktree"}, denied)
+                self.assertTrue(body.strip())
+
+
 if __name__ == "__main__":
     unittest.main()
