@@ -209,7 +209,7 @@ These are the repository defaults, not fixed rules:
 The Codex tiers map roughly as Astra to Fable, Sol to Opus, and Luna to Sonnet or Haiku. The defaults use Opus rather than Fable because Fable costs 2.5 times as much, may bill usage credits, and falls back automatically. Orchestrator may recommend Fable for the Planner, Architect or Reviewer on a hard feature, or medium effort for the Coder on a routine one. Those are examples of judgment, not rules.
 
 - **Native controls.** Every role and helper start passes the accepted `model` and `effort` on the Agent tool call. Prompt text never stands in for a native setting.
-- **Recording.** The log records the short model name actually passed, and always an explicit effort, because Claude Code's default differs by model. A short name resolves to the newest model in its family, or to the session's own model version when the session uses that family. Each feature's configuration lists this as an acknowledged limitation that the user accepts with it.
+- **Recording.** The log records the short model name actually passed, and always an explicit effort, because Claude Code's default differs by model. A short name resolves to the newest model in its family, or to the session's own model version when the session uses that family. Setup documentation and Orchestrator's recommendation state this once; it is not added to every feature's acknowledged limitations, because an always-present entry would make the validator's check for an unmapped intermediate effort always pass.
 - **Overrides that defeat per-call choices.** At feature start, Orchestrator checks for `CLAUDE_CODE_SUBAGENT_MODEL_FORCE` and `CLAUDE_CODE_EFFORT_LEVEL`. It discloses any `availableModels` or `fallbackModel` substitution that Claude Code reports. Each is presented as a limitation for the user to accept or remove. Nothing is substituted silently.
 - **Fable.** When the user selects Fable, its automatic fallback is recorded as an acknowledged limitation, and its usage-credit consent prompt may pause a background role until answered.
 - **Unavailable models.** An unavailable model or a usage limit pauses the affected work for the user's choice, as today.
@@ -258,10 +258,12 @@ Orchestrator records each role's return by agent ID rather than by copying it:
 
   Orchestrator works from this summary and from any return that arrived inline, and never needs to load a large return into its own context.
 - **Fallbacks.**
-  - If the transcript cannot be found or parsed, record an inline return by passing it on stdin, as Codex does.
-  - Record a return that was saved because of its size from Claude Code's saved tool-result file.
-  - If neither works, stop and ask the user.
+  - If the transcript is not in the current session's folder, the recorder searches this project's other session folders for the agent ID, or takes an explicit transcript path.
+  - Record an inline return on stdin only when its text is unaltered. Background completion notices escape the report text and can neutralize parts of it, so their text is never copied.
+  - A saved tool-result file lives in the same session folder as the transcript, so it adds no separate fallback.
+  - If none of these works, stop and ask the user.
   - Never record a summary, a pointer or a reconstruction.
+- **Orchestrator's own entries.** A Claude-only entry writer records approvals, overrides, dispositions and other Orchestrator entries. It derives the ID, timestamp, status and effective configuration through the shared replay and validates the candidate before writing, so Orchestrator never edits or loads a large log by hand.
 - **Role obligations.** A role's final message is the JSON wrapper alone, with no code fences or prose, and the role validates its wrapper before returning, as today. Wrapper schemas do not change.
 
 The transcript reader is a Claude-only script, kept outside the files shared with Codex. It depends on an undocumented layout, so it fails with a specific error when the layout changes, and fixture tests built from real transcripts guard it.
@@ -335,7 +337,7 @@ The check runs at every `/orchestrator-flow` invocation, including resume, befor
 
 - what the integration provides
 - the two install links and migration from the old installation
-- the Python dependency
+- the Python dependency, installed in a git-ignored virtual environment inside the skill that every workflow script call names
 - the minimum version, and how to check and update the CLI and the desktop app
 - invocation
 - a `capability_defaults["claude-code"]` example using the defaults above
@@ -357,9 +359,9 @@ The check runs at every `/orchestrator-flow` invocation, including resume, befor
 - **Parity:** the shared-file parity test.
 - **Claude links:** real relative `VERSION` and `templates` symlinks with Git mode `120000`, readable from a foreign working directory.
 - **Schema and replay** for the optional exploration-helper assignment: absent, present, as an override target, and in helper failure attribution.
-- **Transcript reader**, using fixtures taken from real Claude Code transcripts and a saved tool-result file:
+- **Transcript reader**, using sanitized fixtures taken from real Claude Code transcripts:
   - inline returns
-  - saved large returns
+  - large returns
   - indented hand-back text
   - Unicode
   - a missing transcript
@@ -396,14 +398,15 @@ The Codex twelve-case matrix, its master-controller harness, Windows testing, an
 
 ## Questions
 
+Both questions were settled with the maintainer during implementation planning.
+
 1. **Recommended permission mode for workflow sessions.**
-   - **Recommendation:** default mode with the documented allow rules.
-   - Auto mode is the alternative if the native test shows its classifier does not interfere with checkpoint pushes or role messages.
-   - This affects the README guidance and the native test setup.
+   - **Decided:** auto mode is the single recommended mode. It is Claude Code's default starting mode and lets long runs continue while the user is away. `acceptEdits` with the documented allow rules is described as the alternative for users who prefer to approve commands themselves.
+   - The mode is the user's session choice: the workflow neither detects nor changes it, and the contracts behave the same in either mode. Classifier blocks and report warnings are reported to the user as they happened.
+   - The native test runs in auto mode.
 2. **Background or foreground leads.**
-   - **Recommendation:** background, as described in section 7. The user can interact with Orchestrator during long runs, and it matches Claude Code's default.
-   - Foreground leads are simpler to follow but block interaction until the lead returns.
-   - This affects the Orchestrator contract.
+   - **Decided:** background, as described in section 7. The user can interact with Orchestrator during long runs, and it matches Claude Code's default.
+   - Leads still start their helpers in the foreground, so each helper's report returns to its lead.
 
 Otherwise, the decisions above form the planning baseline. Planner should raise newly discovered contradictions or material policy choices at the appropriate requirements, design or task-planning phase rather than silently changing the agreed behavior.
 
@@ -418,7 +421,7 @@ Otherwise, the decisions above form the planning baseline. Planner should raise 
 - [Codex skill entry](../../.codex/skills/orchestrator-flow/SKILL.md) and its [references](../../.codex/skills/orchestrator-flow/references/): the behavioral source for the Claude-native contracts. This covers the workflow protocol, the Orchestrator, Planner, Architect, Coder and Reviewer contracts, assurance, recovery, implementation phases and Maximum assurance.
 - [Common schema](../../.codex/skills/orchestrator-flow/references/common.schema.json), [task-log schema](../../.codex/skills/orchestrator-flow/references/task_log_schema.json), [repository configuration schema](../../.codex/skills/orchestrator-flow/references/repository_config.schema.json) and [wrappers](../../.codex/skills/orchestrator-flow/references/wrappers/): the `roles`, `capability` and invocation `context_id` definitions, and the return shapes.
 - [Codex runtime scripts](../../.codex/skills/orchestrator-flow/scripts/): the recorder (`record-handoff` and `prepare_handoff`), replay, spec reader and checkpoint helpers to be copied.
-- [Legacy Claude agents](../../.claude/agents/) and [`/orchestrate` command](../../.claude/commands/orchestrate.md): the integration being replaced.
+- Legacy Claude agents (`.claude/agents/*.md`) and the `/orchestrate` command (`.claude/commands/orchestrate.md`): the integration being replaced, removed by this change; see them in Git history at commit `49e9e1d`.
 - [tests/README.md](../../tests/README.md) and [tests/test_distribution.py](../../tests/test_distribution.py): existing coverage, including the linked-resource tests to mirror for Claude.
 - [Proposal and bug-report templates](../../templates/): the canonical inputs exposed through the skill's `templates` link.
 - [Coding directives](../../Directives/codingAgentDirectives.md): reusable project-owned guidance that the workflow does not load as policy.
