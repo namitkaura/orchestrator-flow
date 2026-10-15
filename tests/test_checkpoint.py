@@ -448,7 +448,7 @@ class CheckpointTests(unittest.TestCase):
         separate = self.root / "separate"
         self.git("init", "--separate-git-dir", str(metadata), str(separate), cwd=self.root)
         self.assertTrue((separate / ".git").is_file())
-        self.assertEqual(journal_path(separate, "example").resolve(), metadata / "orchestrator-flow/example/checkpoint-attempts.jsonl")
+        self.assertEqual(journal_path(separate, "example").resolve(), (metadata / "orchestrator-flow/example/checkpoint-attempts.jsonl").resolve())
 
     def test_next_checkpoint_after_success_has_no_invented_uncertainty(self):
         self.checkpoint()

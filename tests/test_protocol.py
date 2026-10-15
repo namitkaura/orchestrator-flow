@@ -108,6 +108,44 @@ class ProtocolTests(unittest.TestCase):
         self.assertEqual(state.config["capability"]["roles"]["helpers"]["model"], "helper-next")
         self.assertEqual(state.errors, {})
 
+    def test_exploration_helpers_assignment_is_optional_and_overridable(self):
+        explorer = {"model": "explorer-model", "reasoning_effort": "medium"}
+        # Absent keeps the 2.0.0 meaning: the single helpers assignment covers exploration.
+        self.assertNotIn("exploration_helpers", replay(complete_flow().log).config["capability"]["roles"])
+        flow = Flow(platform="claude-code", exploration_helpers=explorer)
+        roles = deepcopy(flow.log["capability"]["roles"])
+        self.assertEqual(replay(flow.log).config["capability"]["roles"]["exploration_helpers"], explorer)
+        validate_shape("repository-config", {"assurance_level": "standard", "capability_defaults": {"claude-code": roles}})
+        # A configured assignment is a complete-role target; the test-runner assignment is unaffected.
+        flow.override("/capability/roles/exploration_helpers", {"model": "explorer-next", "reasoning_effort": "low"})
+        flow.spec_output("requirements")
+        state = replay(flow.log)
+        self.assertEqual(state.config["capability"]["roles"]["exploration_helpers"]["model"], "explorer-next")
+        self.assertEqual(state.config["capability"]["roles"]["helpers"], roles["helpers"])
+
+    def test_exploration_helpers_are_added_or_removed_with_complete_capability(self):
+        explorer = {"model": "explorer-model", "reasoning_effort": "medium"}
+        flow = Flow()
+        flow.add("user-override", "User", "User", flow.log["status"], details={
+            "changes": [{"target": "/capability/roles/exploration_helpers", "previous": explorer, "new": explorer}],
+            "rationale": "Split exploration from test execution.", "user_statement": "Use a separate exploration helper."})
+        self.rejected(flow, "/capability/roles/exploration_helpers is not configured")
+        flow = Flow()
+        added = deepcopy(flow.log["capability"])
+        added["roles"]["exploration_helpers"] = explorer
+        flow.override("/capability", added)
+        self.assertEqual(replay(flow.log).config["capability"]["roles"]["exploration_helpers"], explorer)
+        removed = deepcopy(added)
+        del removed["roles"]["exploration_helpers"]
+        flow.override("/capability", removed)
+        self.assertNotIn("exploration_helpers", replay(flow.log).config["capability"]["roles"])
+        overlapping = Flow(exploration_helpers=explorer)
+        overlapping.add("user-override", "User", "User", overlapping.log["status"], details={"changes": [
+            {"target": "/capability", "previous": deepcopy(overlapping.log["capability"]), "new": deepcopy(overlapping.log["capability"])},
+            {"target": "/capability/roles/exploration_helpers", "previous": explorer, "new": explorer}],
+            "rationale": "Overlapping change.", "user_statement": "Apply both."})
+        self.rejected(overlapping, "Overlapping override targets")
+
     def test_inflight_review_survives_capability_change(self):
         flow = Flow("basic").finish_spec()
         flow.start_review("spec")

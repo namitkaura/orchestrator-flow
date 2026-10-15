@@ -26,12 +26,14 @@ def disposition(fid, decision="fix", authority="user", authority_ref=None):
 
 
 class Flow:
-    def __init__(self, assurance="standard", policy="spec_user_code_auto", baseline="a" * 40):
+    def __init__(self, assurance="standard", policy="spec_user_code_auto", baseline="a" * 40, platform="codex", exploration_helpers=None):
+        roles = {role: {"model": "example-model", "reasoning_effort": "high"} for role in ("planner", "architect", "coder", "reviewer", "helpers")}
+        if exploration_helpers:
+            roles["exploration_helpers"] = deepcopy(exploration_helpers)
         self.log = {"feature": "example", "feature_dir": ".docs/specs/example", "workflow_version": "2.0.0",
                     **{name + "_ref": f".docs/specs/example/{name}.md" for name in ("requirements", "design", "tasks")},
                     "task_log_ref": ".docs/specs/example/task_log.json", "assurance_level": assurance,
-                    "capability": {"platform": "codex", "roles": {role: {"model": "example-model", "reasoning_effort": "high"}
-                        for role in ("planner", "architect", "coder", "reviewer", "helpers")}, "acknowledged_limitations": []},
+                    "capability": {"platform": platform, "roles": roles, "acknowledged_limitations": []},
                     "review_disposition_policy": policy, "branch_context": {"feature_branch": "feature/example", "integration_branch": "main", "remote": "origin", "baseline_commit": baseline},
                     "status": "spec_in_progress", "history": []}
         self.artifacts = dict.fromkeys(("requirements", "design", "tasks"))

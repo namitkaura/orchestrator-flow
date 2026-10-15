@@ -1,6 +1,6 @@
 # Orchestrator Flow protocol
 
-This is the Codex v2 runtime contract. Read this skill's `VERSION`, never a consumer product version. The other integrations retain their native contracts; their v2 updates are deferred. Repository maintenance does not activate this consumer workflow.
+This is the Codex v2 runtime contract. Read this skill's `VERSION`, never a consumer product version. Claude Code has its own v2 integration with the same protocol and task log; GitHub Copilot and Cursor retain their native contracts, and their v2 updates are deferred. Repository maintenance does not activate this consumer workflow.
 
 Use this reference for normal coordination. Roles read their own contract and `assurance.md`; consult `workflow-recovery.md` for interrupted/failed work, `implementation-phases.md` for an approved phased plan, and `maximum-assurance.md` when the applicable review assurance is Maximum.
 
