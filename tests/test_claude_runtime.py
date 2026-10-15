@@ -152,6 +152,14 @@ class ClaudeLogTests(unittest.TestCase):
         tail["message"]["content"] = [{"type": "text", "text": dumps(wrapper)[-200:]}]
         split += [reminder, tail]
         self.assertRejected(self.record(self.write_transcript("".join(dumps(r) + "\n" for r in split))), "report_truncated", before)
+        # Altered real records: an older cut message whose continuation finished does not taint a later complete report.
+        settled = deepcopy(records[:final + 1])
+        settled[final]["message"]["stop_reason"] = "max_tokens"
+        continuation, report = deepcopy(records[final]), deepcopy(records[final])
+        continuation["message"].update(id="msg_fixture_continued", content=[{"type": "text", "text": "Fixture continuation text."}])
+        report["message"].update(id="msg_fixture_report", content=[{"type": "text", "text": dumps(wrapper)}])
+        settled += [reminder, continuation, reminder, report]
+        self.assertRecorded(self.record(self.write_transcript("".join(dumps(r) + "\n" for r in settled))), wrapper)
 
     def test_unusable_reports_and_layouts_are_rejected(self):
         previous, wrapper = planner_handoff()

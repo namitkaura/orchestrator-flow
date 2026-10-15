@@ -139,8 +139,11 @@ def continues_after_limit(run, start):
             continue
         if record["type"] == "user" or any(b.get("type") == "tool_use" for b in blocks(record)):
             return False
-        if record["message"].get("stop_reason") == "max_tokens":
+        stop = record["message"].get("stop_reason")
+        if stop == "max_tokens":
             return True
+        if stop:  # An earlier message that finished normally ends the stretch.
+            return False
     return False
 
 
