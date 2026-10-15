@@ -123,6 +123,11 @@ class ProtocolTests(unittest.TestCase):
         self.assertEqual(state.config["capability"]["roles"]["exploration_helpers"]["model"], "explorer-next")
         self.assertEqual(state.config["capability"]["roles"]["helpers"], roles["helpers"])
 
+    def test_log_written_by_the_current_version_replays(self):
+        flow = complete_flow()
+        flow.log["workflow_version"] = "2.1.0"
+        self.assertEqual(replay(flow.log).status, "implementation_complete")
+
     def test_exploration_helpers_are_added_or_removed_with_complete_capability(self):
         explorer = {"model": "explorer-model", "reasoning_effort": "medium"}
         flow = Flow()

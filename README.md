@@ -84,7 +84,15 @@ The main conversation is Orchestrator. It starts each lead as a real subagent wi
 
 ### Link the two folders
 
-Keep this checkout available and link its two folders into your Claude Code folders. Both destinations are subfolders, so your other skills and agents keep working beside them. These commands assume the destinations do not already exist:
+The previous Claude Code integration linked the whole `~/.claude/agents` directory to this checkout and linked a single `~/.claude/commands/orchestrate.md`. Migrate that installation first, before adding any link: while `~/.claude/agents` is itself a symlink to this checkout, `mkdir -p` succeeds silently and the agents link below would be created inside the checkout instead. Check with `ls -ld ~/.claude/agents ~/.claude/commands/orchestrate.md`, then:
+
+```sh
+rm ~/.claude/agents                      # only when it is a symlink to this checkout
+mkdir ~/.claude/agents
+rm ~/.claude/commands/orchestrate.md
+```
+
+Keep this checkout available and link its two folders into your Claude Code folders. Both destinations are subfolders, so your other skills and agents keep working beside them. These commands assume the destinations do not already exist and `~/.claude/agents` is a real directory:
 
 ```sh
 mkdir -p ~/.claude/skills ~/.claude/agents
@@ -92,15 +100,7 @@ ln -s "[ORCHESTRATOR_REPO_PATH]/.claude/skills/orchestrator-flow" ~/.claude/skil
 ln -s "[ORCHESTRATOR_REPO_PATH]/.claude/agents/orchestrator-flow" ~/.claude/agents/orchestrator-flow
 ```
 
-The skill's `VERSION` and `templates` entries are real relative symlinks (`../../../VERSION` and `../../../templates`) stored by Git as mode `120000`, exactly as in the Codex skill. A missing, broken or flattened link is a setup error.
-
-The previous Claude Code integration linked the whole `~/.claude/agents` directory to this checkout and linked a single `~/.claude/commands/orchestrate.md`. Before adding the two links above, check with `ls -l ~/.claude ~/.claude/commands`, then replace that installation:
-
-```sh
-rm ~/.claude/agents                      # only when it is a symlink to this checkout
-mkdir ~/.claude/agents
-rm ~/.claude/commands/orchestrate.md
-```
+Keep the checkout and link paths free of spaces: the skill's inline startup check runs its script by path without quoting. The skill's `VERSION` and `templates` entries are real relative symlinks (`../../../VERSION` and `../../../templates`) stored by Git as mode `120000`, exactly as in the Codex skill. A missing, broken or flattened link is a setup error.
 
 The workflow never changes these paths itself. Features started under the old `/orchestrate` workflow cannot continue under v2, and their logs remain unsupported.
 
@@ -149,7 +149,7 @@ Leads run in the background, so you can keep talking to Orchestrator during long
 
 ### Permissions
 
-Auto mode, Claude Code's default starting mode, is the recommended mode for workflow sessions because it lets long runs continue while you are away. What to expect:
+Auto mode, Claude Code's default starting mode, is the recommended mode for workflow sessions because it lets long runs continue while you are away. Switch modes with Shift+Tab in the CLI or the mode selector in the desktop app, or set `defaultMode` in your settings. What to expect:
 
 - The first time a role reads the skill's references outside the project, Claude Code asks once; choose to keep allowing such reads.
 - Checkpoint pushes to the feature branch run without a prompt.
@@ -157,13 +157,13 @@ Auto mode, Claude Code's default starting mode, is the recommended mode for work
 - If the classifier flags a role's report, Orchestrator shows you the warning before acting on it.
 - The classifier adds latency and, on API or Enterprise billing, token cost. Narrow allow rules for the commands below skip it.
 
-If you prefer to approve commands yourself, use `acceptEdits` mode with allow rules like these in `~/.claude/settings.json`, replacing `<skill-dir>` with the absolute skill path that appears in the workflow's commands:
+If you prefer to approve commands yourself, use `acceptEdits` mode with allow rules like these in `~/.claude/settings.json`, replacing `<skill-dir>` with the absolute skill path that appears in the workflow's commands. Read rules mark an absolute path with a leading `//`, hence the extra slash in the first rule:
 
 ```json
 {
   "permissions": {
     "allow": [
-      "Read(~/.claude/skills/orchestrator-flow/**)",
+      "Read(/<skill-dir>/**)",
       "Bash(<skill-dir>/.venv/bin/python <skill-dir>/scripts/*)",
       "Bash(git add *)",
       "Bash(git commit *)",
@@ -327,6 +327,7 @@ python .codex/skills/orchestrator-flow/scripts/checkpoint_state.py recent <TASK_
 python3 .claude/skills/orchestrator-flow/scripts/check_claude_code.py
 .claude/skills/orchestrator-flow/.venv/bin/python .claude/skills/orchestrator-flow/scripts/claude_log.py record-return --log <TASK_LOG> --agent-id <AGENT_ID> --workspace <CONSUMER_ROOT>
 .claude/skills/orchestrator-flow/.venv/bin/python .claude/skills/orchestrator-flow/scripts/claude_log.py append-entry --log <TASK_LOG> --workspace <CONSUMER_ROOT> < <ENTRY_JSON>
+.claude/skills/orchestrator-flow/.venv/bin/python .claude/skills/orchestrator-flow/scripts/claude_log.py find-agent --feature <FEATURE> --invocation <TRIGGER>/<ROLE>/<ATTEMPT>
 python -B -m unittest discover -s tests -v
 git diff --check
 ```

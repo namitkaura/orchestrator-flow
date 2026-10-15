@@ -1,6 +1,6 @@
 # Maximum assurance checklists
 
-Read when the applicable review stage requires Maximum. Apply these complete checks on every required pass; the same review agent continues across passes with its context. Finding priority still follows demonstrated behavior and actual consequences under `assurance.md`. Cosmetic wording preferences do not become blockers, and nits alone never cause a repair-only cycle. Honor explicit user repair decisions through the existing path described in `assurance.md`.
+Read when the applicable review stage requires Maximum. Apply these complete checks on every required pass; the same review agent continues across passes with its context while its model and effort match the required assignment. Finding priority still follows demonstrated behavior and actual consequences under `assurance.md`. Cosmetic wording preferences do not become blockers, and nits alone never cause a repair-only cycle. Honor explicit user repair decisions through the existing path described in `assurance.md`.
 
 ## Maximum specification review obligations
 

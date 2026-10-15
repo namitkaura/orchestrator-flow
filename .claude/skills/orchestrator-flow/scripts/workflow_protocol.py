@@ -786,6 +786,9 @@ class Replay:
                     "Helper failure must identify the actual failed helper and owning role")
             require(not details["helper"] or details["helper"].get("assignment", "helpers") in self.config["capability"]["roles"],
                     "Helper failure cites an exploration_helpers assignment that is not configured")
+            # With two helper assignments, an unattributed failure would be compared with the wrong model.
+            require(not details["helper"] or "exploration_helpers" not in self.config["capability"]["roles"] or "assignment" in details["helper"],
+                    "With exploration_helpers configured, a helper failure must name the helper assignment that applied")
             self.errors.setdefault(context["trigger_event_id"], []).append(details)
             self.last_error = {**details, "event_id": entry_id}
             self.inflight = role

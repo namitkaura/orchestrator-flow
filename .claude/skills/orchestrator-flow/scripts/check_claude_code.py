@@ -19,7 +19,7 @@ import sys
 
 # The integration's single statement of the minimum supported Claude Code version.
 MINIMUM = (2, 1, 296)
-OVERRIDES = ("CLAUDE_CODE_SUBAGENT_MODEL_FORCE", "CLAUDE_CODE_SUBAGENT_MODEL", "CLAUDE_CODE_EFFORT_LEVEL")
+TRUE = {"1", "true", "yes", "on"}
 VERSION_OUTPUT = re.compile(r"(\d+)\.(\d+)\.(\d+)\s*\(Claude Code\)")
 
 
@@ -43,13 +43,13 @@ def running_version(env):
 
 
 def source(execpath, env):
-    """Name the app running this session; the binary's path wins over the inheritable entrypoint."""
+    """Name the app running this session, or None; the binary's path wins over the inheritable entrypoint."""
     path = (execpath or "").replace("\\", "/")
     if "/Application Support/Claude/" in path or "/Claude.app/" in path:
         return "Claude desktop app"
     if "/.local/" in path or "/claude/versions/" in path or "/@anthropic-ai/claude-code/" in path:
         return "Claude Code CLI"
-    return {"claude-desktop": "Claude desktop app", "cli": "Claude Code CLI"}.get(env.get("CLAUDE_CODE_ENTRYPOINT", ""), "unknown source")
+    return {"claude-desktop": "Claude desktop app", "cli": "Claude Code CLI"}.get(env.get("CLAUDE_CODE_ENTRYPOINT", ""))
 
 
 def version_lines(env):
@@ -58,10 +58,12 @@ def version_lines(env):
         return [f"Claude Code: unknown ({problem})"]
     app = source(execpath, env)
     verdict = "supported" if version >= MINIMUM else "too_old"
-    lines = [f"Claude Code: {verdict} (running {dotted(version)} from the {app}; minimum {dotted(MINIMUM)})"]
+    origin = f" from the {app}" if app else ""
+    lines = [f"Claude Code: {verdict} (running {dotted(version)}{origin}; minimum {dotted(MINIMUM)})"]
     if verdict == "too_old":
+        running = f"{dotted(version)} ({app})" if app else dotted(version)
         lines.append(f"Orchestrator Flow requires Claude Code {dotted(MINIMUM)} or newer. This session is running Claude Code "
-                     f"{dotted(version)} ({app}). Update Claude Code, then start a new session: in a terminal run `claude update`; "
+                     f"{running}. Update Claude Code, then start a new session: in a terminal run `claude update`; "
                      "for the desktop app, update the Claude app.")
     return lines
 
@@ -85,7 +87,14 @@ def venv_lines(skill_dir):
 
 
 def override_lines(env):
-    present = [f"{name}={env[name]}" for name in OVERRIDES if env.get(name)]
+    """Report only settings that defeat per-call choices: a true model FORCE (with its model) and an effort level."""
+    present = []
+    if env.get("CLAUDE_CODE_SUBAGENT_MODEL_FORCE", "").strip().lower() in TRUE:
+        present.append(f"CLAUDE_CODE_SUBAGENT_MODEL_FORCE={env['CLAUDE_CODE_SUBAGENT_MODEL_FORCE']}")
+        if env.get("CLAUDE_CODE_SUBAGENT_MODEL"):
+            present.append(f"CLAUDE_CODE_SUBAGENT_MODEL={env['CLAUDE_CODE_SUBAGENT_MODEL']}")
+    if env.get("CLAUDE_CODE_EFFORT_LEVEL"):
+        present.append(f"CLAUDE_CODE_EFFORT_LEVEL={env['CLAUDE_CODE_EFFORT_LEVEL']}")
     return [f"Per-call overrides: {', '.join(present) if present else 'none'}"]
 
 

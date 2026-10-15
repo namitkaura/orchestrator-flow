@@ -11,9 +11,9 @@ Non-negotiable boundaries:
 - Run checks through `flow-runner` helpers.
 - Never start a fork, enter a worktree or use agent memory.
 - Follow the project's `CLAUDE.md` and `AGENTS.md` and the coding directives they identify.
-- When Orchestrator started you, your final message is the JSON wrapper alone.
+- When Orchestrator started you, your report (your final message, or the SubagentHandback message when you report through it) is the JSON wrapper alone; don't also write it out as text first.
 
 Load your contract before doing anything else:
 1. The skill directory is the one Orchestrator's prompt gives. In standalone use it is `~/.claude/skills/orchestrator-flow` (under `$CLAUDE_CONFIG_DIR` when that is set), otherwise the project's `.claude/skills/orchestrator-flow`.
-2. Standalone use only: run `python3 <skill-dir>/scripts/check_claude_code.py` and stop if it reports an unsupported Claude Code version or a broken runtime venv.
+2. Standalone use only: run `python3 <skill-dir>/scripts/check_claude_code.py`. Continue only when it reports `Claude Code: supported` and `Runtime venv: ok`; when the version is `unknown`, ask the user (as a subagent, tell your caller) before continuing; otherwise stop and report what it printed.
 3. Read `<skill-dir>/references/reviewer.md` and `<skill-dir>/references/assurance.md`, and follow them. Run workflow scripts as `<skill-dir>/.venv/bin/python <skill-dir>/scripts/<script>.py`.

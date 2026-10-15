@@ -132,10 +132,26 @@ class ClaudeLogTests(unittest.TestCase):
                 self.assertRejected(self.record(self.write_transcript("".join(lines[:cut]))), "no_completed_report", before)
         with self.subTest(case="partial last line"):
             self.assertRejected(self.record(self.write_transcript("".join(lines) + '{"type": "assist')), "no_completed_report", before)
-        with self.subTest(case="max_tokens"):
-            # Altered real record: the final text stops at the output limit instead of end_turn.
-            text = transcript_text("cli-final-text.jsonl", dumps(wrapper)).replace('"stop_reason": "end_turn"', '"stop_reason": "max_tokens"')
-            self.assertRejected(self.record(self.write_transcript(text)), "no_completed_report", before)
+
+    def test_reports_cut_at_the_output_limit_ask_for_a_resend(self):
+        previous, wrapper = planner_handoff()
+        self.write_log(previous)
+        before = self.log.read_bytes()
+        records = [json.loads(line) for line in transcript_text("cli-final-text.jsonl", dumps(wrapper)).splitlines()]
+        # Altered real records: the final text stops at the output limit.
+        final = next(i for i, r in enumerate(records) if r["type"] == "assistant" and r["message"].get("stop_reason") == "end_turn")
+        truncated = deepcopy(records)
+        truncated[final]["message"]["stop_reason"] = "max_tokens"
+        self.assertRejected(self.record(self.write_transcript("".join(dumps(r) + "\n" for r in truncated))), "report_truncated", before)
+        # Altered real records: the harness continued a cut report in a new message, so the final message is only its tail.
+        split = deepcopy(records[:final + 1])
+        split[final]["message"]["stop_reason"] = "max_tokens"
+        reminder = {**deepcopy(records[0]), "isMeta": True, "message": {"role": "user", "content": "[harness] Fixture output-limit reminder."}}
+        tail = deepcopy(records[final])
+        tail["message"]["id"] = "msg_fixture_tail"
+        tail["message"]["content"] = [{"type": "text", "text": dumps(wrapper)[-200:]}]
+        split += [reminder, tail]
+        self.assertRejected(self.record(self.write_transcript("".join(dumps(r) + "\n" for r in split))), "report_truncated", before)
 
     def test_unusable_reports_and_layouts_are_rejected(self):
         previous, wrapper = planner_handoff()
@@ -166,6 +182,28 @@ class ClaudeLogTests(unittest.TestCase):
         self.assertRejected(result, "already_recorded", before)
         self.assertIn("event 2", result.stderr)
 
+    def test_duplicates_are_checked_against_the_leads_latest_return_only(self):
+        previous, details = coder_coordination()
+        self.write_log(previous)
+        first, second = deepcopy(details), deepcopy(details)
+        second["summary"] = "Report the remaining access blocker again after new progress."
+        transcript = lambda report: self.write_transcript(transcript_text("cli-final-text.jsonl", dumps(report)))
+        self.assertEqual(self.record(transcript(first)).returncode, 0)
+        before = self.log.read_bytes()
+        self.assertRejected(self.record(transcript(first)), "already_recorded", before)
+        self.assertEqual(self.record(transcript(second)).returncode, 0)
+        # The same report after a different one is a new return, not a duplicate.
+        result = self.record(transcript(first))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(len(json.loads(self.log.read_text(encoding="utf-8"))["history"]), len(previous["history"]) + 3)
+
+    def test_summary_names_the_agent(self):
+        previous, wrapper = planner_handoff()
+        self.write_log(previous)
+        text = transcript_text("cli-final-text.jsonl", dumps(wrapper))
+        agent = json.loads(text.splitlines()[-2])["agentId"]
+        self.assertEqual(self.assertRecorded(self.record(self.write_transcript(text)), wrapper)["agent_id"], agent)
+
     def test_inline_returns_must_be_unaltered(self):
         previous, wrapper = planner_handoff()
         self.write_log(previous)
@@ -177,6 +215,7 @@ class ClaudeLogTests(unittest.TestCase):
             with self.subTest(altered=altered[:40]):
                 result = self.run_log("record-return", "--log", str(self.log), "--stdin", stdin=altered)
                 self.assertRejected(result, "inline_text_altered", before)
+                self.assertIn("a literal one in the wrapper is refused too", result.stderr)
         result = self.run_log("record-return", "--log", str(self.log), "--stdin", stdin=indented)
         self.assertEqual(self.assertRecorded(result, wrapper)["source"], "stdin")
 
@@ -206,10 +245,42 @@ class ClaudeLogTests(unittest.TestCase):
                 self.assertEqual(result.returncode, 1)
                 self.assertEqual(self.log.read_bytes(), before)
 
+    def test_find_agent_matches_the_start_prompt_newest_first(self):
+        config = self.tmp / "config"
+        project = config / "projects/-work-example-project"
+        session, other = "11111111-1111-4111-8111-111111111111", "22222222-2222-4222-8222-222222222222"
+        records = [json.loads(line) for line in transcript_text("cli-final-text.jsonl", "{}").splitlines()]
+
+        def agent(session_id, agent_id, agent_type, prompt, started):
+            folder = project / session_id / "subagents"
+            folder.mkdir(parents=True, exist_ok=True)
+            lines = deepcopy(records)
+            lines[0]["message"]["content"] = prompt
+            lines[0]["timestamp"] = started
+            (folder / f"agent-{agent_id}.jsonl").write_text("".join(dumps(r) + "\n" for r in lines), encoding="utf-8")
+            (folder / f"agent-{agent_id}.meta.json").write_text(dumps({"agentType": agent_type}), encoding="utf-8")
+
+        start = "Orchestrator-Feature: example\nOrchestrator-Invocation: 3/Coder/1\nImplement the approved tasks."
+        agent(session, "a0000000000000011", "flow-coder", start, "2026-10-15T10:00:00.000Z")
+        agent(other, "a0000000000000012", "flow-coder", start, "2026-10-15T12:00:00.000Z")
+        agent(session, "a0000000000000013", "flow-runner", start, "2026-10-15T13:00:00.000Z")
+        agent(session, "a0000000000000014", "flow-coder", start.replace("3/Coder/1", "3/Coder/2"), "2026-10-15T14:00:00.000Z")
+        agent(session, "a0000000000000015", "flow-coder", start.replace("example", "other-feature"), "2026-10-15T15:00:00.000Z")
+        env = {"CLAUDE_CONFIG_DIR": str(config), "CLAUDE_CODE_SESSION_ID": session}
+        result = self.run_log("find-agent", "--feature", "example", "--invocation", "3/Coder/1", env=env)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        matches = json.loads(result.stdout)["matches"]
+        self.assertEqual([m["agent_id"] for m in matches], ["a0000000000000012", "a0000000000000011"])
+        self.assertEqual(matches[0]["session_id"], other)
+        result = self.run_log("find-agent", "--feature", "example", "--invocation", "9/Coder/1", env=env)
+        self.assertEqual(json.loads(result.stdout), {"matches": []})
+        result = self.run_log("find-agent", "--feature", "example", "--invocation", "3/coder/1", env=env)
+        self.assertEqual(result.returncode, 1)
+
     def test_coordination_report_is_recorded_as_coding_updated(self):
         previous, details = coder_coordination()
         self.write_log(previous)
-        result = self.record(self.write_transcript(transcript_text("cli-final-text.jsonl", dumps(details))), "--coordination")
+        result = self.record(self.write_transcript(transcript_text("cli-final-text.jsonl", dumps(details))))
         self.assertEqual(result.returncode, 0, result.stderr)
         entry = json.loads(self.log.read_text(encoding="utf-8"))["history"][-1]
         self.assertEqual((entry["event"], entry["actor"], entry["requestor"], entry["status"]), ("coding-updated", "Coder", "Planner", "coding_in_progress"))
@@ -310,12 +381,27 @@ class ClaudeStartupCheckTests(unittest.TestCase):
         self.assertIn(f'  python3 -m venv --clear "{(self.skill / ".venv").resolve()}"', lines)
         shutil.rmtree(self.skill / ".venv")
         self.assertIn("Runtime venv: missing. Set it up before starting the workflow:", self.check(env))
+        self.fake_python("echo 'Fatal Python error: failed to start' >&2\nexit 1")
+        self.assertIn("Runtime venv: broken. Set it up before starting the workflow:", self.check(env))
+
+    def test_source_falls_back_to_the_entrypoint_then_stays_unnamed(self):
+        claude = self.claude("2.1.295 (Claude Code)")
+        lines = self.check({"CLAUDE_CODE_EXECPATH": claude, "CLAUDE_CODE_ENTRYPOINT": "claude-desktop"})
+        self.assertEqual(lines[0], "Claude Code: too_old (running 2.1.295 from the Claude desktop app; minimum 2.1.296)")
+        lines = self.check({"CLAUDE_CODE_EXECPATH": claude})
+        self.assertEqual(lines[0], "Claude Code: too_old (running 2.1.295; minimum 2.1.296)")
+        self.assertIn("This session is running Claude Code 2.1.295. Update Claude Code", lines[1])
 
     def test_defeating_overrides_are_disclosed(self):
         env = {"CLAUDE_CODE_EXECPATH": self.claude("2.1.300 (Claude Code)")}
         self.assertIn("Per-call overrides: none", self.check(env))
+        # A subagent model alone, or with FORCE off, ranks below per-call choices and defeats nothing.
+        for quiet in ({"CLAUDE_CODE_SUBAGENT_MODEL": "sonnet"}, {"CLAUDE_CODE_SUBAGENT_MODEL": "sonnet", "CLAUDE_CODE_SUBAGENT_MODEL_FORCE": "0"}):
+            with self.subTest(settings=quiet):
+                self.assertIn("Per-call overrides: none", self.check({**env, **quiet}))
         lines = self.check({**env, "CLAUDE_CODE_SUBAGENT_MODEL_FORCE": "1", "CLAUDE_CODE_SUBAGENT_MODEL": "sonnet", "CLAUDE_CODE_EFFORT_LEVEL": "low"})
         self.assertIn("Per-call overrides: CLAUDE_CODE_SUBAGENT_MODEL_FORCE=1, CLAUDE_CODE_SUBAGENT_MODEL=sonnet, CLAUDE_CODE_EFFORT_LEVEL=low", lines)
+        self.assertIn("Per-call overrides: CLAUDE_CODE_SUBAGENT_MODEL_FORCE=true", self.check({**env, "CLAUDE_CODE_SUBAGENT_MODEL_FORCE": "true"}))
 
 
 def frontmatter(path):
