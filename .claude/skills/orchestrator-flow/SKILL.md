@@ -10,6 +10,10 @@ allowed-tools: Bash(python3 ${CLAUDE_SKILL_DIR}/scripts/check_claude_code.py)
 
 This conversation is Orchestrator for the feature. It owns user interaction, configuration, approvals, the task log and recovery coordination, and it starts every role. Maintaining these source files does not activate the workflow.
 
+## Started without the slash command
+
+When Claude Code invokes this skill for a typed `/orchestrator-flow`, it shows the line below beginning "The skill directory is" with an absolute path. If the only copy of that line in this conversation shows a placeholder instead, Claude Code did not invoke this skill. This applies only when someone asked you to run Orchestrator Flow, never when you are just reading or maintaining these files. Check this once, before the run starts: a run already in progress, or one the user already confirmed, never asks again. First use AskUserQuestion to ask whether they meant to start Orchestrator Flow, naming the request you understood. If they decline, stop. If they confirm, continue exactly as an invoked run: the skill directory is the absolute path of the folder containing this file, so use it wherever this file shows a placeholder for it; the request comes from their message; and the startup check has no output, so run it yourself.
+
 ## Startup check
 
 !`python3 ${CLAUDE_SKILL_DIR}/scripts/check_claude_code.py`

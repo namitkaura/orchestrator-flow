@@ -437,6 +437,16 @@ class ClaudeConfigurationTests(unittest.TestCase):
         self.assertTrue(rule.startswith("Bash(") and rule.endswith(")"))
         self.assertIn(f"!`{rule[len('Bash('):-1]}`", body, "The inline startup check must match its pre-approval exactly")
 
+    def test_confirm_first_section_cannot_be_altered_by_substitution(self):
+        _, body = frontmatter(CLAUDE / "SKILL.md")
+        start = body.index("## Started without the slash command")
+        section = body[start:body.index("\n## ", start)]
+        self.assertLess(start, body.index("## Startup check"), "Confirmation comes before the startup check")
+        self.assertNotIn("$", section, "Claude Code substitutes $ placeholders on invocation, which would garble the condition")
+        self.assertIn('beginning "The skill directory is"', section)
+        self.assertIn("\nThe skill directory is `${CLAUDE_SKILL_DIR}`.", body,
+                      "The line the condition tests must keep its placeholder")
+
     def test_agents_are_namespaced_and_carry_native_restrictions(self):
         read_only = {"Edit", "Write", "NotebookEdit"}
         expected = {"flow-planner": set(), "flow-coder": set(), "flow-architect": read_only, "flow-reviewer": read_only,

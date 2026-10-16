@@ -153,6 +153,12 @@ ln -s "[ORCHESTRATOR_REPO_PATH]/.claude/agents/orchestrator-flow" ~/.claude/agen
 ### 2. Start explicitly; the main conversation is Orchestrator
 
 - **Explicit start.** The user starts the workflow with `/orchestrator-flow <completed proposal or bug-report path, or a request>`. The skill sets `disable-model-invocation: true`, so Claude never starts it on its own. This differs deliberately from Codex, which also allows implicit invocation.
+- **A start without the slash command is confirmed first.** When `/orchestrator-flow` is not run as a command, a model can still find `SKILL.md` and follow it by hand. A native probe saw this when the command was another session's opening prompt for a desktop session; a request in other words can lead to the same thing.
+  - `SKILL.md` detects the case when no copy of its skill-directory line in the conversation shows an absolute path, only the unexpanded placeholder. A placeholder alone isn't enough: a real run also reads `SKILL.md` as a file, and that copy shows the placeholder too.
+  - Before the run starts, Orchestrator asks the user whether they meant to start Orchestrator Flow, naming the request it understood. If they decline, it stops. It asks only once: a run already in progress, or one the user already confirmed, never asks again, even if compaction later leaves only the file copy.
+  - If they confirm, it continues exactly as an invoked run. The skill directory is the folder containing `SKILL.md`, the request comes from the user's message, and the startup check runs through its fallback (section 8).
+  - Only the skill's `allowed-tools` pre-approval cannot apply, so setup documentation adds an allow rule for the startup check.
+  - Reading or maintaining the skill's files never starts the workflow, and the typed command remains the normal start. Whether a `SKILL.md` read by hand persists through compaction as an invoked skill does has not been verified.
 - **The main conversation is Orchestrator.** Only the main conversation can ask the user questions and start every role. Its model and effort are whatever the user picks for the session. They are not recorded and may change partway through a feature.
 - **Loading guide.** `SKILL.md` is a loading guide like the Codex one. Coordination loads the Orchestrator contract, the protocol and assurance. Recovery, phases and Maximum checklists load only when they apply. `SKILL.md` resolves every path through `${CLAUDE_SKILL_DIR}` and passes the skill directory to each role it starts.
 - **Version check first.** The check in section 8 runs before anything else.
@@ -299,7 +305,7 @@ The check runs at every `/orchestrator-flow` invocation, including resume, befor
   Orchestrator Flow requires Claude Code 2.1.296 or newer. This session is running Claude Code 2.1.295 (Claude desktop app). Update Claude Code, then start a new session: in a terminal run `claude update`; for the desktop app, update the Claude app.
   ```
 
-- **Unknown version.** If the version cannot be determined, Orchestrator runs the script itself. That covers a missing variable and inline commands turned off by `disableSkillShellExecution`. If the version is still unknown, Orchestrator says so and asks the user before continuing.
+- **Unknown version.** If the version cannot be determined, Orchestrator runs the script itself. That covers a missing variable, inline commands turned off by `disableSkillShellExecution`, and a run the user confirmed without the slash command (section 2). If the version is still unknown, Orchestrator says so and asks the user before continuing.
 - **Standalone roles** run the same check first.
 
 ### 9. A Claude-owned runtime kept identical to Codex's

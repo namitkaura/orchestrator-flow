@@ -125,7 +125,9 @@ Orchestrator Flow requires **Claude Code 2.1.296 or newer**. Every `/orchestrato
 /orchestrator-flow .docs/specs/<feature>/proposal.md
 ```
 
-The skill starts only when you invoke it; Claude never starts it on its own. Orchestrator recommends a complete configuration with a reason for each choice, and you accept or override any part. Repository defaults live in the consumer's `.orchestrator-flow.json`; these are the suggested starting defaults:
+The skill starts only when you invoke it; Claude never starts it on its own. If you ask for it in other words and Claude follows the skill without the command, it asks you to confirm first, then runs as if you had typed the command. Typing the command is still the better start for long runs: a skill followed this way is only a file Claude read, and whether it survives context compaction as well as an invoked skill hasn't been verified.
+
+Orchestrator recommends a complete configuration with a reason for each choice, and you accept or override any part. Repository defaults live in the consumer's `.orchestrator-flow.json`; these are the suggested starting defaults:
 
 ```json
 {
@@ -165,6 +167,7 @@ If you prefer to approve commands yourself, use `acceptEdits` mode with allow ru
     "allow": [
       "Read(/<skill-dir>/**)",
       "Bash(<skill-dir>/.venv/bin/python <skill-dir>/scripts/*)",
+      "Bash(python3 <skill-dir>/scripts/check_claude_code.py)",
       "Bash(git add *)",
       "Bash(git commit *)",
       "Bash(git push *)"
@@ -173,7 +176,7 @@ If you prefer to approve commands yourself, use `acceptEdits` mode with allow ru
 }
 ```
 
-`Bash(git push *)` also matches force-push variants; add ask or deny rules for them if you want that guard, although no workflow role force-pushes. A background agent's permission prompts appear in the main session and name the agent. Architect, Reviewer and the helpers have no edit tools, but their Bash use stays read-only by contract rather than by enforcement. Headless `claude -p` runs are not supported, because they deny permission prompts. The workflow never changes the session's permission mode.
+A typed `/orchestrator-flow` pre-approves its own startup check; the `python3` rule covers a run you confirmed after asking in other words. `Bash(git push *)` also matches force-push variants; add ask or deny rules for them if you want that guard, although no workflow role force-pushes. A background agent's permission prompts appear in the main session and name the agent. Architect, Reviewer and the helpers have no edit tools, but their Bash use stays read-only by contract rather than by enforcement. Headless `claude -p` runs are not supported, because they deny permission prompts. The workflow never changes the session's permission mode.
 
 ### Standalone roles
 
