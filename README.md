@@ -159,15 +159,16 @@ Auto mode, Claude Code's default starting mode, is the recommended mode for work
 - If the classifier flags a role's report, Orchestrator shows you the warning before acting on it.
 - The classifier adds latency and, on API or Enterprise billing, token cost. Narrow allow rules for the commands below skip it.
 
-If you prefer to approve commands yourself, use `acceptEdits` mode with allow rules like these in `~/.claude/settings.json`, replacing `<skill-dir>` with the absolute skill path that appears in the workflow's commands. Read rules mark an absolute path with a leading `//`, hence the extra slash in the first rule:
+If you prefer to approve commands yourself, use `acceptEdits` mode with allow rules like these in `~/.claude/settings.json`. The workflow's commands use the skill's absolute link path, and Bash rules match command text as written, so spell that path out; replace `/Users/you` with your home directory. Claude Code allows a read through a symlink only when both the link and the file it resolves to are allowed, so the second Read rule covers the checkout. In Read rules, a leading `//` marks an absolute path, hence the extra slash before `[ORCHESTRATOR_REPO_PATH]`:
 
 ```json
 {
   "permissions": {
     "allow": [
-      "Read(/<skill-dir>/**)",
-      "Bash(<skill-dir>/.venv/bin/python <skill-dir>/scripts/*)",
-      "Bash(python3 <skill-dir>/scripts/check_claude_code.py)",
+      "Read(~/.claude/skills/orchestrator-flow/**)",
+      "Read(/[ORCHESTRATOR_REPO_PATH]/.claude/skills/orchestrator-flow/**)",
+      "Bash(/Users/you/.claude/skills/orchestrator-flow/.venv/bin/python /Users/you/.claude/skills/orchestrator-flow/scripts/*)",
+      "Bash(python3 /Users/you/.claude/skills/orchestrator-flow/scripts/check_claude_code.py)",
       "Bash(git add *)",
       "Bash(git commit *)",
       "Bash(git push *)"
