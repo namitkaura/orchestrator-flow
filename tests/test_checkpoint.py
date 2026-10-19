@@ -463,6 +463,64 @@ class CheckpointTests(unittest.TestCase):
         self.git("push", "origin", "HEAD:refs/heads/feature/example")
         self.assertEqual(inspect_delivery(self.repo, self.flow.log)["delivery"], "delivered")
 
+    def earlier_run(self, branch):
+        """Leave an earlier run of the same feature on another branch, pushed but with no recorded result."""
+        self.git("checkout", "-b", branch, self.baseline)
+        earlier = Flow(baseline=self.baseline, feature_branch=branch)
+        self.checkpoint(log=earlier.log)
+        record_push_attempt(self.repo, earlier.log)
+        self.git("push", "origin", f"HEAD:refs/heads/{branch}")
+        self.git("checkout", "feature/example")
+
+    def test_an_earlier_run_on_another_branch_neither_blocks_nor_looks_uncertain(self):
+        self.earlier_run("feature/example-run1")
+        self.checkpoint()
+        self.assertEqual(inspect_delivery(self.repo, self.flow.log)["delivery"], "committed")
+        attempt = record_push_attempt(self.repo, self.flow.log)
+        self.assertEqual(attempt["feature_branch"], "feature/example")
+        self.git("push", "origin", "HEAD:refs/heads/feature/example")
+        self.assertEqual(inspect_delivery(self.repo, self.flow.log)["delivery"], "delivered")
+        self.assertEqual(len(read_attempts(self.repo, "example")), 2)
+
+    def test_an_earlier_run_on_a_recreated_branch_of_the_same_name_is_ignored(self):
+        self.checkpoint()
+        self.fail_push()
+        self.git("checkout", "-B", "feature/example", self.baseline)
+        rerun = Flow(assurance="basic", baseline=self.baseline)
+        self.checkpoint(log=rerun.log)
+        self.assertEqual(inspect_delivery(self.repo, rerun.log)["delivery"], "committed")
+        record_push_attempt(self.repo, rerun.log)
+        self.git("push", "origin", "HEAD:refs/heads/feature/example")
+        self.assertEqual(inspect_delivery(self.repo, rerun.log)["delivery"], "delivered")
+
+    def test_this_runs_failed_push_still_blocks_beside_an_earlier_runs_records(self):
+        self.earlier_run("feature/example-run1")
+        self.checkpoint()
+        failure = self.fail_push()
+        self.assertEqual(inspect_delivery(self.repo, self.flow.log)["delivery"], "failed")
+        with self.assertRaisesRegex(ValidationError, "Previous delivery failed"):
+            record_push_attempt(self.repo, self.flow.log)
+        auth = self.flow.authorize("checkpoint_recovery", failures=[failure])
+        self.checkpoint(first=2)
+        self.assertEqual(inspect_delivery(self.repo, self.flow.log)["authorization_event_id"], auth)
+        retry = record_push_attempt(self.repo, self.flow.log, auth)
+        self.assertEqual(inspect_delivery(self.repo, self.flow.log)["uncertain_attempt"]["attempt_id"], retry["attempt_id"])
+        with self.assertRaisesRegex(ValidationError, "already consumed"):
+            record_push_attempt(self.repo, self.flow.log, auth)
+
+    def test_a_journal_record_whose_commit_is_missing_locally_is_ignored(self):
+        path = journal_path(self.repo, "example")
+        path.parent.mkdir(parents=True)
+        missing = {"record": "started", "attempt_id": "earlier-run", "timestamp": "2026-10-01T00:00:00Z", "attempted_commit": "deadbeef" * 5,
+                   "event_ids": ["1"], "checkpoint_kind": "log", "publishing_role": "Orchestrator", "invocation": None, "phase_id": None,
+                   "remote": "origin", "feature_branch": "feature/example", "authorization_event_id": None}
+        path.write_text(json.dumps(missing) + "\n", encoding="utf-8")
+        self.checkpoint()
+        self.assertEqual(inspect_delivery(self.repo, self.flow.log)["delivery"], "committed")
+        record_push_attempt(self.repo, self.flow.log)
+        self.git("push", "origin", "HEAD:refs/heads/feature/example")
+        self.assertEqual(inspect_delivery(self.repo, self.flow.log)["delivery"], "delivered")
+
     def test_unrelated_commit_after_checkpoint_is_not_pushed_as_its_update(self):
         self.checkpoint()
         (self.repo / "unrelated.txt").write_text("separate work", encoding="utf-8")

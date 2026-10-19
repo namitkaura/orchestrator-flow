@@ -26,7 +26,8 @@ def disposition(fid, decision="fix", authority="user", authority_ref=None):
 
 
 class Flow:
-    def __init__(self, assurance="standard", policy="spec_user_code_auto", baseline="a" * 40, platform="codex", exploration_helpers=None):
+    def __init__(self, assurance="standard", policy="spec_user_code_auto", baseline="a" * 40, platform="codex", exploration_helpers=None,
+                 feature_branch="feature/example"):
         roles = {role: {"model": "example-model", "reasoning_effort": "high"} for role in ("planner", "architect", "coder", "reviewer", "helpers")}
         if exploration_helpers:
             roles["exploration_helpers"] = deepcopy(exploration_helpers)
@@ -34,7 +35,7 @@ class Flow:
                     **{name + "_ref": f".docs/specs/example/{name}.md" for name in ("requirements", "design", "tasks")},
                     "task_log_ref": ".docs/specs/example/task_log.json", "assurance_level": assurance,
                     "capability": {"platform": platform, "roles": roles, "acknowledged_limitations": []},
-                    "review_disposition_policy": policy, "branch_context": {"feature_branch": "feature/example", "integration_branch": "main", "remote": "origin", "baseline_commit": baseline},
+                    "review_disposition_policy": policy, "branch_context": {"feature_branch": feature_branch, "integration_branch": "main", "remote": "origin", "baseline_commit": baseline},
                     "status": "spec_in_progress", "history": []}
         self.artifacts = dict.fromkeys(("requirements", "design", "tasks"))
         self.contexts = {}

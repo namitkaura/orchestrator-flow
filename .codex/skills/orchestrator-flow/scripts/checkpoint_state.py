@@ -32,6 +32,19 @@ def read_attempts(repo, feature):
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line] if path.exists() else []
 
 
+def run_attempts(repo, log, checkpoint_commit):
+    """This run's journal records: on its feature branch and remote, for the checkpoint or one of its ancestors.
+
+    The journal is keyed by feature, so an earlier run of the same feature can leave records on another
+    branch, or on a recreated branch where its commits are unrelated. A commit missing locally (Git exits
+    128), for example after an old branch was deleted and collected, is another run's too.
+    """
+    branch = log["branch_context"]
+    return [record for record in read_attempts(repo, log["feature"])
+            if record["feature_branch"] == branch["feature_branch"] and record["remote"] == branch["remote"]
+            and git(repo, "merge-base", "--is-ancestor", record["attempted_commit"], checkpoint_commit, check=False).returncode == 0]
+
+
 def append_attempt(repo, feature, record):
     path = journal_path(repo, feature)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -197,7 +210,7 @@ def inspect_delivery(repo, log, remote_tip=None):
             uncertainty = "Remote ancestry is unavailable locally"
         elif git(repo, "merge-base", "--is-ancestor", remote_tip, checkpoint["commit"], check=False).returncode != 0:
             return {"delivery": "uncertain", "checkpoint": checkpoint, "reason": "Remote branch diverged; obtain direction without force-pushing"}
-    journal = read_attempts(repo, log["feature"])
+    journal = run_attempts(repo, log, checkpoint["commit"])
     authorizations = [e for e in log["history"] if e["event"] == "user-authorization-recorded"
                       and e["details"]["kind"] == "checkpoint_recovery"]
     latest_auth = authorizations[-1] if authorizations else None
@@ -235,7 +248,7 @@ def record_push_attempt(repo, log, authorization_event_id=None):
     require(delivery["delivery"] != "delivered", "Checkpoint already delivered; do not repeat its push")
     branch = log["branch_context"]
     require(git(repo, "branch", "--show-current").stdout.strip() == branch["feature_branch"], "Wrong active feature branch")
-    journal = read_attempts(repo, log["feature"])
+    journal = run_attempts(repo, log, checkpoint["commit"])
     if authorization_event_id:
         auth = next((e for e in log["history"] if e["id"] == authorization_event_id), None)
         require(auth and auth["event"] == "user-authorization-recorded" and auth["details"]["kind"] == "checkpoint_recovery"
