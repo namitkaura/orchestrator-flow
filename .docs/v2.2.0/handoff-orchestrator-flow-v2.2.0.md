@@ -4,6 +4,21 @@ Start the next release here. It is v2.2.0 unless the task-log schema changes in 
 
 These items were found or deferred while releasing v2.1.0, or carried forward from v2.0.0. The evidence behind them is in the [v2.1.0 native-test summary](../v2.1.0/native-test-summary.md). The last two sections hold lessons for running the next release and the transcript facts the recorder items rely on.
 
+## Start here
+
+- **State:** v2.1.0 was completed on `v2.1.0-claude-code-integration`. Recheck whether it has since been merged into `main` and tagged; don't assume either.
+- **Read first:**
+  1. [AGENTS.md](../../AGENTS.md) and the [README](../../README.md)
+  2. the [v2.1.0 handoff](../v2.1.0/handoff-orchestrator-flow-v2.1.0.md):
+     - §2: why v2 exists, and the "perfection is the enemy of good" rules
+     - §3: settled workflow behaviour
+     - §4: implementation boundaries
+     - §8: test-kit intent
+  3. the [v2.1.0 proposal](../v2.1.0/proposal-orchestrator-flow-v2.1.0.md), which is the settled Claude Code integration
+  4. the [v2.1.0 native-test summary](../v2.1.0/native-test-summary.md), for results and platform facts
+  5. then the items below
+- **Status of the items:** they are candidates for the next proposal, not an approved backlog. Settled v2 and v2.1.0 decisions aren't reopened without a concrete reason.
+
 ## Before the next release
 
 1. **Watch the next real Codex run.** v2.1.0 changed two parts of the shared runtime:
@@ -74,7 +89,7 @@ These items were found or deferred while releasing v2.1.0, or carried forward fr
 
 ## Lessons for running the next release
 
-- **Carry the v2 baseline forward.** The [v2.1.0 handoff](../v2.1.0/handoff-orchestrator-flow-v2.1.0.md)'s settled behaviour (§3), implementation boundaries (§4) and test-kit intent (§8) still apply. Don't reopen settled decisions. Perfection is the enemy of good.
+- **Carry the v2 baseline forward.** The [v2.1.0 handoff](../v2.1.0/handoff-orchestrator-flow-v2.1.0.md)'s principles (§2), settled behaviour (§3), implementation boundaries (§4) and test-kit intent (§8) still apply, and so do the decisions in the [v2.1.0 proposal](../v2.1.0/proposal-orchestrator-flow-v2.1.0.md). Don't reopen settled decisions. Perfection is the enemy of good.
 - **Test natively early, and compare runs.** Three contract assumptions failed only on real runs:
   - the symlink allow-rule behaviour
   - helpers running asynchronously under background leads
@@ -96,3 +111,18 @@ These hold for items 4 and 5, and were verified on real transcripts during v2.1.
 - **Async helpers:** the launch's tool result carries `toolUseResult.status: "async_launched"` and the `agentId`. The hand-back arrives with `origin.from` set to that ID.
 - **Large outputs:** tool results over 50,000 characters are saved to the session's `tool-results/` folder, and the model gets a 2 KB preview.
 - **Background notices:** the desktop app XML-escapes their text. The CLI delivers them as `<task-notification>` entries in `queue-operation` records.
+
+## Source map
+
+| Read when needed | Source |
+| --- | --- |
+| Maintenance boundaries, layout and validation | [AGENTS.md](../../AGENTS.md) |
+| User-facing setup and behaviour | [README.md](../../README.md) |
+| Proposal format | [Proposal template](../../templates/proposal-template.md) |
+| Codex entry and contracts | [SKILL.md](../../.codex/skills/orchestrator-flow/SKILL.md), [references](../../.codex/skills/orchestrator-flow/references/) |
+| Claude Code entry, contracts and agents | [SKILL.md](../../.claude/skills/orchestrator-flow/SKILL.md), [references](../../.claude/skills/orchestrator-flow/references/), [agents](../../.claude/agents/orchestrator-flow/) |
+| Shared runtime, byte-identical in both skills | Each skill's `scripts/` and schemas, enforced by `tests/test_runtime_parity.py` |
+| Claude-only runtime | `check_claude_code.py` and `claude_log.py` in the Claude skill's [scripts](../../.claude/skills/orchestrator-flow/scripts/) |
+| Development tests and their limits | [tests/README.md](../../tests/README.md) |
+| Live test kits | [tests/live](../../tests/live/README.md): `codex/`, `claude/`, `common/` |
+| History and rationale | [.docs/v2.0.0](../v2.0.0/) (v2 proposals, corrections, test kit) and [.docs/v2.1.0](../v2.1.0/) (Claude proposal, handoff, native-test summary) |
