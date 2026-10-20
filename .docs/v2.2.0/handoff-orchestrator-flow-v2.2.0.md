@@ -1,6 +1,8 @@
-# Orchestrator Flow v2.1.0 follow-ups
+# Handoff: Orchestrator Flow v2.2.0
 
-These items were found or deferred while releasing v2.1.0. They are inputs for the next release: v2.2.0, or v3.0.0 if the task-log schema changes in a non-backwards-compatible way. The evidence behind them is in the [native-test summary](native-test-summary.md).
+Start the next release here. It is v2.2.0 unless the task-log schema changes in a non-backwards-compatible way. In that case it becomes v3.0.0, and this folder and file are renamed during planning.
+
+These items were found or deferred while releasing v2.1.0, or carried forward from v2.0.0. The evidence behind them is in the [v2.1.0 native-test summary](../v2.1.0/native-test-summary.md). The last two sections hold lessons for running the next release and the transcript facts the recorder items rely on.
 
 ## Before the next release
 
@@ -50,7 +52,47 @@ These items were found or deferred while releasing v2.1.0. They are inputs for t
    - the desktop app as the workflow host, since both native runs used the CLI
    - an Opus Orchestrator after the step-4 checklist fix; before it, Opus left out the per-choice reasons until asked
 
+9. **Codex live-kit issues deferred from v2.0.0.** The [v2.1.0 handoff](../v2.1.0/handoff-orchestrator-flow-v2.1.0.md) (§7) kept these from v2.0.0's third run for the next significant workflow change. v2.1.0 only moved the kit.
+   - Fix the deliberate push-rejection hook so it accepts the workflow's paragraph-separated checkpoint trailers, and preflight it against a real checkpoint commit. This is a harness defect.
+   - State that a successor's eligibility follows actual acceptance and delivery, not a historical protocol Fail.
+   - Set out the local push destinations and their standing scope in the setup the user authorizes, so delegated pushes don't ask repeatedly.
+   - Keep these as observations:
+     - Git exit codes invented after a tool refusal
+     - the Maximum Architect's disagreement between its startup and status signals
+     - the missed in-flight Reviewer override, which stays Unverified
+10. **Codex coverage still open from v2.0.0** (v2.1.0 handoff §6.2):
+    - The full Maximum feature sequence wasn't validated.
+    - Native exceptional-phase execution remains deferred.
+    - The deterministic inventory has gaps around some intermediate effort mappings and the Maximum two-cycle intermediate boundary.
+
+    Choose proportionate coverage. A full matrix isn't the default response to every kit fix (§8).
+
 ## Platforms
 
-9. **Windows.** Claude Code setup on Windows, and a native test from PowerShell, aren't covered yet.
-10. **Copilot and Cursor.** Their v2 updates remain deferred, as set out in `AGENTS.md`.
+11. **Windows.** Claude Code setup on Windows, and a native test from PowerShell, aren't covered yet.
+12. **Copilot and Cursor.** Their v2 updates remain deferred, as set out in `AGENTS.md`.
+
+## Lessons for running the next release
+
+- **Carry the v2 baseline forward.** The [v2.1.0 handoff](../v2.1.0/handoff-orchestrator-flow-v2.1.0.md)'s settled behaviour (§3), implementation boundaries (§4) and test-kit intent (§8) still apply. Don't reopen settled decisions. Perfection is the enemy of good.
+- **Test natively early, and compare runs.** Three contract assumptions failed only on real runs:
+  - the symlink allow-rule behaviour
+  - helpers running asynchronously under background leads
+  - a model following `SKILL.md` by hand when a slash command didn't run as one
+
+  Comparing run 1, which passed an explicit `run_in_background: false`, with run 2, which omitted it, is what separated platform behaviour from model behaviour.
+- **Verify documentation claims natively** when users will follow them. Part D confirmed the README's auto-mode `Read` rules this way.
+- **Keep review separate from implementation.** A review thread that checked every diff and claim against the files and transcripts caught a confirm-first condition that would have fired on every typed run, and a misread finding.
+- **Messages between threads need care.** They're delivered only when the receiving thread's turn ends, and can't be recalled once queued. Agree on the content before sending; "yes, but…" is still discussion. A hold must arrive before the work starts. In this release, a reorganization was done, undone and redone because a hold and an undo were queued behind work already under way.
+- **Commit shared files in order.** When several pending changes touch the same files, commit them in order and apply later edits only after the earlier commit. Then no commit links to a file that doesn't exist yet.
+
+## Reference: transcript structure the recorder relies on
+
+These hold for items 4 and 5, and were verified on real transcripts during v2.1.0.
+
+- **Where a run starts:** at a user prompt that isn't `isMeta`, or at an `isMeta` user record whose `origin.kind` is `coordinator` (a SendMessage continuation) or `peer` (a helper's hand-back). Harness nudges are `isMeta` with no `origin`.
+- **How a message is recorded:** one record per content block, all sharing `message.id`. The final record carries `stop_reason: "end_turn"`, while `max_tokens` marks a cut-off.
+- **Hand-backs and refusals:** a SubagentHandback's tool result is `{"success": true, …}`, and refusals set `is_error`.
+- **Async helpers:** the launch's tool result carries `toolUseResult.status: "async_launched"` and the `agentId`. The hand-back arrives with `origin.from` set to that ID.
+- **Large outputs:** tool results over 50,000 characters are saved to the session's `tool-results/` folder, and the model gets a 2 KB preview.
+- **Background notices:** the desktop app XML-escapes their text. The CLI delivers them as `<task-notification>` entries in `queue-operation` records.

@@ -1,6 +1,6 @@
 # Orchestrator Flow v2.1.0: native test summary
 
-This summary covers native testing of the Claude Code integration on macOS, from 2026-10-16 to 2026-10-19. The raw evidence (transcripts, scratch repositories and review notes) stays local. Remaining work is listed in [follow-ups.md](follow-ups.md). To repeat the test, follow the [Claude native-test runbook](../../tests/live/claude/README.md).
+This summary covers native testing of the Claude Code integration on macOS, from 2026-10-16 to 2026-10-19. The raw evidence (transcripts, scratch repositories and review notes) stays local. Remaining work is listed in the [v2.2.0 handoff](../v2.2.0/handoff-orchestrator-flow-v2.2.0.md). To repeat the test, follow the [Claude native-test runbook](../../tests/live/claude/README.md).
 
 ## Setup
 
@@ -58,9 +58,9 @@ This summary covers native testing of the Claude Code integration on macOS, from
 
 ## Known limitations
 
-- **Orchestrator's own entries:** Orchestrator learns the shapes of its own log entries by probing the schemas with `cat` and inline scripts. Those would prompt in acceptEdits mode. Deferred; see follow-ups 2 and 3.
-- **The coordinator-message reset:** a coordinator message clears the recorder's pending-helper list. If Orchestrator messages a waiting lead that then replies in plain text, a stray correction request can follow. See follow-up 5.
-- **Hand-backs:** the recorder counts a helper as finished only when its hand-back arrives as a peer message. See follow-up 4.
+- **Orchestrator's own entries:** Orchestrator learns the shapes of its own log entries by probing the schemas with `cat` and inline scripts. Those would prompt in acceptEdits mode. Deferred; see items 2 and 3 of the v2.2.0 handoff.
+- **The coordinator-message reset:** a coordinator message clears the recorder's pending-helper list. If Orchestrator messages a waiting lead that then replies in plain text, a stray correction request can follow. See handoff item 5.
+- **Hand-backs:** the recorder counts a helper as finished only when its hand-back arrives as a peer message. See handoff item 4.
 
 ## Claude Code platform facts
 
@@ -96,11 +96,14 @@ These held on CLI 2.1.300 to 2.1.304, plus the desktop app's 2.1.299 for the pro
 
 ## Coverage gaps and next steps
 
-[follow-ups.md](follow-ups.md) lists them:
+The [v2.2.0 handoff](../v2.2.0/handoff-orchestrator-flow-v2.2.0.md) lists them:
 - watching the next real Codex run, with a v2.1.1 fix if needed
 - Orchestrator's entry shapes
 - the recorder's remaining edge cases
 - a Claude version of the live test kit
 - native coverage gaps
+- the Codex live-kit issues and coverage carried forward from v2.0.0
 - Windows
 - Copilot and Cursor
+
+It also holds lessons for running the next release and the transcript facts the recorder relies on.

@@ -396,7 +396,7 @@ The check runs at every `/orchestrator-flow` invocation, including resume, befor
 
 **Native-test finding: checkpoint journals.** Preparing the second run showed that the checkpoint journal, keyed by feature only, would let an earlier run of the same feature block a rerun's first push. `2eaaac8` counts only the current run's records, in both integrations.
 
-The [native-test summary](native-test-summary.md) records both runs, their results, the findings and fixes, and the platform facts learned. Remaining work is listed in [follow-ups.md](follow-ups.md).
+The [native-test summary](native-test-summary.md) records both runs, their results, the findings and fixes, and the platform facts learned. Remaining work is listed in the [v2.2.0 handoff](../v2.2.0/handoff-orchestrator-flow-v2.2.0.md).
 
 The Codex twelve-case matrix, its master-controller harness, Windows testing, and a native exceptional-phase run are not required.
 

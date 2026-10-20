@@ -1,6 +1,6 @@
 # Claude Code native test
 
-A short, hands-on test of the Claude Code integration that you run yourself, over a few sessions. It is separate from the [managed Codex kit](../codex/README.md), which runs twelve features through a master session. A master session can't answer Claude Code's dialogs, so here you answer them yourself. A fuller Claude kit is [follow-up 7](../../../.docs/v2.1.0/follow-ups.md). The [v2.1.0 native-test summary](../../../.docs/v2.1.0/native-test-summary.md) records what this test found the first time it ran.
+A short, hands-on test of the Claude Code integration that you run yourself, over a few sessions. It is separate from the [managed Codex kit](../codex/README.md), which runs twelve features through a master session. A master session can't answer Claude Code's dialogs, so here you answer them yourself. A fuller Claude kit is item 7 of the [v2.2.0 handoff](../../../.docs/v2.2.0/handoff-orchestrator-flow-v2.2.0.md). The [v2.1.0 native-test summary](../../../.docs/v2.1.0/native-test-summary.md) records what this test found the first time it ran.
 
 ## What it covers
 
