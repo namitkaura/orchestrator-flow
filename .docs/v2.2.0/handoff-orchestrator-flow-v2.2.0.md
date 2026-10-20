@@ -235,6 +235,8 @@ Preserve these boundaries:
    - `references/examples/` holds only role returns and repository configuration.
 
    Give Orchestrator a reference or examples for every event it records. If the clearest fix changes the schema itself, the release becomes v3.0.0.
+
+   The checkpoint helper has a related gap. Neither recovery contract names `checkpoint_state.py attempt --authorization-event <event-id>`, which an authorized push retry needs. Without it, the helper refuses with "Previous delivery failed/is uncertain; obtain recovery direction", which could send Orchestrator back to the user for an authorization it already has. `failure`'s required flags are likewise documented only by `--help`. Until the v2.1.0 README cleanup, the README held the only list of these flags.
 3. **Prompts in acceptEdits mode.** The same `cat` reads and inline scripts match none of the documented allow rules, so in acceptEdits mode each one would prompt; auto mode was unaffected. Item 2 should remove most of them. The contracts could also steer Orchestrator to the Read tool, which the README's `Read` rules already cover.
 
 ## Claude transcript recorder (`claude_log.py`)
