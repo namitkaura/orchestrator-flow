@@ -1,6 +1,6 @@
 # Orchestrator Flow v2.1.0: native test summary
 
-This summary covers native testing of the Claude Code integration on macOS, from 2026-10-16 to 2026-10-19. The raw evidence (transcripts, scratch repositories and review notes) stays local. Remaining work is listed in [follow-ups.md](follow-ups.md).
+This summary covers native testing of the Claude Code integration on macOS, from 2026-10-16 to 2026-10-19. The raw evidence (transcripts, scratch repositories and review notes) stays local. Remaining work is listed in [follow-ups.md](follow-ups.md). To repeat the test, follow the [Claude native-test runbook](../../tests/live/claude/README.md).
 
 ## Setup
 

@@ -330,7 +330,7 @@ Do not require another full matrix as the default response to every small kit fi
 | Existing Claude-native implementation to assess | [agent definitions](../../.claude/agents/), [`orchestrate.md`](../../.claude/commands/orchestrate.md) |
 | General consumer coding guidance, kept separate from workflow policy | [codingAgentDirectives.md](../../Directives/codingAgentDirectives.md) |
 | Focused development coverage and its limits | [tests/README.md](../../tests/README.md), protocol/recovery/checkpoint/phase/resource tests under [tests](../../tests/) |
-| Reusable Codex live kit, if its revision is in scope | [entry point](../../tests/live/README.md), [master prompt](../../tests/live/prompts/master-agent.md), [runbook](../../tests/live/runbook.md), [scenarios](../../tests/live/scenarios.md) |
+| Reusable Codex live kit, if its revision is in scope | [entry point](../../tests/live/README.md), [master prompt](../../tests/live/codex/prompts/master-agent.md), [runbook](../../tests/live/codex/runbook.md), [scenarios](../../tests/live/codex/scenarios.md) |
 
 For historical rationale beyond this summary, use the [original v2 proposal](../v2.0.0/proposal-orchestrator-flow-v2.0.0.md), [first corrections](../v2.0.0/proposal-orchestrator-flow-v2.0.0-corrections.md), [final part-2 simplification](../v2.0.0/proposal-orchestrator-flow-v2.0.0-corrections-part2.md), [test-kit proposal](../v2.0.0/proposal-orchestrator-flow-v2.0.0-testkit.md), and [test-kit part 2](../v2.0.0/proposal-orchestrator-flow-v2.0.0-testkit-part2.md). If the user archives that release directory, locate the moved documents or use Git history when necessary; their important decisions and the final run conclusions are already summarized here.
 

@@ -2,7 +2,7 @@
 
 The master may audit directly or delegate to an authorized evidence agent. This prompt grants no messaging or repair authority. Use the read-only source observations already captured where possible and bounded targeted reads where needed.
 
-Substitution checklist: set `CONTROL_ROOT` to the actual run-level `.orchestrator-test` directory and `KIT_ROOT` to the resolved canonical `tests/live` directory. Confirm the manifest provides paths, source identities, interpreter, ready thread/host IDs, case owners, configurations, and evidence references. Resolve both placeholders everywhere and send only text below the divider.
+Substitution checklist: set `CONTROL_ROOT` to the actual run-level `.orchestrator-test` directory and `KIT_ROOT` to the resolved canonical `tests/live/codex` directory. Confirm the manifest provides paths, source identities, interpreter, ready thread/host IDs, case owners, configurations, and evidence references. Resolve both placeholders everywhere and send only text below the divider.
 
 ---
 

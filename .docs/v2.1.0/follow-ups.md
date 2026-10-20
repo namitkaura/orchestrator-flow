@@ -33,7 +33,7 @@ These items were found or deferred while releasing v2.1.0. They are inputs for t
 
 ## Testing
 
-7. **A Claude version of the live test kit.** Codex's design, where a master session holds the user's delegated authority and answers each Orchestrator's dialogs, doesn't carry over. A probe on 2026-10-16 found:
+7. **A Claude version of the live test kit.** The short [Claude native test](../../tests/live/claude/README.md) is the starting point. Codex's design, where a master session holds the user's delegated authority and answers each Orchestrator's dialogs, doesn't carry over. A probe on 2026-10-16 found:
    - another session's message can't answer an open AskUserQuestion dialog; it queues behind it
    - the tool for stopping a session's turn refuses while that session waits for the user
    - a slash command runs only when it's the CLI's opening prompt, not when it's a desktop session's opening prompt or a message
@@ -42,7 +42,7 @@ These items were found or deferred while releasing v2.1.0. They are inputs for t
    - the user answers the dialogs, with features possibly launched in CLI tabs by a master session
    - a contract option to ask in plain text when the user has delegated decisions, then a test of whether Orchestrator honours labelled delegated decisions
    - an Agent SDK host program that answers dialogs in code, if the SDK supports that, which hasn't been checked
-8. **Not yet covered natively.** Each of these has deterministic tests, but no native run has shown it:
+8. **Not yet covered natively.** Each of these has deterministic tests, but no native run has shown it. The [Claude native test](../../tests/live/claude/README.md) can cover several of them in its next run:
    - the `flow-explorer` helper, which neither native feature needed
    - the plain final-message report form, because every return used SubagentHandback
    - a tool call interrupted inside a lead after a resume, the Claude Code 2.1.296 fix; in run 2 the Coder was waiting, not mid-call

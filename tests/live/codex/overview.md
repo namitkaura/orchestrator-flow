@@ -4,7 +4,7 @@ The Codex v2 kit observes real agents in three disposable local repositories at 
 
 ## What the two test layers establish
 
-The [development suite](../README.md) checks schemas, recorded transitions, document reading, and Git recovery. Live runs observe whether native agents actually choose the required actions, use accepted settings, read the necessary inputs, and produce the claimed results. Neither layer substitutes for the other.
+The [development suite](../../README.md) checks schemas, recorded transitions, document reading, and Git recovery. Live runs observe whether native agents actually choose the required actions, use accepted settings, read the necessary inputs, and produce the claimed results. Neither layer substitutes for the other.
 
 | Area | Live observations |
 | --- | --- |
@@ -13,11 +13,11 @@ The [development suite](../README.md) checks schemas, recorded transitions, docu
 | Ownership | Planner publishes specs; Coder owns intentional implementation/test/documentation/progress edits and artifact checkpoints; helpers explore and execute tests; Orchestrator owns gates, configuration, logs and their checkpoints. |
 | Workflow | Sequential document approvals, coding authority, dispositions, cumulative completion returns, recovery before a completion wrapper, rejected artifact pushes, unrelated-change preservation, and explicit feature acceptance. |
 
-Capability is a model/effort assignment, independently of assurance. The goal is enforcement and persistence, not comparing model quality, speed, token use, or cost. The [configuration contract](../../.codex/skills/orchestrator-flow/references/workflow-protocol.md#configuration-and-authority) distinguishes repository defaults from accepted feature snapshots. The [assurance policy](../../.codex/skills/orchestrator-flow/references/assurance.md) retains mandatory roles and complete initial coverage at every level.
+Capability is a model/effort assignment, independently of assurance. The goal is enforcement and persistence, not comparing model quality, speed, token use, or cost. The [configuration contract](../../../.codex/skills/orchestrator-flow/references/workflow-protocol.md#configuration-and-authority) distinguishes repository defaults from accepted feature snapshots. The [assurance policy](../../../.codex/skills/orchestrator-flow/references/assurance.md) retains mandatory roles and complete initial coverage at every level.
 
 ## Product and chat lifecycle
 
-Each project runs four complete features: initial line-list application, exact uniqueness, output limit, and case-insensitive uniqueness. Setup supplies only ordinary guidance, ignore rules, and the completed [product inputs](proposals/README.md). The master does not build the application. Each feature has its own Orchestrator chat and starts from its accepted predecessor's actual branch tip. There are twelve planned feature chats plus the U-S replacement if its recovery boundary is reached.
+Each project runs four complete features: initial line-list application, exact uniqueness, output limit, and case-insensitive uniqueness. Setup supplies only ordinary guidance, ignore rules, and the completed [product inputs](../common/proposals/README.md). The master does not build the application. Each feature has its own Orchestrator chat and starts from its accepted predecessor's actual branch tip. There are twelve planned feature chats plus the U-S replacement if its recovery boundary is reached.
 
 The small features use the ordinary single-Coder-assignment path, with natural checkpoint groups and no per-group review or acknowledgement. Native implementation phases are deferred; their deterministic evidence and remaining gaps are listed in the [phase coverage inventory](scenarios.md#deterministic-phase-coverage).
 
@@ -46,8 +46,8 @@ Closeout preserves all run files during workflow implementation, validation, and
 
 ## Contract references
 
-- [Workflow protocol](../../.codex/skills/orchestrator-flow/references/workflow-protocol.md)
-- [Assurance policy](../../.codex/skills/orchestrator-flow/references/assurance.md)
-- [Codex entry and capability rules](../../.codex/skills/orchestrator-flow/SKILL.md)
-- [Role contracts and schemas](../../.codex/skills/orchestrator-flow/references/)
-- [Release proposals](../../.docs/v2.0.0/)
+- [Workflow protocol](../../../.codex/skills/orchestrator-flow/references/workflow-protocol.md)
+- [Assurance policy](../../../.codex/skills/orchestrator-flow/references/assurance.md)
+- [Codex entry and capability rules](../../../.codex/skills/orchestrator-flow/SKILL.md)
+- [Role contracts and schemas](../../../.codex/skills/orchestrator-flow/references/)
+- [Release proposals](../../../.docs/v2.0.0/)
