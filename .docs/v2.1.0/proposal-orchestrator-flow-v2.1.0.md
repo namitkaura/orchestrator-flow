@@ -230,7 +230,7 @@ The Codex tiers map roughly as Astra to Fable, Sol to Opus, and Luna to Sonnet o
   - The split lets tests run on Haiku while exploration uses a stronger model. In Codex, a single helper setting worked because Luna at maximum effort was sufficient for exploration.
 - **How leads use helpers.**
   - A lead starts helpers itself with the Agent tool, passing the accepted helper model and effort.
-  - It waits for the result, so the report returns to the lead.
+  - It asks for a foreground start with `run_in_background: false`. Under a background lead, Claude Code runs the helper asynchronously regardless, as the native tests showed: the lead ends its turn while it waits, and the helper's hand-back arrives as a message that wakes it. A lead never returns its report while a helper is pending.
   - It groups related checks into one helper call. This replaces Codex's guidance to reuse helper contexts, which in Claude Code would depend on resuming helpers.
 - **After an interruption,** leads start new helpers and rerun interrupted checks. Helpers are never resumed.
 - **Report size.** Concise reports stay far below 50,000 characters. If a helper's report nonetheless arrives as a saved-file preview, the lead reads the saved file instead of rerunning the helper.
@@ -389,6 +389,11 @@ The check runs at every `/orchestrator-flow` invocation, including resume, befor
 - the user-level links loading
 - push behavior under the recommended permission mode
 
+**Native-test finding: helpers run asynchronously.** On CLI 2.1.301 to 2.1.304, every helper started by a background lead ran asynchronously. That held whether the lead passed `run_in_background: false`, as run 1's Coder and Reviewer did, or omitted it, as run 2's Coder did.
+- The lead ends its turn while it waits, and the hand-back arrives as a peer message that wakes it.
+- A waiting lead's transcript therefore ends on plain text. The recorder reports it as `no_completed_report`, so Orchestrator sends no false correction request.
+- The contracts describe the wait. After a resume, a lead whose helper was lost with the session is continued by message, and it reruns that helper's work with a fresh helper.
+
 The Codex twelve-case matrix, its master-controller harness, Windows testing, and a native exceptional-phase run are not required.
 
 ### 13. Non-goals
@@ -412,7 +417,7 @@ Both questions were settled with the maintainer during implementation planning.
    - The native test runs in auto mode.
 2. **Background or foreground leads.**
    - **Decided:** background, as described in section 7. The user can interact with Orchestrator during long runs, and it matches Claude Code's default.
-   - Leads still start their helpers in the foreground, so each helper's report returns to its lead.
+   - Leads ask for foreground helpers, but under a background lead Claude Code runs them asynchronously, and each hand-back reaches the lead as a message (section 5 and the native-test findings in section 12).
 
 Otherwise, the decisions above form the planning baseline. Planner should raise newly discovered contradictions or material policy choices at the appropriate requirements, design or task-planning phase rather than silently changing the agreed behavior.
 

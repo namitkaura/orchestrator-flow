@@ -109,18 +109,40 @@ def prompt_text(record):
     return content if isinstance(content, str) else "\n".join(b.get("text", "") for b in blocks(record) if b.get("type") == "text")
 
 
+def origin_kind(record):
+    origin = record.get("origin")
+    return origin.get("kind") if isinstance(origin, dict) else None
+
+
 def starts_run(record):
     """A run starts at a user prompt or at a message from the coordinator or a peer; harness prompts do not."""
     if record["type"] != "user":
         return False
     if record.get("isMeta"):
-        origin = record.get("origin")
-        return isinstance(origin, dict) and origin.get("kind") in RUN_ORIGINS
+        return origin_kind(record) in RUN_ORIGINS
     return isinstance(record["message"]["content"], str) or not any(b.get("type") == "tool_result" for b in blocks(record))
 
 
 def harness_prompt(record):
     return record["type"] == "user" and record.get("isMeta") and not isinstance(record.get("origin"), dict)
+
+
+def pending_helpers(records):
+    """Agents started in the background since the last prompt or coordinator message that have not handed back.
+
+    Claude Code runs a background agent's helpers asynchronously: the agent ends its turn while it waits, and each
+    hand-back arrives as a peer message. A coordinator message starts afresh, because ordinary continuations follow a
+    return and helpers lost with an interrupted session never hand back.
+    """
+    starts = [index for index, record in enumerate(records) if starts_run(record) and origin_kind(record) != "peer"]
+    waiting = {}
+    for record in records[starts[-1] + 1:] if starts else records:
+        launch = record.get("toolUseResult")
+        if isinstance(launch, dict) and launch.get("status") == "async_launched" and launch.get("agentId"):
+            waiting[launch["agentId"]] = True
+        if origin_kind(record) == "peer":
+            waiting.pop(record["origin"].get("from"), None)
+    return list(waiting)
 
 
 def delivered(result):
@@ -321,8 +343,18 @@ def record_return(args):
         value, source = read_inline(), "stdin"
     else:
         path = Path(args.transcript) if args.transcript else find_transcript(args.agent_id)
-        text, record = select_report(read_records(path))
-        value, source = parse_report(text), "transcript"
+        records = read_records(path)
+        text, record = select_report(records)
+        try:
+            value = parse_report(text)
+        except RecorderError as error:
+            waiting = pending_helpers(records)
+            if error.category != "report_not_json" or not waiting:
+                raise
+            raise RecorderError("no_completed_report", f"the agent is waiting on helpers it started in the background "
+                                                       f"({', '.join(waiting)}); it is still working, so send no correction "
+                                                       "request") from error
+        source = "transcript"
         agent_id = agent_id or record.get("agentId")
     log_path = Path(args.log)
     log = json.loads(log_path.read_bytes().decode("utf-8-sig"))

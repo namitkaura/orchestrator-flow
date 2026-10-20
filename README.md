@@ -80,7 +80,7 @@ The Claude Code integration is the [Orchestrator Flow skill](.claude/skills/orch
 | `flow-explorer` | Exploration and research helper, started by a lead |
 | `flow-runner` | Test and check runner, started by a lead |
 
-The main conversation is Orchestrator. It starts each lead as a real subagent with the feature's accepted model and effort, continues each lead across approvals and repairs by its agent ID, and records every return directly from the subagent's transcript, so large returns are never copied by hand. Leads start their own helpers. The `flow-` prefix keeps these agents from colliding with a project's own agents; you, the task log and the contracts still use the role names.
+The main conversation is Orchestrator. It starts each lead as a real subagent with the feature's accepted model and effort, continues each lead across approvals and repairs by its agent ID, and records every return directly from the subagent's transcript, so large returns are never copied by hand. Leads start their own helpers; because leads run in the background, Claude Code runs those helpers asynchronously, and each helper's report reaches its lead as a message. The `flow-` prefix keeps these agents from colliding with a project's own agents; you, the task log and the contracts still use the role names.
 
 ### Link the two folders
 
@@ -153,7 +153,7 @@ Leads run in the background, so you can keep talking to Orchestrator during long
 
 Auto mode, Claude Code's default starting mode, is the recommended mode for workflow sessions because it lets long runs continue while you are away. Switch modes with Shift+Tab in the CLI or the mode selector in the desktop app, or set `defaultMode` in your settings. What to expect:
 
-- The first time a role reads the skill's references outside the project, Claude Code asks once; choose to keep allowing such reads.
+- When a role reads the skill's references outside the project, Claude Code may show its out-of-project read prompt. Its "keep allowing" option is saved permanently and covers every read outside a project, in all sessions, not just this skill's. Instead, add the two `Read` rules from the allow list below, even in auto mode: rules are checked before the mode decides, so the skill's reads go through without the prompt and nothing broad is saved.
 - Checkpoint pushes to the feature branch run without a prompt.
 - The classifier can block an action, and the agent reports the block with its rule name. After three blocks in a row or twenty in total, auto mode falls back to prompts and the run waits for you.
 - If the classifier flags a role's report, Orchestrator shows you the warning before acting on it.
