@@ -394,6 +394,10 @@ The check runs at every `/orchestrator-flow` invocation, including resume, befor
 - A waiting lead's transcript therefore ends on plain text. The recorder reports it as `no_completed_report`, so Orchestrator sends no false correction request.
 - The contracts describe the wait. After a resume, a lead whose helper was lost with the session is continued by message, and it reruns that helper's work with a fresh helper.
 
+**Native-test finding: checkpoint journals.** Preparing the second run showed that the checkpoint journal, keyed by feature only, would let an earlier run of the same feature block a rerun's first push. `2eaaac8` counts only the current run's records, in both integrations.
+
+The [native-test summary](native-test-summary.md) records both runs, their results, the findings and fixes, and the platform facts learned. Remaining work is listed in [follow-ups.md](follow-ups.md).
+
 The Codex twelve-case matrix, its master-controller harness, Windows testing, and a native exceptional-phase run are not required.
 
 ### 13. Non-goals
