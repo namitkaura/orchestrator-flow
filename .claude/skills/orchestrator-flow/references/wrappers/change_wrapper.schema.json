@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:orchestrator-flow:change-wrapper",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "context": {
+      "anyOf": [
+        {
+          "$ref": "urn:orchestrator-flow:common#/$defs/invocation"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "artifacts": {
+      "$ref": "urn:orchestrator-flow:common#/$defs/artifacts"
+    },
+    "artifact_changes": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:orchestrator-flow:common#/$defs/artifact_change"
+      },
+      "minItems": 0
+    },
+    "changed_files": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^(?!/)(?![A-Za-z]:)(?!.*\\\\)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
+      },
+      "minItems": 0
+    },
+    "new_files": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^(?!/)(?![A-Za-z]:)(?!.*\\\\)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
+      },
+      "minItems": 0
+    },
+    "deleted_files": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^(?!/)(?![A-Za-z]:)(?!.*\\\\)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
+      },
+      "minItems": 0
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:orchestrator-flow:common#/$defs/check"
+      },
+      "minItems": 0
+    },
+    "task_progress": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:orchestrator-flow:common#/$defs/task_progress"
+      },
+      "minItems": 0
+    },
+    "blockers": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:orchestrator-flow:common#/$defs/blocker"
+      },
+      "minItems": 0
+    },
+    "dispositions": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:orchestrator-flow:common#/$defs/disposition"
+      },
+      "minItems": 0
+    },
+    "causes": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:orchestrator-flow:common#/$defs/reference"
+      },
+      "minItems": 0
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:orchestrator-flow:common#/$defs/evidence"
+      },
+      "minItems": 0
+    },
+    "checkpoint_commit": {
+      "anyOf": [
+        {
+          "$ref": "urn:orchestrator-flow:common#/$defs/commit"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "work_scope": {
+      "$ref": "urn:orchestrator-flow:common#/$defs/work_scope"
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "required": [
+    "context",
+    "summary",
+    "artifacts",
+    "checkpoint_commit",
+    "task_progress",
+    "checks"
+  ]
+}

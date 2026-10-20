@@ -1,41 +1,39 @@
 # Orchestrator Flow
 
-Orchestrator Flow takes a proposal or bug report through **Planner → Architect → Coder → Reviewer**, coordinated by **Orchestrator**. The current **2.0.0 implementation is Codex only**, identified by the canonical [VERSION](VERSION). Claude Code, GitHub Copilot, and Cursor retain their committed native implementations; their v2 updates are deferred.
+Orchestrator Flow takes a proposal or bug report through **Planner → Architect → Coder → Reviewer**, coordinated by **Orchestrator**, with your approval at each gate, an append-only task log and checkpoints pushed to a feature branch. The current workflow, **2.1.0** ([VERSION](VERSION)), is implemented for Codex and Claude Code. This repository is the installation source: integrations run from this checkout through links, and maintaining the checkout doesn't run the workflow in it.
 
-This repository is the installation source. Maintaining its artifacts does not run the consumer workflow here. See [AGENTS.md](AGENTS.md) for maintenance boundaries and validation. The separate legacy BugAgents, CoordinatorVersion and TaskSync implementations are outside this Codex v2 work.
-
-## Integrations and ownership
-
-| Platform | Entry point and artifacts | Current scope |
+| Platform | Entry point and files | Status |
 | --- | --- | --- |
-| Codex | [Orchestrator Flow skill](.codex/skills/orchestrator-flow/SKILL.md) | v2; actual native subagents, with no virtual/in-place role fallback |
-| Claude Code | `/orchestrate`, [agents](.claude/agents), [command](.claude/commands/orchestrate.md) | Existing native instructions; v2 deferred |
-| GitHub Copilot | Select **Orchestrator** in the custom-agent selector; [agents](.github/agents), [prompts](.github/prompts/prompts.md) | Existing custom agents; v2 deferred |
-| Cursor | `/cursor-orchestrate`, [rule](.cursor/rules/Orchestrator.mdc), [agents](.cursor/agents), [command](.cursor/commands/cursor-orchestrate.md) | Existing rule, command and agents; v2 deferred |
+| Codex | `$orchestrator-flow`: [skill](.codex/skills/orchestrator-flow/SKILL.md) | v2, using real subagents with no in-place role fallback |
+| Claude Code | `/orchestrator-flow`: [skill](.claude/skills/orchestrator-flow/SKILL.md), [agents](.claude/agents/orchestrator-flow) | v2, using real `flow-*` subagents with no in-place role fallback |
+| GitHub Copilot | **Orchestrator** in the custom-agent selector: [agents](.github/agents), [prompts](.github/prompts/prompts.md) | Existing custom agents; v2 deferred. `.github/agents/` also holds the separate BugAgents, CoordinatorVersion and TaskSync agent sets, outside the v2 work. |
+| Cursor | `/cursor-orchestrate`: [rule](.cursor/rules/Orchestrator.mdc), [agents](.cursor/agents), [command](.cursor/commands/cursor-orchestrate.md) | Existing rule, command and agents; v2 deferred |
 
-In Codex v2, Orchestrator owns user interaction, initialization, configuration, `task_log.json`, `known-issues.md`, log checkpoints and recovery coordination. Planner publishes requirements/design/tasks/research artifacts; Coder publishes its implementation/tests/docs and task-completion progress. Architect and Reviewer assess work read-only. Coder's helpers explore and execute tests without intentional edits or publication. Git ownership is serialized through the active producer and coherent yields; no agent performs the final squash merge.
+## How it works
 
-The Codex contracts are [workflow-protocol.md](.codex/skills/orchestrator-flow/references/workflow-protocol.md), [assurance.md](.codex/skills/orchestrator-flow/references/assurance.md), the five role references and the [schemas/examples](.codex/skills/orchestrator-flow/references). They live within the skill alongside its required runtime scripts. Other platforms retain their own substantive instructions and do not load this Codex implementation. The v2 runtime behavior and Codex setup instructions below apply to Codex; project coding guidance and reusable input templates apply to all four platforms.
+In v2 (Codex and Claude Code):
 
-| Source location | Purpose |
-| --- | --- |
-| [.codex/skills/orchestrator-flow/](.codex/skills/orchestrator-flow) | Codex instructions, UI metadata, role references, schemas, examples, runtime scripts, dependency declaration, and version/template symlinks |
-| [Directives/codingAgentDirectives.md](Directives/codingAgentDirectives.md) | Reusable coding guidance for projects using any of the four platforms; copy and customize per project, separately from workflow installations |
-| [tests/](tests) | Repository development tests and fixtures, outside all platform-specific integration directories |
-| [.docs/v2.0.0/](.docs/v2.0.0/) | Workflow and test-kit proposals, corrections, and release validation summaries |
-| [tests/live/](tests/live/README.md) | Reusable live test kit: bootstrap setup, twelve feature cases, prompts, evidence, and run-retention instructions |
+- **Roles.** Orchestrator talks to you and owns configuration, approvals, the task log, known issues, log checkpoints and recovery. Planner writes the requirements, design and tasks. Coder implements the tasks with separate Red and Green steps. Architect and Reviewer review read-only. Helpers started by a lead explore or run checks without editing.
+- **Gates.** You approve the requirements, design and tasks in turn, then authorize coding after Architect's review. After Reviewer accepts the implementation, you give explicit feature acceptance.
+- **Artifacts.** A feature's documents, `task_log.json` and `known-issues.md` live in the consuming repository under `.docs/specs/{feature}/`.
+- **Branches and checkpoints.** Work stays in your existing checkout, unless you ask for a worktree, on one feature branch: the branch you name, otherwise exactly the feature name, keeping any release version it has (for example `v2.1.0-claude-code-integration` or `unique-lines`), never with a `codex/`, `claude/` or other prefix. Every artifact and log checkpoint is committed and pushed to that branch, never to the integration branch. A failed push pauses the workflow until you decide.
+- **Interruptions.** Invoke the workflow again for the feature, and it continues from the task log and Git.
+- **Merging.** After acceptance, Orchestrator gives one conventional squash-commit message and you merge. No agent merges, force-pushes or deploys.
+- **Versions.** 2.1.0 applies to new work, logs written by 2.0.0 stay valid, and a resumed feature keeps its recorded version. Pre-2.0 logs aren't supported: Orchestrator stops for your direction instead of migrating them.
 
-## Codex setup: link the source checkout
+Both integrations implement the same protocol and task log through their own contracts, which hold the full rules: the protocol ([Codex](.codex/skills/orchestrator-flow/references/workflow-protocol.md), [Claude Code](.claude/skills/orchestrator-flow/references/workflow-protocol.md)), with `assurance.md`, `workflow-recovery.md`, `implementation-phases.md` and the role contracts beside it.
 
-Keep this checkout available and link its skill directory into the user's Codex skills directory. These examples assume the destination does not already exist and its parent directory does. Inspect existing installations before making setup changes.
+## Setup
 
-POSIX:
+### Codex setup: link the skill
+
+Keep this checkout available and link its skill folder into your Codex skills folder. These commands assume the destination doesn't exist yet and its parent does; inspect any existing installation before changing it.
 
 ```sh
 ln -s "[ORCHESTRATOR_REPO_PATH]/.codex/skills/orchestrator-flow" ~/.codex/skills/orchestrator-flow
 ```
 
-PowerShell:
+In PowerShell:
 
 ```powershell
 $skillSource = Join-Path '[ORCHESTRATOR_REPO_PATH]' '.codex/skills/orchestrator-flow'
@@ -43,40 +41,144 @@ $skillDestination = Join-Path $env:USERPROFILE '.codex/skills/orchestrator-flow'
 New-Item -ItemType SymbolicLink -Path $skillDestination -Target $skillSource
 ```
 
-The skill accesses its own `references/` and `scripts/` directly. Its two external resources are real relative symlinks inside the checkout:
-
-| Skill entry | Relative target |
-| --- | --- |
-| `VERSION` | `../../../VERSION` |
-| `templates` | `../../../templates` |
-
-Git stores each symlink as mode `120000` with its relative target, so the reference survives a push/clone when the checkout supports symlinks. When staging these entries, verify their modes with `git ls-files --stage -- .codex/skills/orchestrator-flow/VERSION .codex/skills/orchestrator-flow/templates`.
-
-Windows needs permission to create symlinks (an administrator shell, or a supported Developer Mode setup) and Git's `core.symlinks=true`. For a new checkout, use `git clone --config core.symlinks=true <REPOSITORY_URL> <CHECKOUT_PATH>`. For an existing checkout, setting `git config --local core.symlinks true` does not itself convert already flattened links. Repair them as real relative symlinks before using the skill. `Get-Item <SKILL_PATH>/VERSION,<SKILL_PATH>/templates | Format-Table Name,LinkType,Target` should show `SymbolicLink` and the targets above. A broken link or a regular file containing a relative path is a setup error; no text-pointer or copy/export fallback is supported.
-
-### Runtime Python dependency
-
-Python 3.10+ runs the helpers. Install the declared dependency once in the Python environment that will run them, from the checkout:
+The helper scripts need Python 3.10+ and the declared dependency, `jsonschema>=4.18,<5`. Install it once from the checkout into the environment that will run them, and use the same interpreter (`python3`, or `python` on Windows) for setup and for the helpers. Revisit this when `scripts/requirements.txt` changes. It's workflow setup: don't add the dependency to consuming projects.
 
 ```sh
 python -m pip install -r .codex/skills/orchestrator-flow/scripts/requirements.txt
 ```
 
-Use `python3` where appropriate and `python` on Windows, consistently selecting the same environment for setup and helper execution. `scripts/requirements.txt` declares `jsonschema>=4.18,<5`, which supplies the JSON Schema validator. Revisit setup when its requirements change. This is workflow setup; do not add this dependency to each consuming project's dependency files. Runtime scripts remain in the skill, while development tests remain in this repository's `tests/` directory.
+The skill's `VERSION` and `templates` entries are real relative symlinks to `../../../VERSION` and `../../../templates`. On Windows, Git needs permission to create symlinks (an administrator shell or a supported Developer Mode setup) and `core.symlinks=true`:
 
-## Project coding guidance
+- For a new checkout, use `git clone --config core.symlinks=true <REPOSITORY_URL> <CHECKOUT_PATH>`.
+- In an existing checkout, `git config --local core.symlinks true` doesn't convert links already flattened into files. Repair them as real relative symlinks before using the skill.
+- `Get-Item <SKILL_PATH>/VERSION,<SKILL_PATH>/templates | Format-Table Name,LinkType,Target` should show `SymbolicLink` and the targets above.
 
-[Directives/codingAgentDirectives.md](Directives/codingAgentDirectives.md) is an optional starting point for a project's coding conventions on **all four platforms: Codex, Claude Code, GitHub Copilot, and Cursor**. Copy it to a suitable location in the consuming repository, keep the relevant language sections, and customize its frameworks, tooling and conventions. Identify that project-owned file in the project's native instruction file or README so the chosen platform's agents can find it.
+A broken link, or a regular file holding a relative path, is a setup error; there is no text-pointer or copy fallback.
 
-Maintain the project's copy independently of the workflow installation. Keep the reusable source in this repository's `Directives/` directory, separate from platform-specific workflow artifacts. Workflow assurance, approvals, task ownership and recovery belong in each platform's workflow contracts rather than the coding-directives document.
+### Claude Code setup: link the skill and agents
 
-Codex v2 follows this separation. The deferred Claude, Copilot, and Cursor implementations still have their existing Directives references; those remain unchanged in this phase and will need to align with the same project-owned guidance policy when updated.
+The integration is the [Orchestrator Flow skill](.claude/skills/orchestrator-flow/SKILL.md) plus six subagents in [.claude/agents/orchestrator-flow](.claude/agents/orchestrator-flow):
 
-## Capability and feature configuration
+| Agent | Role |
+| --- | --- |
+| `flow-planner` | Planner: requirements, design and tasks |
+| `flow-architect` | Architect: read-only specification review |
+| `flow-coder` | Coder: implementation, tests, documentation and task progress |
+| `flow-reviewer` | Reviewer: read-only implementation review |
+| `flow-explorer` | Exploration and research helper, started by a lead |
+| `flow-runner` | Test and check runner, started by a lead |
 
-During first setup, establish repository defaults with the user in committed consumer-root `.orchestrator-flow.json`. Do not add these defaults to `AGENTS.md`. Model and effort are configured separately from assurance for Planner, Architect, Coder, Reviewer and helpers.
+The main conversation is Orchestrator. It starts each lead as a background subagent with the feature's accepted model and effort, continues it across approvals and repairs by its agent ID, and records every return straight from the subagent's transcript, so large returns are never copied by hand. Leads start their own helpers, which Claude Code runs asynchronously; a lead waiting for a helper's report is still working. The `flow-` prefix keeps these agents from colliding with a project's own; you, the task log and the contracts still use the role names.
 
-An illustrative Codex default file is below. Replace `YOUR_AVAILABLE_MODEL` and confirm supported effort values through the user's native configuration; these are examples, not a model fallback chain or a claim of availability:
+If you used the pre-v2 Claude Code integration, [migrate it](#upgrading-from-the-pre-v2-claude-integration) first. Then link the two folders. Both links are subfolders of your Claude Code folders, so your other skills and agents keep working beside them. These commands assume the links don't exist yet and `~/.claude/agents` is a real directory:
+
+```sh
+mkdir -p ~/.claude/skills ~/.claude/agents
+ln -s "[ORCHESTRATOR_REPO_PATH]/.claude/skills/orchestrator-flow" ~/.claude/skills/orchestrator-flow
+ln -s "[ORCHESTRATOR_REPO_PATH]/.claude/agents/orchestrator-flow" ~/.claude/agents/orchestrator-flow
+```
+
+Keep the checkout and link paths free of spaces, because the skill's inline startup check runs its script by an unquoted path. As in the Codex skill, `VERSION` and `templates` are real relative symlinks, and a missing, broken or flattened one is a setup error. The workflow never changes these paths itself.
+
+**Python.** The workflow scripts need Python 3.10+ with `jsonschema`. Create a virtual environment inside the skill, where Git ignores it, and install the requirements into it:
+
+```sh
+python3 -m venv "[ORCHESTRATOR_REPO_PATH]/.claude/skills/orchestrator-flow/.venv"
+"[ORCHESTRATOR_REPO_PATH]/.claude/skills/orchestrator-flow/.venv/bin/python" -m pip install -r "[ORCHESTRATOR_REPO_PATH]/.claude/skills/orchestrator-flow/scripts/requirements.txt"
+```
+
+Every workflow script runs as `<skill-dir>/.venv/bin/python <skill-dir>/scripts/<script>.py`, in the CLI and the desktop app alike. Only the startup check uses `python3`, so that it can report a missing or broken venv, for example after a system Python upgrade, with the commands that recreate it. Don't add this dependency to consuming projects.
+
+**Version.** Orchestrator Flow requires **Claude Code 2.1.296 or newer**. Every `/orchestrator-flow` invocation, including a resume, first runs `scripts/check_claude_code.py`, which reports the version of the Claude Code actually running the session and stops the workflow with an update message when it's older. The CLI and the desktop app run separate copies of Claude Code: check the CLI with `claude --version` and update it with `claude update`; the desktop app's copy changes only when you update the Claude app. If the check can't run as part of the skill, Orchestrator runs it itself, and asks you before continuing when the version stays unknown.
+
+Windows setup for Claude Code isn't covered yet.
+
+#### Permissions
+
+Auto mode, Claude Code's default starting mode, is recommended for workflow sessions, because long runs continue while you're away. Switch modes with Shift+Tab in the CLI or the mode selector in the desktop app, or set `defaultMode` in your settings. What to expect:
+
+- When a role reads the skill's references outside the project, Claude Code may show its out-of-project read prompt. Its "keep allowing" option is saved permanently and covers every read outside a project, in all sessions, not just this skill's. Instead, add the two `Read` rules from the allow list below, even in auto mode: rules are checked before the mode decides, so the skill's reads go through without the prompt and nothing broad is saved.
+- Checkpoint pushes to the feature branch run without a prompt.
+- The classifier can block an action, and the agent reports the block with its rule name. After three blocks in a row or twenty in total, auto mode falls back to prompts and the run waits for you.
+- If the classifier flags a role's report, Orchestrator shows you the warning before acting on it.
+- The classifier adds latency and, on API or Enterprise billing, token cost. Narrow allow rules for the commands below skip it.
+
+To approve commands yourself, use `acceptEdits` mode with allow rules like these in `~/.claude/settings.json`. The workflow's commands use the skill's absolute link path, and Bash rules match command text as written, so spell that path out, replacing `/Users/you` with your home directory. Claude Code allows a read through a symlink only when both the link and the file it resolves to are allowed, so the second `Read` rule covers the checkout. In `Read` rules a leading `//` marks an absolute path, hence the extra slash before `[ORCHESTRATOR_REPO_PATH]`:
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "Read(~/.claude/skills/orchestrator-flow/**)",
+      "Read(/[ORCHESTRATOR_REPO_PATH]/.claude/skills/orchestrator-flow/**)",
+      "Bash(/Users/you/.claude/skills/orchestrator-flow/.venv/bin/python /Users/you/.claude/skills/orchestrator-flow/scripts/*)",
+      "Bash(python3 /Users/you/.claude/skills/orchestrator-flow/scripts/check_claude_code.py)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)"
+    ]
+  }
+}
+```
+
+A typed `/orchestrator-flow` pre-approves its own startup check; the `python3` rule covers a run you confirmed after asking in other words. `Bash(git push *)` also matches force-push variants; add ask or deny rules for them if you want that guard, although no workflow role force-pushes. A background agent's permission prompts appear in the main session and name the agent. Architect, Reviewer and the helpers have no edit tools, but their Bash use stays read-only by contract rather than by enforcement. Headless `claude -p` runs aren't supported, because they deny permission prompts. The workflow never changes the session's permission mode.
+
+### GitHub Copilot and Cursor
+
+These keep their committed integrations and the entry points in the table above: select **Orchestrator** in Copilot's custom-agent selector, or run `/cursor-orchestrate` in Cursor. Neither loads a v2 implementation.
+
+## Using it
+
+### Write a proposal or bug report
+
+These reusable templates apply to all four platforms:
+
+- [Proposal template](templates/proposal-template.md): feature or improvement intent, rationale, settled decisions and important constraints.
+- [Bug-report template](templates/bugreport-template.md): observed failure, reproduction, expected correction and relevant preservation boundaries, without requiring a speculative diagnosis.
+
+Each is self-contained, with visible authoring guidance and section expectations, so no earlier document is needed as a style reference. Copy the appropriate template into a completed document in the consuming repository, following its conventions for where artifacts go; don't overwrite the template itself. Remove the template-version line, authoring guidance, examples, instructional text and placeholders, keep the applicable outline, and scale the detail to the work. Each template's integer template version, now 2, advances only when its authoring contract changes, independently of the other template, the workflow version, product releases and spec content versions.
+
+### Start a feature
+
+Invoke the workflow with the completed document's path: `$orchestrator-flow` in Codex, or in Claude Code:
+
+```text
+/orchestrator-flow .docs/specs/<feature>/proposal.md
+```
+
+Copilot and Cursor keep their own entry points.
+
+In Claude Code the skill starts only when you invoke it; Claude never starts it on its own. If you ask for it in other words and Claude follows the skill without the command, it asks you to confirm first, then runs as if you had typed the command. Typing the command is still the better start for long runs: a skill Claude follows by hand is only a file it read, which may hold up less well through context compaction than an invoked skill.
+
+Claude Code leads run in the background, so you can keep talking to Orchestrator during long runs, for example to answer a question, approve a document or change a setting. `/tasks` lists the running agents. After an interruption, resume the same session (reopen it in the desktop app, or run `claude --resume` in the CLI) and run `/orchestrator-flow` again; Orchestrator continues each lead by its agent ID.
+
+### Configuration
+
+On first setup, Orchestrator establishes repository defaults with you in the consuming repository's committed `.orchestrator-flow.json`; don't put them in `AGENTS.md`. The defaults set an assurance level and, separately, a model and effort for Planner, Architect, Coder, Reviewer and helpers, with an optional separate assignment for exploration helpers.
+
+At the start of each feature, Orchestrator reads the defaults, assesses the proposal and recommends a complete configuration with a reason for each choice. You accept it or override any part. The accepted configuration is recorded in the task log before Planner runs, and it governs on resume. Changing the defaults affects later features; changing a running feature's settings takes a recorded override, and accepting a feature's settings never changes the defaults.
+
+Suggested Claude Code defaults:
+
+```json
+{
+  "assurance_level": "standard",
+  "capability_defaults": {
+    "claude-code": {
+      "planner": {"model": "opus", "reasoning_effort": "xhigh"},
+      "architect": {"model": "opus", "reasoning_effort": "max"},
+      "coder": {"model": "opus", "reasoning_effort": "high"},
+      "reviewer": {"model": "opus", "reasoning_effort": "max"},
+      "exploration_helpers": {"model": "sonnet", "reasoning_effort": "medium"},
+      "helpers": {"model": "haiku", "reasoning_effort": "medium"}
+    }
+  }
+}
+```
+
+Claude Code's models are the short names `opus`, `sonnet`, `haiku` and `fable`. A short name resolves to the newest model in its family, or to the session's own model version when the session uses that family, so the log records the name chosen rather than an exact model version. Efforts are `low`, `medium`, `high`, `xhigh` and `max`, and the log always records an explicit effort. `exploration_helpers` assigns the exploration and research helpers, and `helpers` the test and check runners; without `exploration_helpers`, `helpers` covers both. These are defaults, not rules: Orchestrator may recommend Fable for a hard feature's Planner, Architect or Reviewer, or medium effort for a routine feature's Coder. Fable costs more than Opus, can bill usage credits and falls back to another model automatically when its safety classifiers flag a request; choosing it records that as an accepted limitation. `CLAUDE_CODE_SUBAGENT_MODEL_FORCE` and `CLAUDE_CODE_EFFORT_LEVEL` override per-role choices; the startup check reports them and Orchestrator asks you to accept or remove them.
+
+An illustrative Codex default file follows. Replace `YOUR_AVAILABLE_MODEL` and confirm the supported effort values in your Codex configuration; these are examples, not a model fallback chain or a claim of availability. Codex keeps a single `helpers` assignment, so configure all five roles:
 
 ```json
 {
@@ -93,11 +195,7 @@ An illustrative Codex default file is below. Replace `YOUR_AVAILABLE_MODEL` and 
 }
 ```
 
-The configuration schema retains the platform identifiers `codex`, `claude-code`, `github-copilot`, and `cursor`; this does not imply v2 support in the deferred integrations. For this Codex setup, configure the `codex` assignments for all five roles. Check available model/reasoning controls and native agent settings, present per-role recommendations, and record the user's accepted values. Configure a matching native agent or use an invocation override where supported; a role prompt alone does not enforce model/effort.
-
-### Codex native assignments
-
-For clients supporting custom-agent TOML files, create one file per delegated role under the consumer's `.codex/agents/` or `~/.codex/agents/`. For example, `.codex/agents/flow-planner.toml`:
+A role prompt alone doesn't enforce a model or effort. For Codex clients supporting custom-agent TOML files, create one file per delegated role under the consumer's `.codex/agents/` or `~/.codex/agents/`. For example, `.codex/agents/flow-planner.toml`:
 
 ```toml
 name = "flow_planner"
@@ -111,106 +209,47 @@ Orchestrator owns user gates and the task log; Planner publishes its artifacts.
 """
 ```
 
-Create corresponding Architect, Coder, Reviewer and helper definitions with the accepted assignments. A custom file's model/effort can take precedence over spawn settings; keep it consistent with the feature snapshot, including overrides. Where the native spawn interface directly exposes model/effort, use those controls without a conflicting custom profile. Confirm the effective assignment before work. See [official Codex subagent configuration](https://learn.chatgpt.com/docs/agent-configuration/subagents).
+Create corresponding Architect, Coder, Reviewer and helper definitions with the accepted assignments. A custom file's model and effort can take precedence over spawn settings, so keep it consistent with the feature's configuration, including overrides. Where the native spawn interface exposes model and effort directly, use those controls without a conflicting custom profile. Confirm the effective assignment before work. See [official Codex subagent configuration](https://learn.chatgpt.com/docs/agent-configuration/subagents).
 
-### Feature acceptance and overrides
+If an assignment can't be honored, or a lead or helper reaches a model limit, Orchestrator pauses the affected work and asks whether to choose another assignment or wait. It never silently falls back or changes assurance with a model substitution. An explicit `platform_default` value or a `not_supported` effort is a native limitation that Orchestrator discloses for you to accept. The configuration schema also accepts `github-copilot` and `cursor` keys, which don't imply v2 support in those integrations.
 
-The Codex skill uses accepted feature assignments rather than fixed model choices. Explicit `platform_default` values or `not_supported` effort require disclosure and user acceptance of the actual native limitation. Record concrete effective values when exposed. If an explicit assignment cannot be honored, or a lead/helper reaches a model limit, pause affected work and ask whether to choose another assignment or wait. Never silently fall back or change assurance with a model substitution.
+The review-disposition policy is chosen per feature and recorded in the task log, not in the defaults. The built-in `spec_user_code_auto` has you decide on Architect's findings before Planner revises, while routine in-scope repairs after Reviewer's findings go ahead; `all_user` and `within_scope_auto` are the alternatives. Every policy keeps material document approvals, product decisions, must-fix exceptions, loop limits and operational authorization with you.
 
-At the beginning of each feature, Orchestrator reads defaults, assesses the proposal, presents recommendations for acceptance/override, and stores the **complete resolved feature configuration** in the task log before Planner runs. On resume that snapshot governs. Default changes affect future features; applying them to this feature requires a recorded `user-override`. Feature acceptance does not silently change repository defaults.
-
-The built-in `review_disposition_policy` is `spec_user_code_auto`: user disposition of Architect findings before Planner revision, routine in-scope Reviewer-driven repairs allowed. Explicit feature alternatives are `all_user` and `within_scope_auto`. The effective policy is top-level in the task log, not a repository-default field. All alternatives preserve material artifact approvals, product decisions, must-fix exceptions, loop limits and operational authorization.
-
-## Assurance and review
+### Assurance
 
 | | Basic | Standard | Maximum |
 | --- | --- | --- | --- |
 | Initial review | Complete relevant spec and implementation | Complete relevant spec and implementation | Complete exhaustive review |
 | Follow-up | Focused, expanding when consequences/evidence warrant | Focused, affected or full according to impact | Comprehensive on each required pass |
-| Remediation | Practical benefit, likelihood, consequences and total workflow cost | Stronger presumption toward robustness/repair | Existing rigorous repair and justified-deferral obligations |
-| Further repair gate | Before a second repair-and-re-review cycle | Before a third | Existing rigorous loops and stalled-loop safeguards |
+| Remediation | Practical benefit, likelihood, consequences and total workflow cost | Stronger presumption toward robustness/repair | Rigorous repair; any deferral needs justification |
+| Further repair gate | Before a second repair-and-re-review cycle | Before a third | Rigorous loops with stalled-loop safeguards |
 
-Classification itself reflects the agreed acceptance standard. Findings explain factual behavior, conditions and actual project consequences, distinguishing demonstrated defects, hardening opportunities and preferences. A personal project's optional improvement need not receive a consequential deployment's completion priority. Facts stay accurate; explicit must-fix exceptions require user disposition. A nonempty known-issues document does not automatically prevent acceptance. Completed nit-only reviews are accepted by default at every assurance, including Maximum; Orchestrator derives their deferral and known issues without a producer response, another approval or a polishing cycle. An explicit user request to repair a nit uses the existing findings-decision and repair path, including its allowances and follow-up review. Nits cannot excuse missing required work, checks or consequential findings. Basic weighs should-fix benefit against total follow-up cost; Standard normally repairs should-fix unless there are concrete exceptional grounds.
+Each feature has one assurance level, set separately from the roles' models and efforts. It follows the feature's consequences, such as exposure and reversibility, and your preference, not its technical difficulty. Every level reviews the complete relevant work; higher levels add scrutiny, not coverage. Findings describe actual behavior and its consequences for your project. A must-fix finding blocks acceptance unless you decide otherwise, while nit-only reviews are accepted at every level, with the nits recorded as known issues. The assurance rubric ([Codex](.codex/skills/orchestrator-flow/references/assurance.md), [Claude Code](.claude/skills/orchestrator-flow/references/assurance.md)) sets out classification, acceptance, task boundaries and proportionate test execution.
 
-Basic/Standard check source/assumption changes, reuse valid completed evidence, and repeat affected or incomplete work. Maximum actively revalidates decision-critical evidence even when sources appear unchanged. Helpers separate observations, inferences, gaps and uncertainty with verifiable references. Leads own synthesis. Preserve ongoing role context across checkpoints where supported; full review obligations concern the work performed, not starting a new agent.
+### Standalone roles
 
-Basic/Standard use targeted Red/Green checks and broader integration/final checks, reusing fresh applicable evidence. Report corrections, checkbox changes and unrelated documentation do not alone invalidate results. Reviewer independently evaluates code/assertions and reruns where useful; Maximum retains comprehensive fresh checks. Coder reuses suitable exploration/test helpers, keeps tested work stable, and reports concise command/status/count/failure evidence once.
+In Claude Code, each lead can be used without Orchestrator. Ask for it by name in any session, for example "use flow-reviewer to review these changes"; it runs as a subagent and returns its questions to that session. Or start a session as the role with `claude --agent flow-reviewer`, and it asks you directly. Standalone use never creates orchestration approvals.
 
-If assurance increases while a review is running, record its output against the settings it actually used. Compare that result with the current requirement; any gap requires catch-up review before dependent coding or final completion, including when this was the first review.
+## Upgrading from the pre-v2 Claude integration
 
-See [the assurance rubric](.codex/skills/orchestrator-flow/references/assurance.md) for classification, acceptance, task boundaries and proportionate test execution. [Maximum checklists](.codex/skills/orchestrator-flow/references/maximum-assurance.md), [exceptional phases](.codex/skills/orchestrator-flow/references/implementation-phases.md) and [recovery](.codex/skills/orchestrator-flow/references/workflow-recovery.md) are loaded when applicable.
-
-## Artifacts and user gates
-
-Consumer artifacts live under `.docs/specs/{feature}/`. Requirements, design and tasks are mandatory, with separate approvals in dependency order. A material upstream decision must be approved before dependent revisions proceed. Unaffected artifacts need no artificial changes or renewed approval. Editorial corrections, faithful recording and task-progress accounting preserve a real approval basis with rationale.
-
-Feedback received while Planner is drafting stays in the current creation or revision cycle, even when an earlier spec handoff has already completed. Record the clarification and subsequent draft updates, preserve the existing Planner context where supported, and continue the approval path. A new revision starts when feedback arrives outside active drafting; clarifications within a cycle do not consume extra repair cycles.
-
-Required documents have independent integer content versions from the first draft and a final Revision History. Every completed content update increments its document version, including separate updates in one session. Pure approvals do not change documents. Spec documents contain no duplicated workflow/Git metadata. Read current bodies with the streaming body reader; retrieve history explicitly when needed.
-
-Task-checkbox progress preserves the tasks version, Revision History, producing Planner reference and approval. Coder changes only actual numbered completion marks; Planner owns wording, numbering, dependencies and editorial revisions. Bounded reader chunks use normalized character offsets, so truncated output can be reread without losing the end of a line. Initial review still covers every current spec body at all assurance levels.
-
-`task_log.json` holds append-only events, effective configuration, requests, actual outputs, approvals, findings/dispositions and recovery authority. Planner returns requirements and design drafts at their approval gates, then supplies the consolidated handoff with the final tasks draft. Unchanged tasks approval establishes spec_ready and enables Architect using that same immutable return plus approval context; no extra Planner invocation or duplicate wrapper. Coder normally returns one cumulative wrapper per completed assignment/repair; ordinary artifact checkpoints need no wrapper or acknowledgement. The coding-updated event contains coordination details only, preserving progress and blockers without claiming completion. Required returns are complete actual JSON, never file pointers. Normal operation creates no scratch role artifacts; validate directly in memory or through stdin. Optional research has no content version or separate approval gate. Orchestrator maintains current deferred findings/accepted limitations in `known-issues.md`; resolved history remains in the log and review summaries/evidence.
-
-Exceptionally large tasks plans may propose stable implementation phases through the existing tasks approval. Basic skips intermediate reviews; Standard uses Basic, and Maximum uses Standard, with one/two repair cycles per intermediate stage. Required intermediate capability retains the full Reviewer model with effort `max → high`, `xhigh → medium`, or `high → low`, recorded in feature configuration. Basic needs no unused assignment; unmapped/unsupported settings require explicit direction. Final review always uses full feature settings and its separate allowance. The last Coder integrates and reports the entire feature and owns all final repairs. Natural Markdown checkpoint groups alone do not justify phases.
-
-Assurance changes reuse all applicable accepted evidence: unchanged Maximum evidence remains sufficient after lowering and restoring assurance. Real content/source/assumption gaps require bounded assessment or review, scoped independently to specification, phase or final implementation. Applicability assessments grant neither higher assurance nor new acceptance; required Maximum review work remains comprehensive.
-
-All levels preserve Scaffolding boundaries, separate Red/Green tasks sized around coherent behavioral changes, production-only Refactor, concrete Documentation, Planner-defined final Test-Maintenance and repair-free Verification. Planning supplies concrete design, targets, dependencies and requirement mappings. Diagrams are used when useful, without a compulsory diagram at any level. Coder may mark task progress, not redesign the plan. Architect approval is distinct from user authorization to begin coding. Reviewer approval is distinct from final feature acceptance.
-
-## Checkpoints, interruptions and final merging
-
-Initialize the explicit user branch or otherwise the feature name, validating it with Git and recording integration target, remote and baseline. No automatic prefix or product version; conflicts need direction. Use the existing checkout unless a worktree was explicitly requested. Planner checkpoints substantive artifacts before handoff. Coder checkpoints approved natural task groups, meaningful partial work and completion. Orchestrator separately checkpoints every authoritative log update, approval, decision and review return. Deliberately Red work is described accurately. Checkpoints grant neither approval nor merge readiness.
-
-Every checkpoint has feature/kind/role trailers; producer artifacts also identify invocation and applicable phase. Only log commits carry the log path and contiguous event range. Wrappers identify already-published artifact commits; no event stores its containing log checkpoint's own hash. No ordinary checkpoint or success-receipt event is added. Resume reconciles metadata and names/statuses, paginating recent commits as needed, with remote delivery and actual native/user evidence. Orchestrator delegates content inspection and recovers existing producers before replacement. Coder reconstructs cumulative work against its original baseline, distinguishing recovered verification from newly run checks.
-
-On a failed push, preserve the local commit and failure evidence, globally pause work, and obtain direction. Before an authorized retry, commit the failure context and retry-authorization update. One push then delivers the outstanding checkpoint plus this update. Git proves successful delivery; do not create a success receipt or another commit/push. A failed retry is immediately preserved locally and requires new direction. The final checkpoint uses the same sequence, leaving no pending success receipt or extra approval.
-
-If an attempt was recorded but its result is unknown after interruption, inspect Git first. When delivery cannot be established, a fresh explicit authorization may permit one more push. Record the original attempt and the actual observation in `uncertain_attempts`, commit the authorization, then record the new attempt before dispatch. Do not invent a failure or reuse a consumed allowance. `checkpoint_state.py inspect` supplies the uncertain-attempt context; it never authorizes or performs a push.
-
-Other blockers pause only affected operations/dependencies while independent approved work can continue. Model unavailability requires user direction; no automatic fallback. Ordinary role failures preserve context and completed evidence, with three total attempts before further direction. Bound external-operation retries to their actual authorization.
-
-After Reviewer acceptance, present delivery, verification and known issues for **explicit user feature acceptance**. Record `implementation-complete` with status `implementation_complete`, complete its checkpoint delivery, and then provide one conventional squash-commit message covering the total final change against the baseline. A commit-message request does not itself authorize completion. The user manually merges into `main` or the explicitly selected integration branch. No agent performs that merge or deployment.
-
-## Proposal and bug-report templates
-
-These reusable inputs apply to all four platforms.
-
-- [Proposal template](templates/proposal-template.md): feature/improvement intent, rationale, settled decisions and important constraints.
-- [Bug-report template](templates/bugreport-template.md): observed failure, reproduction, expected correction and relevant preservation boundaries without requiring a speculative diagnosis.
-
-Each is self-contained with visible Markdown authoring guidance, section expectations and optional heading hierarchy. No earlier proposal/report is needed as a style reference. Copy the appropriate template into a completed document in the consuming repository, following that repository's artifact-location conventions; do not overwrite the reusable template.
-
-Remove the template-version line, authoring guidance, examples, instructional text and placeholders. Preserve the applicable completed-document outline and scale detail to the work. Invoke `$orchestrator-flow` with the completed document's path in Codex. The deferred platforms retain their existing entry points listed above.
-
-Each template currently has independent integer **template version 2**. These integers track authoring contracts, independently of each other, workflow semantic versions, product releases and spec content versions. The Codex skill accesses the canonical files through its real `templates/` symlink.
-
-## Compatibility and validation
-
-The workflow applies accepted settings to subsequent affected work while preserving the logical assignment, cumulative baseline, approvals, progress and repair allowances. Reuse the native context where supported; capability-only changes do not invalidate useful in-flight results. Assurance remains a separate gate based on actual review work. Required returns are validated before recording. Small report corrections stay in the same assignment without failure records, empty commits or automatic retesting; genuine failures retain bounded recovery.
-
-The `record-handoff` command takes the actual native wrapper JSON once, derives the event, ID, causal requestor, UTC timestamp and state, and records it unchanged in the selected task log. Internal validation/readback checks preserve the historical prefix and captured values. It never commits or pushes; other validator commands remain read-only. Use UTF-8 stdin. In PowerShell set `$OutputEncoding = [System.Text.UTF8Encoding]::new($false)` before piping literal Unicode. See the [workflow protocol](.codex/skills/orchestrator-flow/references/workflow-protocol.md#compact-returns-and-recording) for the input format, in-memory API and recovery rules.
-
-Version 2.0.0 applies to new work. Pre-2.0/missing-version logs are unsupported; stop and obtain direction rather than migrate or repair automatically. Completed historical features remain untouched. Patch/minor releases preserve older supported logs' execution and approval meaning, with actual documented defaults for compatible additions. Exact-version-only checks must not reject an older supported log under a compatible newer reader. Older readers need not understand newer logs; major changes require an explicit compatibility boundary.
-
-Run these commands from the source checkout. Runtime commands can also use the linked skill's `scripts/` path; the unittest and Git checks are repository development checks:
+The previous Claude Code integration linked the whole `~/.claude/agents` directory to this checkout and linked a single `~/.claude/commands/orchestrate.md`. Migrate that installation before adding the new links: while `~/.claude/agents` is itself a symlink to this checkout, `mkdir -p` succeeds silently and the agents link would be created inside the checkout instead. Check with `ls -ld ~/.claude/agents ~/.claude/commands/orchestrate.md`, then:
 
 ```sh
-python .codex/skills/orchestrator-flow/scripts/validate_orchestrator_artifacts.py task-log <TASK_LOG> --workspace <CONSUMER_ROOT>
-python .codex/skills/orchestrator-flow/scripts/validate_orchestrator_artifacts.py repository-config <REPOSITORY_CONFIG>
-python .codex/skills/orchestrator-flow/scripts/validate_orchestrator_artifacts.py spec-change-wrapper <WRAPPER>
-python .codex/skills/orchestrator-flow/scripts/validate_orchestrator_artifacts.py spec-review-wrapper <WRAPPER>
-python .codex/skills/orchestrator-flow/scripts/validate_orchestrator_artifacts.py change-wrapper <WRAPPER>
-python .codex/skills/orchestrator-flow/scripts/validate_orchestrator_artifacts.py review-wrapper <WRAPPER>
-python .codex/skills/orchestrator-flow/scripts/validate_orchestrator_artifacts.py resume-action <TASK_LOG> --observations <OBSERVATIONS_JSON>
-python .codex/skills/orchestrator-flow/scripts/validate_orchestrator_artifacts.py record-handoff - --log <TASK_LOG> --workspace <CONSUMER_ROOT>
-python .codex/skills/orchestrator-flow/scripts/read_spec_body.py <SPEC_DOCUMENT> --offset 0 --max-chars 8000
-python .codex/skills/orchestrator-flow/scripts/checkpoint_state.py inspect <TASK_LOG> --repo <CONSUMER_ROOT>
-python .codex/skills/orchestrator-flow/scripts/checkpoint_state.py recent <TASK_LOG> --repo <CONSUMER_ROOT> --limit 20
-python -B -m unittest discover -s tests -v
-git diff --check
+rm ~/.claude/agents                      # only when it is a symlink to this checkout
+mkdir ~/.claude/agents
+rm ~/.claude/commands/orchestrate.md
 ```
 
-Primary validator input `-` reads actual JSON on stdin. For candidate updates, `task-log - --previous <AUTHORITATIVE_LOG>` verifies append-only history without creating snapshots. `--observations -` is allowed when the log is a file; stdin cannot be consumed twice. `--workspace` mechanically verifies Git provenance, publication, document versions, checkbox-only progress and task completion, returning concise diagnostics. The read-only resume command accepts delivery/liveness observations and actual unrecorded output/approval entries; it validates those entries before recommending recording. Results expose scope, phase readiness, counters and evidence gaps. Without evidence it requests reconciliation. These observations do not execute or authorize actions.
+Then follow the [Claude Code setup](#claude-code-setup-link-the-skill-and-agents). Features started under the old `/orchestrate` workflow can't continue under v2, and their logs remain unsupported.
 
-The checkpoint helper additionally provides `attempt` (optional `--authorization-event`) and `failure` (`--attempt-id`, `--exit-code`, redacted `--error-summary`) to preserve local Git-metadata evidence. It never commits, pushes, retries or records success receipts. The focused suite uses temporary repositories/local bare remotes. Schema validation checks shape; replay/scenario tests check transitions, approvals, interruptions, recovery and linked resource access. Codex must still honor its native configuration and permissions.
+## Project coding guidance
+
+[Directives/codingAgentDirectives.md](Directives/codingAgentDirectives.md) is an optional starting point for a project's coding conventions on all four platforms. Copy it to a suitable place in the consuming repository, keep the relevant language sections, and customize its frameworks, tooling and conventions. Name that project-owned file in the project's native instruction file or README so the chosen platform's agents can find it, and maintain it independently of the workflow installation. Workflow policy, such as assurance, approvals, task ownership and recovery, belongs in the workflow contracts, not in the coding directives. Codex and Claude Code follow this separation; the Copilot and Cursor integrations still have their existing Directives references.
+
+## More
+
+- **Contracts:** each skill's `SKILL.md` and `references/` folder ([Codex](.codex/skills/orchestrator-flow/references), [Claude Code](.claude/skills/orchestrator-flow/references)) hold the full rules for the protocol, assurance, recovery, implementation phases and each role.
+- **[AGENTS.md](AGENTS.md):** maintaining this repository, its layout and its validation commands.
+- **[tests/README.md](tests/README.md):** the focused test suite.
+- **[tests/live/](tests/live/README.md):** the [Codex live kit](tests/live/codex/README.md), the [Claude native test](tests/live/claude/README.md) and the [material they share](tests/live/common/README.md).
+- **[.docs/](.docs):** the [v2.0.0](.docs/v2.0.0) and [v2.1.0](.docs/v2.1.0) proposals, the [v2.1.0 native-test summary](.docs/v2.1.0/native-test-summary.md) and the [v2.2.0 handoff](.docs/v2.2.0/handoff-orchestrator-flow-v2.2.0.md).

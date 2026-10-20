@@ -1,0 +1,31 @@
+{
+  "assurance_level": "standard",
+  "capability_defaults": {
+    "claude-code": {
+      "planner": {
+        "model": "opus",
+        "reasoning_effort": "xhigh"
+      },
+      "architect": {
+        "model": "opus",
+        "reasoning_effort": "max"
+      },
+      "coder": {
+        "model": "opus",
+        "reasoning_effort": "high"
+      },
+      "reviewer": {
+        "model": "opus",
+        "reasoning_effort": "max"
+      },
+      "exploration_helpers": {
+        "model": "sonnet",
+        "reasoning_effort": "medium"
+      },
+      "helpers": {
+        "model": "haiku",
+        "reasoning_effort": "medium"
+      }
+    }
+  }
+}

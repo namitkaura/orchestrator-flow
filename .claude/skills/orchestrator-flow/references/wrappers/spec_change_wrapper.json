@@ -1,0 +1,26 @@
+{
+  "context": null,
+  "output_kind": "consolidated",
+  "artifacts": {
+    "requirements": {
+      "ref": ".docs/specs/example/requirements.md",
+      "version": 1
+    },
+    "design": {
+      "ref": ".docs/specs/example/design.md",
+      "version": 1
+    },
+    "tasks": {
+      "ref": ".docs/specs/example/tasks.md",
+      "version": 1
+    }
+  },
+  "decisions": [
+    "Manual retry is adequate for the accepted deployment."
+  ],
+  "constraints": [
+    "Preserve existing nonempty-input behavior."
+  ],
+  "checkpoint_commit": null,
+  "summary": "No hidden decisions."
+}

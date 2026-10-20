@@ -1175,6 +1175,26 @@
                             "previous",
                             "new"
                           ]
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "target": {
+                              "const": "/capability/roles/exploration_helpers"
+                            },
+                            "previous": {
+                              "$ref": "urn:orchestrator-flow:common#/$defs/assignment"
+                            },
+                            "new": {
+                              "$ref": "urn:orchestrator-flow:common#/$defs/assignment"
+                            }
+                          },
+                          "required": [
+                            "target",
+                            "previous",
+                            "new"
+                          ]
                         }
                       ]
                     },
@@ -1469,6 +1489,13 @@
                               "role_failure",
                               "model_unavailable",
                               "usage_limit"
+                            ]
+                          },
+                          "assignment": {
+                            "description": "Helper assignment that applied to the failed helper. Absent means helpers, the 2.0.0 meaning.",
+                            "enum": [
+                              "helpers",
+                              "exploration_helpers"
                             ]
                           }
                         },

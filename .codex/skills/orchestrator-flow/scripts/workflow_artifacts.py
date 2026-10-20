@@ -1,4 +1,4 @@
-"""Codex artifact validation using local schemas and the skill's VERSION symlink."""
+"""Orchestrator Flow artifact validation using local schemas and the skill's VERSION symlink."""
 from __future__ import annotations
 
 import json

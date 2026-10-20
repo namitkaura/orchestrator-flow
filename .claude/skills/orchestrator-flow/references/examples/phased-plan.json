@@ -1,0 +1,50 @@
+{
+  "context": {
+    "trigger_event_id": "1",
+    "role": "Planner",
+    "attempt": 1,
+    "context_id": "planner-session"
+  },
+  "checkpoint_commit": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "implementation_phases": [
+    {
+      "id": "P1",
+      "title": "Foundations",
+      "task_ids": [
+        "1",
+        "2"
+      ]
+    },
+    {
+      "id": "P2",
+      "title": "Integration, Test-Maintenance and Verification",
+      "task_ids": [
+        "3",
+        "4",
+        "5"
+      ]
+    }
+  ],
+  "output_kind": "consolidated",
+  "artifacts": {
+    "requirements": {
+      "ref": ".docs/specs/example/requirements.md",
+      "version": 1
+    },
+    "design": {
+      "ref": ".docs/specs/example/design.md",
+      "version": 1
+    },
+    "tasks": {
+      "ref": ".docs/specs/example/tasks.md",
+      "version": 1
+    }
+  },
+  "decisions": [
+    "Manual retry is adequate for the accepted deployment."
+  ],
+  "constraints": [
+    "Preserve existing nonempty-input behavior."
+  ],
+  "summary": "No hidden decisions."
+}

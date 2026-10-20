@@ -20,7 +20,7 @@ Recover an actual unrecorded return or user approval once, validating its origin
 
 ## Local attempt evidence and inspection
 
-Use `checkpoint_state.py inspect` and `recent` read-only. The append-only attempt journal is located through `git rev-parse --git-path orchestrator-flow/{feature}/checkpoint-attempts.jsonl`; never assume .git is a directory. Records preserve checkpoint kind, publishing role, invocation/phase, exact commit/event range, target, timestamp and authorization. Only artifact-only commits allow empty event IDs. Keep credentials out. This is operational evidence, not a pending-action field.
+Use `checkpoint_state.py inspect` and `recent` read-only. The append-only attempt journal is located through `git rev-parse --git-path orchestrator-flow/{feature}/checkpoint-attempts.jsonl`; never assume .git is a directory. Because it is keyed by feature, the helpers count only this run's records: those on its feature branch and remote whose commit is the current checkpoint or one of its ancestors. Records preserve checkpoint kind, publishing role, invocation/phase, exact commit/event range, target, timestamp and authorization. Only artifact-only commits allow empty event IDs. Keep credentials out. This is operational evidence, not a pending-action field.
 
 Validate log correspondence separately from artifact checkpoints. Legitimate artifacts may follow the latest delivered log and must be delivered too. Reject a push silently including unrelated unaccounted commits. Reconcile remote ancestry and previous attempts before another attempt; completed delivery requires neither another push nor a receipt. Recover uncommitted work without treating file presence or commit prose as user authority.
 

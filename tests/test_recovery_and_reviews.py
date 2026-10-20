@@ -238,6 +238,57 @@ class RecoveryAndReviewTests(unittest.TestCase):
         flow.override("/capability/roles/helpers", {"model": "replacement-helper", "reasoning_effort": "medium"})
         self.assertEqual(replay(flow.log).next_action(), "recover_invocation_or_output")
 
+    def test_exploration_helper_failure_uses_its_own_assignment(self):
+        explorer = {"model": "explorer-model", "reasoning_effort": "medium"}
+        flow = Flow(platform="claude-code", exploration_helpers=explorer)
+        helper = {"id": "flow-explorer", **explorer, "category": "usage_limit", "assignment": "exploration_helpers"}
+        failed_role(flow, category="helper_failure", helper=helper)
+        self.assertEqual(replay(flow.log).next_action(), "obtain_model_direction")
+        # Changing only the test-runner assignment does not answer an exploration failure.
+        flow.override("/capability/roles/helpers", {"model": "runner-next", "reasoning_effort": "low"})
+        self.assertEqual(replay(flow.log).next_action(), "obtain_model_direction")
+        flow.override("/capability/roles/exploration_helpers", {"model": "explorer-next", "reasoning_effort": "medium"})
+        self.assertEqual(replay(flow.log).next_action(), "recover_invocation_or_output")
+        # Removing the split falls back to helpers, which also counts as a changed basis.
+        removed = Flow(platform="claude-code", exploration_helpers=explorer)
+        failed_role(removed, category="helper_failure", helper=helper)
+        capability = deepcopy(removed.log["capability"])
+        del capability["roles"]["exploration_helpers"]
+        removed.override("/capability", capability)
+        self.assertEqual(replay(removed.log).next_action(), "recover_invocation_or_output")
+
+    def test_runner_failure_ignores_an_exploration_only_change(self):
+        explorer = {"model": "explorer-model", "reasoning_effort": "medium"}
+        flow = Flow(platform="claude-code", exploration_helpers=explorer)
+        runner = {"id": "flow-runner", "model": "example-model", "reasoning_effort": "high", "category": "model_unavailable", "assignment": "helpers"}
+        failed_role(flow, category="helper_failure", helper=runner)
+        flow.override("/capability/roles/exploration_helpers", {"model": "explorer-next", "reasoning_effort": "medium"})
+        self.assertEqual(replay(flow.log).next_action(), "obtain_model_direction")
+        flow.override("/capability/roles/helpers", {"model": "runner-next", "reasoning_effort": "low"})
+        self.assertEqual(replay(flow.log).next_action(), "recover_invocation_or_output")
+
+    def test_split_helpers_require_failure_attribution(self):
+        # Unattributed, an explorer failure would be compared with the runner's model and look changed.
+        flow = Flow(platform="claude-code", exploration_helpers={"model": "explorer-model", "reasoning_effort": "medium"})
+        failed_role(flow, category="helper_failure", helper={"id": "flow-explorer", "model": "explorer-model",
+                                                             "reasoning_effort": "medium", "category": "model_unavailable"})
+        with self.assertRaisesRegex(ValidationError, "must name the helper assignment that applied"):
+            replay(flow.log)
+
+    def test_helper_failure_attribution_must_match_configured_assignments(self):
+        helper = {"id": "flow-explorer", "model": "example-model", "reasoning_effort": "high", "category": "usage_limit",
+                  "assignment": "exploration_helpers"}
+        flow = Flow()
+        failed_role(flow, category="helper_failure", helper=helper)
+        with self.assertRaisesRegex(ValidationError, "exploration_helpers assignment that is not configured"):
+            replay(flow.log)
+        # Explicit or absent helpers attribution keeps the 2.0.0 meaning.
+        for attribution in ({"assignment": "helpers"}, {}):
+            with self.subTest(attribution=attribution):
+                flow = Flow()
+                failed_role(flow, category="helper_failure", helper={**{k: v for k, v in helper.items() if k != "assignment"}, **attribution})
+                self.assertEqual(replay(flow.log).next_action(), "obtain_model_direction")
+
     def test_inflight_acceptance_keeps_original_basis_with_current_gate_separate(self):
         flow = coding_flow("maximum")
         flow.code_output()

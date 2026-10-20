@@ -1,4 +1,8 @@
-"""Codex resource lookup, schema examples and document-reader checks."""
+"""Recorder, schema example and document-reader checks, run in-process against the Codex copy.
+
+Every v2 integration carries identical runtime files (see test_runtime_parity), so these checks
+cover each copy; linked resources and per-integration CLI runs are checked there.
+"""
 from pathlib import Path
 import json
 import os
@@ -210,13 +214,9 @@ class DistributionTests(unittest.TestCase):
     def test_all_distributed_examples_validate(self):
         for name in ("spec_change_wrapper", "spec_review_wrapper", "change_wrapper", "review_wrapper"):
             validate_wrapper(name.replace("_", "-"), json.loads((BUNDLE / "references/wrappers" / (name + ".json")).read_text(encoding="utf-8")))
+        from test_runtime_parity import EXAMPLE_KINDS
         examples = BUNDLE / "references/examples"
-        for name, kind in (("partial-spec-change", "spec-change-wrapper"), ("accepted-limitation-review", "review-wrapper"),
-                           ("same-version-progress", "change-wrapper"), ("no-artifact-planner", "spec-change-wrapper"),
-                           ("resolved-spec-review", "spec-review-wrapper"), ("resolved-review", "review-wrapper"),
-                           ("phased-plan", "spec-change-wrapper"), ("phase-change", "change-wrapper"),
-                           ("phase-review", "review-wrapper"), ("final-phased-change", "change-wrapper"),
-                           ("continued-planner", "spec-change-wrapper"), ("corrected-coder-output", "change-wrapper")):
+        for name, kind in EXAMPLE_KINDS:
             validate_wrapper(kind, json.loads((examples / (name + ".json")).read_text(encoding="utf-8")))
         validate_shape("repository-config", json.loads((examples / "repository-config.json").read_text(encoding="utf-8")))
         from test_recovery_and_reviews import coding_flow
@@ -226,16 +226,8 @@ class DistributionTests(unittest.TestCase):
         for path in (ROOT / "tests/fixtures").glob("*.json"):
             replay(json.loads(path.read_text(encoding="utf-8")))
 
-    def test_checkout_resources_are_real_relative_symlinks(self):
-        for name in ("VERSION", "templates"):
-            with self.subTest(resource=name):
-                link = BUNDLE / name
-                self.assertTrue(link.is_symlink(), f"Repair the checkout's {name} symlink")
-                self.assertEqual(link.readlink().as_posix(), "../../../" + name)
-                self.assertEqual(link.resolve(strict=True), ROOT / name)
+    def test_workflow_version_reads_the_linked_canonical_version(self):
         self.assertEqual(workflow_version(), (ROOT / "VERSION").read_text(encoding="utf-8").strip())
-        for name in ("proposal-template.md", "bugreport-template.md"):
-            self.assertTrue((BUNDLE / "templates" / name).is_file())
 
     def test_missing_or_flattened_version_is_a_setup_error(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -247,22 +239,6 @@ class DistributionTests(unittest.TestCase):
                     (bundle / "VERSION").write_text(content, encoding="utf-8")
                     with self.assertRaisesRegex(ValidationError, "Workflow setup"):
                         workflow_version(bundle)
-
-    def test_cli_commands_from_foreign_working_directory(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            (Path(tmp) / "VERSION").write_text("99.0.0", encoding="utf-8")
-            cases = [("task-log", ROOT / "tests/fixtures/complete-standard.json"),
-                     ("repository-config", BUNDLE / "references/examples/repository-config.json"),
-                     ("resume-action", ROOT / "tests/fixtures/complete-standard.json")]
-            cases += [(kind, BUNDLE / "references/wrappers" / (kind.replace("-", "_") + ".json"))
-                      for kind in ("spec-change-wrapper", "spec-review-wrapper", "change-wrapper", "review-wrapper")]
-            for kind, artifact in cases:
-                with self.subTest(command=kind):
-                    result = subprocess.run([sys.executable, "-B", str(BUNDLE / "scripts/validate_orchestrator_artifacts.py"), kind, str(artifact)],
-                                            cwd=tmp, capture_output=True, text=True, encoding="utf-8", env=os.environ.copy())
-                    self.assertEqual(result.returncode, 0, result.stderr)
-                    if kind == "resume-action":
-                        self.assertEqual(json.loads(result.stdout)["action"], "reconcile_checkpoint_delivery")
 
     def test_spec_reader_excludes_history_before_context_and_handles_fences(self):
         with tempfile.TemporaryDirectory() as tmp:

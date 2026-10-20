@@ -16,7 +16,7 @@ Use this skill when the user invokes the workflow. Maintaining these source arti
 - Proposed/approved exceptional phases: `references/implementation-phases.md`.
 - Structured outputs: the selected `references/wrappers/*.schema.json` and examples. Task-log/configuration schemas and runtime helpers remain in this skill.
 
-VERSION and templates are real relative symlinks to canonical repository resources. Missing, broken or flattened links are setup errors: stop and report them, do not parse text pointers or search outside the skill. Never read a consumer product VERSION as the workflow version. The other platforms retain their native implementations; their v2 updates are deferred.
+VERSION and templates are real relative symlinks to canonical repository resources. Missing, broken or flattened links are setup errors: stop and report them, do not parse text pointers or search outside the skill. Never read a consumer product VERSION as the workflow version. Claude Code has its own v2 integration; GitHub Copilot and Cursor retain their native implementations, and their v2 updates are deferred.
 
 Follow the consuming project's AGENTS.md/README and project-owned coding directives they identify. Do not automatically load/copy this distribution's reusable coding directives as consumer policy. Inputs may use bundled `templates/proposal-template.md` or `templates/bugreport-template.md`: copy to a completed consumer input, remove authoring/version/example placeholders, preserve the applicable outline, and supply its path.
 

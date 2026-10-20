@@ -180,7 +180,7 @@ class Replay:
         last = failures[-1]
         category = (last.get("helper") or {}).get("category", last["category"])
         if category in {"model_unavailable", "usage_limit"}:
-            assigned_role = "helpers" if last.get("helper") else context["role"].lower()
+            assigned_role = last["helper"].get("assignment", "helpers") if last.get("helper") else context["role"].lower()
             failed_context = last["invocation"]
             failed_id = next(e["id"] for e in reversed(list(self.entries.values()))
                              if e["event"] == "subagent-error" and e["details"]["invocation"]["trigger_event_id"] == context["trigger_event_id"])
@@ -196,7 +196,9 @@ class Replay:
 
     def assignment(self, config, role, context=None):
         capability = config["capability"]
-        assignment = capability["roles"][role.lower()]
+        roles = capability["roles"]
+        # An absent exploration assignment keeps the 2.0.0 meaning: helpers covers exploration.
+        assignment = roles.get("exploration_helpers", roles["helpers"]) if role.lower() == "exploration_helpers" else roles[role.lower()]
         if role.lower() == "reviewer" and context:
             start = self.entries.get(context["trigger_event_id"], {}).get("details", {})
             if work_scope(start)["kind"] == "phase":
@@ -763,6 +765,7 @@ class Replay:
                 parent = self.config
                 for key in keys[:-1]:
                     parent = parent[key]
+                require(keys[-1] in parent, f"{change['target']} is not configured; add or remove it with a complete /capability override")
                 require(parent[keys[-1]] == change["previous"], "Override previous value does not match effective configuration")
                 parent[keys[-1]] = deepcopy(change["new"])
             validate_capability(self.config)
@@ -781,6 +784,11 @@ class Replay:
             require(role == expected_role, "Failure must belong to the active workflow role")
             require((details["category"] == "helper_failure") == (details["helper"] is not None),
                     "Helper failure must identify the actual failed helper and owning role")
+            require(not details["helper"] or details["helper"].get("assignment", "helpers") in self.config["capability"]["roles"],
+                    "Helper failure cites an exploration_helpers assignment that is not configured")
+            # With two helper assignments, an unattributed failure would be compared with the wrong model.
+            require(not details["helper"] or "exploration_helpers" not in self.config["capability"]["roles"] or "assignment" in details["helper"],
+                    "With exploration_helpers configured, a helper failure must name the helper assignment that applied")
             self.errors.setdefault(context["trigger_event_id"], []).append(details)
             self.last_error = {**details, "event_id": entry_id}
             self.inflight = role

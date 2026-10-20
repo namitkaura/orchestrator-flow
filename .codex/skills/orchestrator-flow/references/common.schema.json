@@ -64,6 +64,10 @@
         },
         "helpers": {
           "$ref": "urn:orchestrator-flow:common#/$defs/assignment"
+        },
+        "exploration_helpers": {
+          "description": "Optional exploration and research helper assignment. When absent, helpers covers exploration and check execution, as in 2.0.0; when present, helpers covers test and check execution only.",
+          "$ref": "urn:orchestrator-flow:common#/$defs/assignment"
         }
       },
       "required": [
