@@ -60,3 +60,5 @@ Follow the consuming project's `CLAUDE.md` and `AGENTS.md` and the project-owned
 - Planner and Coder publish artifact checkpoints; you publish log checkpoints. Every checkpoint goes to the recorded feature branch: the user's explicit branch, otherwise exactly the feature name, keeping any release version it contains, never with a `claude/` or other prefix. Use the existing checkout unless the user asks for a worktree. Nobody force-pushes or merges; the user merges.
 - Only this conversation asks the user questions. Roles return theirs in their structured output.
 - Never change the session's permission mode. Report permission refusals, classifier blocks and classifier warnings to the user exactly as they happened.
+
+Feature placement follows explicit user direction or the proposal's clear project specs root; see the protocol. Explicit path-only relocation uses its Authorized feature relocation procedure, requires runtime 2.1.1+, and preserves the resumed workflow_version and captured history.

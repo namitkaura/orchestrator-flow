@@ -19,9 +19,16 @@ def read_json(path):
 
 def validate_workspace(state, workspace):
     """Inspect content mechanically, returning diagnostics rather than bodies/patches."""
-    from checkpoint_state import git, workflow_checkpoints
+    from checkpoint_state import git, workflow_checkpoints, artifact_checkpoint_ref as checkpoint_ref
     from read_spec_body import check_document, check_task_completion, numbered_tasks, progress_basis
+    locations = {}
+    def artifact_checkpoint_ref(repo, log, commit, name):
+        key = (commit, name)
+        if key not in locations:
+            locations[key] = checkpoint_ref(repo, log, commit, name)
+        return locations[key]
     checkpoints = {c["commit"]: c for c in workflow_checkpoints(workspace, state.log)}
+    validate_relocations(state, workspace, checkpoints)
     branch = state.log["branch_context"]
     remote = git(workspace, "ls-remote", "--exit-code", branch["remote"], "refs/heads/" + branch["feature_branch"], check=False)
     tip = remote.stdout.split()[0] if remote.returncode == 0 and remote.stdout.strip() else None
@@ -43,10 +50,10 @@ def validate_workspace(state, workspace):
                 "Artifact handoff checkpoint has not been established as published")
         for name, artifact in wrapper["artifacts"].items():
             if artifact:
-                content = git(workspace, "show", commit + ":" + artifact["ref"]).stdout
+                content = git(workspace, "show", commit + ":" + artifact_checkpoint_ref(workspace, state.log, commit, name)).stdout
                 require(content.splitlines()[1:2] == [f"Content version: {artifact['version']}"], "Artifact checkpoint version differs from handoff")
         if "implementation_phases" in wrapper and wrapper["implementation_phases"]:
-            tasks = git(workspace, "show", commit + ":" + state.log["tasks_ref"]).stdout
+            tasks = git(workspace, "show", commit + ":" + artifact_checkpoint_ref(workspace, state.log, commit, "tasks")).stdout
             planned = [t for p in wrapper["implementation_phases"] for t in p["task_ids"]]
             require(planned == list(numbered_tasks(tasks)), "Phases must partition every actual task in execution order")
         for change in wrapper.get("artifact_changes", []):
@@ -55,17 +62,17 @@ def validate_workspace(state, workspace):
                              int(prior["id"]) < int(entry["id"]) and "spec_change_wrapper" in prior and
                              any(c["artifact"] == "tasks" and c["change_kind"] != "progress" for c in prior["spec_change_wrapper"].get("artifact_changes", []))]
                 producer = producers[-1]
-                approved = git(workspace, "show", producer["checkpoint_commit"] + ":" + state.log["tasks_ref"]).stdout
-                current = git(workspace, "show", commit + ":" + state.log["tasks_ref"]).stdout
+                approved = git(workspace, "show", producer["checkpoint_commit"] + ":" + artifact_checkpoint_ref(workspace, state.log, producer["checkpoint_commit"], "tasks")).stdout
+                current = git(workspace, "show", commit + ":" + artifact_checkpoint_ref(workspace, state.log, commit, "tasks")).stdout
                 require(progress_basis(approved) == progress_basis(current), "Progress concealed a task-content or Revision History change")
     for artifact in state.artifacts.values():
         if artifact:
-            check_document(workspace / artifact["ref"], artifact["version"])
+            check_document(contained_path(workspace, artifact["ref"]), artifact["version"])
     # Even between Coder checkpoints/returns, compare the working tasks to the
     # latest Planner content, not to Coder's reported completion ordering.
     if state.artifacts["tasks"]:
         producing = state.entries[state.produced["tasks"]]["spec_change_wrapper"]
-        approved = git(workspace, "show", producing["checkpoint_commit"] + ":" + state.log["tasks_ref"]).stdout
+        approved = git(workspace, "show", producing["checkpoint_commit"] + ":" + artifact_checkpoint_ref(workspace, state.log, producing["checkpoint_commit"], "tasks")).stdout
         current = (workspace / state.log["tasks_ref"]).read_text(encoding="utf-8-sig")
         require(progress_basis(approved) == progress_basis(current), "Current tasks contain unrecorded content changes")
     for stage, output_id in state.outputs.items():
@@ -78,15 +85,75 @@ def validate_workspace(state, workspace):
         scope = work_scope(wrapper)
         task_ids = next(p["task_ids"] for p in state.phases if p["id"] == scope["phase_id"]) if scope["kind"] == "phase" else None
         path = workspace / state.log["tasks_ref"]
-        completed = git(workspace, "show", wrapper["checkpoint_commit"] + ":" + state.log["tasks_ref"]).stdout
+        completed = git(workspace, "show", wrapper["checkpoint_commit"] + ":" + artifact_checkpoint_ref(workspace, state.log, wrapper["checkpoint_commit"], "tasks")).stdout
         check_task_completion(path, wrapper["task_progress"], task_ids, text=completed)
         # Historical completion describes its own published task basis. New
         # drafting/repair work need not be complete before its next handoff.
         at_handoff = state.status in {"coding_complete", "code_in_review", "code_changes_requested",
                                       "code_approved", "implementation_complete"}
         at_phase_handoff = state.status == "coding_in_progress" and state.inflight is None
-        if (at_handoff or at_phase_handoff) and scope == state.current_scope and wrapper["artifacts"] == state.artifacts:
+        if (at_handoff or at_phase_handoff) and scope == state.current_scope and state.same_artifacts(wrapper["artifacts"], state.artifacts):
             check_task_completion(path, wrapper["task_progress"], task_ids)
+
+
+def contained_path(workspace, ref):
+    from workflow_protocol import relative_path
+    relative_path(ref)
+    path = Path(workspace) / ref
+    require(path.resolve().is_relative_to(Path(workspace).resolve()), "Relocation path escapes workspace through a symlink")
+    return path
+
+
+def validate_relocations(state, workspace, checkpoints):
+    """Verify each authorized move against immutable Git blobs, including pending work."""
+    from checkpoint_state import git
+    for entry in state.entries.values():
+        if entry["event"] != "feature-relocated":
+            continue
+        details = entry["details"]
+        covering = [c for c in checkpoints.values() if entry["id"] in c["event_ids"]]
+        require(len(covering) <= 1, "Relocation has duplicated checkpoints")
+        checkpoint = covering[0] if covering else None
+        if checkpoint:
+            require(checkpoint["first"] == checkpoint["last"] == int(entry["id"]),
+                    "Relocation requires its own single-event log checkpoint")
+        before = checkpoint["commit"] + "^" if checkpoint else "HEAD"
+        after = checkpoint["commit"] if checkpoint else None
+        old, new = details["from_dir"], details["to_dir"]
+        files = git(workspace, "ls-tree", "-r", "--name-only", before, "--", old).stdout.splitlines()
+        require(old + "/task_log.json" in files, "Relocation source has no tracked authoritative log")
+        pairs = [(ref, new + ref[len(old):]) for ref in files]
+        pairs += [(m["from"], m["to"]) for m in details["input_moves"]]
+        require(len({p for pair in pairs for p in pair}) == 2 * len(pairs), "Relocation paths overlap")
+        expected_changes = set()
+        for source, target in pairs:
+            expected_changes.update((source, target))
+            for ref in (source, target):
+                contained_path(workspace, ref)
+            mode = git(workspace, "ls-tree", before, "--", source).stdout.split()
+            require(mode and mode[0] in {"100644", "100755"}, "Relocation source must be a tracked regular file")
+            require(git(workspace, "cat-file", "-e", before + ":" + target, check=False).returncode != 0,
+                    "Relocation destination already exists in its baseline")
+            if after:
+                require(git(workspace, "cat-file", "-e", after + ":" + source, check=False).returncode != 0,
+                        "Relocation left a duplicate source")
+                actual = git(workspace, "ls-tree", after, "--", target).stdout.split()
+                require(actual and actual[0] == mode[0], "Relocation must preserve regular-file mode")
+                digest = actual[2]
+            else:
+                require(not contained_path(workspace, source).exists(), "Relocation left a duplicate source")
+                require(contained_path(workspace, target).is_file(), "Relocation destination is missing")
+                digest = git(workspace, "hash-object", "--path=" + source, "--", target).stdout.strip()
+            if source != old + "/task_log.json":
+                require(digest == mode[2], "Relocation must preserve file bytes without content/version changes")
+        if after:
+            changed = set(git(workspace, "diff-tree", "--no-renames", "--no-commit-id", "--name-only", "-r", after).stdout.splitlines())
+            require(changed == expected_changes, "Relocation checkpoint contains unlisted changes")
+        else:
+            # A nonempty pre-existing destination must never be silently merged.
+            actual_files = {p.relative_to(Path(workspace)).as_posix() for p in contained_path(workspace, new).rglob("*") if p.is_file()}
+            require(actual_files == {target for _, target in pairs if target.startswith(new + "/")},
+                    "Relocation destination contains unlisted files")
 
 
 class HandoffError(ValidationError):

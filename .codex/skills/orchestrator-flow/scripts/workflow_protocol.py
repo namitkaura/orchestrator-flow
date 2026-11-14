@@ -5,7 +5,7 @@ from copy import deepcopy
 
 from workflow_artifacts import (ValidationError, all_findings, check_compatibility,
                                 require, validate_capability, validate_shape, validate_wrapper,
-                                validate_progress, work_scope, validate_review_scope)
+                                validate_progress, work_scope, validate_review_scope, workflow_version, version_tuple)
 
 ARTIFACTS = ("requirements", "design", "tasks")
 LEVELS = {"basic": 0, "standard": 1, "maximum": 2}
@@ -18,6 +18,37 @@ REFERENCE_EVENTS = {
     "approval": {"spec-artifact-approved"}, "authorization": {"user-authorization-recorded"},
     "override": {"user-override"},
 }
+
+
+def relative_path(value):
+    require(isinstance(value, str) and value and not value.startswith("/") and
+            "\\" not in value and ":" not in value and not any(ord(c) < 32 for c in value) and
+            all(part not in {"", ".", ".."} for part in value.split("/")),
+            "Paths must be contained workspace-relative POSIX paths without traversal")
+    return value
+
+
+def validate_feature_directory(directory, feature):
+    relative_path(directory)
+    suffix = ".docs/specs/" + feature
+    require(directory == suffix or directory.endswith("/" + suffix), "Feature directory must match feature identity")
+    return directory
+
+
+def feature_directory(log, event_id=None):
+    """Effective directory at a recorded event boundary, without rewriting history."""
+    relocations = [e for e in log["history"] if e["event"] == "feature-relocated"]
+    directory = relocations[0]["details"]["from_dir"] if relocations else log["feature_dir"]
+    for entry in relocations:
+        if event_id is not None and int(entry["id"]) > int(event_id):
+            break
+        directory = entry["details"]["to_dir"]
+    return directory
+
+
+def log_locations(log):
+    return list(dict.fromkeys([feature_directory(log, 0)] +
+                [e["details"]["to_dir"] for e in log["history"] if e["event"] == "feature-relocated"]))
 
 
 def check_reference(reference, entries):
@@ -46,6 +77,8 @@ def check_references(value, entries):
 class Replay:
     def __init__(self, log):
         self.log = log
+        self.directory = feature_directory(log, 0)
+        self.directories = [self.directory]
         self.entries = {}
         self.status = None
         self.config = None
@@ -87,6 +120,15 @@ class Replay:
         self.completed_phases = set()
         self.assessments = []
         self.accepted_reviews = set()
+
+    def same_artifacts(self, left, right):
+        def effective(snapshot):
+            result = deepcopy(snapshot)
+            for name, artifact in result.items():
+                if artifact and artifact["ref"] in {d + "/" + name + ".md" for d in self.directories}:
+                    artifact["ref"] = self.directory + "/" + name + ".md"
+            return result
+        return effective(left) == effective(right)
 
     def stage(self, scope):
         if scope["kind"] == "feature":
@@ -142,10 +184,10 @@ class Replay:
                     continue
                 reviewed = self.reviewed_source(wrapper)
                 applicable = (reviewed["checkpoint_commit"] == source["checkpoint_commit"]
-                              and self.review_artifacts[wrapper["context"]["trigger_event_id"]] == self.artifacts)
+                              and self.same_artifacts(self.review_artifacts[wrapper["context"]["trigger_event_id"]], self.artifacts))
                 for assessment in self.assessments:
                     if assessment["review_ref"]["event_id"] == event_id and assessment["source_ref"]["event_id"] == self.outputs[stage]:
-                        applicable = assessment["conclusion"] == "applicable" and assessment["reviewed_artifacts"] == self.artifacts and assessment["current_commit"] == source["checkpoint_commit"]
+                        applicable = assessment["conclusion"] == "applicable" and self.same_artifacts(assessment["reviewed_artifacts"], self.artifacts) and assessment["current_commit"] == source["checkpoint_commit"]
                 sufficient |= applicable
             if not sufficient:
                 gaps.add(stage)
@@ -233,7 +275,7 @@ class Replay:
         if source is None:
             source = self.source_wrapper("spec") if "spec" in self.outputs else {}
         return (self.all_approved() and source.get("output_kind") == "consolidated"
-                and source["artifacts"] == self.artifacts and not source.get("questions") and not self.feedback_ref)
+                and self.same_artifacts(source["artifacts"], self.artifacts) and not source.get("questions") and not self.feedback_ref)
 
     def reviewed_source(self, wrapper):
         reference = wrapper["reviewed_output_ref"]
@@ -260,7 +302,7 @@ class Replay:
         for name in ARTIFACTS:
             old, new = self.artifacts[name], wrapper["artifacts"][name]
             change = changes.get(name)
-            expected_ref = self.log[name + "_ref"]
+            expected_ref = self.directory + "/" + name + ".md"
             require(new is None or new["ref"] == expected_ref, f"Wrong {name} path")
             if change is None:
                 require(new == old, f"Unrecorded change to {name}")
@@ -409,7 +451,7 @@ class Replay:
         elif "initial_configuration" in details:
             raise ValidationError("Configuration initialization is only valid in the first event")
         if previous == "implementation_complete":
-            require(event == "user-authorization-recorded" and details["kind"] == "checkpoint_recovery",
+            require(event == "feature-relocated" or event == "user-authorization-recorded" and details["kind"] == "checkpoint_recovery",
                     "Completed work permits only checkpoint recovery authorization")
         target = previous
 
@@ -430,6 +472,30 @@ class Replay:
             self.context(details["invocation"], "Planner", True, entry)
             self.user_revision_pending = False
             target = "spec_in_progress"
+
+        elif event == "feature-relocated":
+            self.pair(entry, "Orchestrator", "User")
+            require(details["from_dir"] == self.directory, "Relocation source disagrees with recorded location")
+            destination = validate_feature_directory(details["to_dir"], self.log["feature"])
+            require(destination not in self.directories, "Relocation must use a new distinct location")
+            require(not any(destination.startswith(d + "/") or d.startswith(destination + "/") for d in self.directories),
+                    "Relocation directories must not overlap")
+            sources, targets = set(), set()
+            for move in details["input_moves"]:
+                source, destination_ref = relative_path(move["from"]), relative_path(move["to"])
+                require(source != destination_ref and source not in sources and destination_ref not in targets, "Relocation input moves must be distinct")
+                require(not any(source == d or source.startswith(d + "/") for d in (*self.directories, destination)),
+                        "Existing feature files move through feature_dir, not input_moves")
+                require(not any(destination_ref == d or destination_ref.startswith(d + "/") for d in self.directories),
+                        "Relocation inputs cannot move into a historical feature location")
+                sources.add(source)
+                targets.add(destination_ref)
+            require(not sources.intersection(targets), "Relocation input moves cannot overlap")
+            self.directory = destination
+            self.directories.append(destination)
+            for name, artifact in self.artifacts.items():
+                if artifact:
+                    artifact["ref"] = destination + "/" + name + ".md"
 
         elif event == "user-change-requested":
             self.pair(entry, "Orchestrator", "User")
@@ -530,7 +596,7 @@ class Replay:
             require(wrapper["reviewed_output_ref"] == start["source_ref"], "Review output disagrees with invocation scope")
             validate_review_scope(wrapper, initial=start["review_kind"] == "initial", repaired=self.repair_pending[phase])
             require(work_scope(wrapper) == work_scope(start), "Review work scope disagrees with invocation")
-            require(self.review_artifacts[context["trigger_event_id"]] == self.artifacts, "Review uses stale document versions")
+            require(self.same_artifacts(self.review_artifacts[context["trigger_event_id"]], self.artifacts), "Review uses stale document versions")
             new_findings = all_findings(wrapper)
             for fid, finding in new_findings.items():
                 old = self.findings.get(fid)
@@ -751,7 +817,7 @@ class Replay:
             require(self.inflight in {None, role}, "Obtain a coherent producer yield before assessment")
             require(details["source_ref"] == {"event_id": self.outputs[phase], "kind": "spec_change_wrapper" if phase == "spec" else "change_wrapper"}, "Assessment must identify the current source handoff")
             source = self.source_wrapper(phase)
-            require(details["current_commit"] == source["checkpoint_commit"] and details["reviewed_artifacts"] == self.artifacts and work_scope(details) == work_scope(source), "Assessment basis disagrees with current work")
+            require(details["current_commit"] == source["checkpoint_commit"] and self.same_artifacts(details["reviewed_artifacts"], self.artifacts) and work_scope(details) == work_scope(source), "Assessment basis disagrees with current work")
             require(all(e.get("freshness", "new") != "incomplete" and not e.get("coverage_gaps") and not e.get("uncertainty") for e in details["evidence"]) or details["conclusion"] != "applicable", "Incomplete/uncertain assessment cannot establish applicability")
             self.assessments.append(deepcopy(details))
 
@@ -909,10 +975,15 @@ def replay(log, reader_version=None, previous=None):
     validate_shape("task-log", log)
     if previous is not None:
         require(log["history"][:len(previous["history"])] == previous["history"], "History is append-only")
-        for key in ("feature", "feature_dir", "workflow_version", "branch_context", "requirements_ref", "design_ref", "tasks_ref", "task_log_ref"):
+        replay(previous, reader_version)
+        require(feature_directory(log, len(previous["history"])) == previous["feature_dir"], "Feature location changed without a new relocation event")
+        for key in ("feature", "workflow_version", "branch_context"):
             require(previous[key] == log[key], f"Immutable feature identity changed: {key}")
-    directory = ".docs/specs/" + log["feature"]
-    require(log["feature_dir"] == directory, "Feature directory must match feature identity")
+    directory = validate_feature_directory(log["feature_dir"], log["feature"])
+    for location in log_locations(log):
+        validate_feature_directory(location, log["feature"])
+    if any(e["event"] == "feature-relocated" for e in log["history"]):
+        require(version_tuple(reader_version or workflow_version()) >= (2, 1, 1), "Relocated logs require a 2.1.1 or newer reader")
     for name in (*ARTIFACTS, "task_log"):
         suffix = ".json" if name == "task_log" else ".md"
         require(log[name + "_ref"] == directory + "/" + name + suffix, f"Invalid {name} reference")
@@ -924,6 +995,7 @@ def replay(log, reader_version=None, previous=None):
             raise ValidationError(f"History {entry['id']} ({entry['event']}): missing prerequisite {exc}") from exc
         except ValidationError as exc:
             raise ValidationError(f"History {entry['id']} ({entry['event']}): {exc}") from exc
+    require(state.directory == directory, "Effective feature directory disagrees with relocation history")
     require(log["status"] == state.status, "Top-level status disagrees with history")
     require({key: log[key] for key in state.config} == state.config, "Effective configuration disagrees with override history")
     return state

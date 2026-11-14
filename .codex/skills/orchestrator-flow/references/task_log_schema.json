@@ -2172,6 +2172,107 @@
               "event",
               "details"
             ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "timestamp": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+              },
+              "id": {
+                "type": "string",
+                "pattern": "^[1-9][0-9]*$"
+              },
+              "actor": {
+                "const": "Orchestrator"
+              },
+              "requestor": {
+                "const": "User"
+              },
+              "status": {
+                "enum": [
+                  "spec_in_progress",
+                  "spec_ready",
+                  "spec_in_review",
+                  "spec_approved",
+                  "spec_changes_requested",
+                  "coding_in_progress",
+                  "coding_complete",
+                  "blocked",
+                  "code_in_review",
+                  "code_approved",
+                  "code_changes_requested",
+                  "implementation_complete"
+                ]
+              },
+              "event": {
+                "const": "feature-relocated"
+              },
+              "details": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "from_dir": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "to_dir": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "user_statement": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "references": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "urn:orchestrator-flow:common#/$defs/reference"
+                    }
+                  },
+                  "input_moves": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "from": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "to": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "from",
+                        "to"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "from_dir",
+                  "to_dir",
+                  "user_statement",
+                  "references",
+                  "input_moves"
+                ]
+              }
+            },
+            "required": [
+              "timestamp",
+              "id",
+              "actor",
+              "requestor",
+              "status",
+              "event",
+              "details"
+            ]
           }
         ]
       },

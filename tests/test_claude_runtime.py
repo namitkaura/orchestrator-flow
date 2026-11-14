@@ -331,6 +331,26 @@ class ClaudeLogTests(unittest.TestCase):
         self.assertTrue(json_values_equal(entry["details"], details))
         self.assertEqual(json.loads(result.stdout)["blockers"], [{"id": "live-check", "reason": "Access needs user authority."}])
 
+    def test_relocation_entry_atomically_updates_current_refs_and_preserves_history(self):
+        flow = Flow(platform="claude-code")
+        flow.spec_output("requirements")
+        previous = deepcopy(flow.log)
+        self.write_log(previous)
+        entry = {"actor": "Orchestrator", "requestor": "User", "event": "feature-relocated", "details": {
+            "from_dir": previous["feature_dir"], "to_dir": "component/.docs/specs/example",
+            "user_statement": "Move this feature directory only.", "references": [], "input_moves": []}}
+        result = self.run_log("append-entry", "--log", str(self.log), stdin=dumps(entry))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        written = json.loads(self.log.read_text(encoding="utf-8"))
+        self.assertEqual(written["history"][:-1], previous["history"])
+        self.assertEqual(written["status"], previous["status"])
+        self.assertEqual(written["workflow_version"], previous["workflow_version"])
+        self.assertEqual(written["feature_dir"], entry["details"]["to_dir"])
+        for name in ("requirements", "design", "tasks", "task_log"):
+            self.assertTrue(written[name + "_ref"].startswith(written["feature_dir"] + "/"))
+        # Repeating a stale source is rejected without changing the authoritative file.
+        self.assertRejected(self.run_log("append-entry", "--log", str(self.log), stdin=dumps(entry)), "invalid_entry", self.log.read_bytes())
+
     def test_orchestrator_entries_derive_metadata_and_validate_before_writing(self):
         flow = Flow(platform="claude-code")
         flow.spec_output("requirements")

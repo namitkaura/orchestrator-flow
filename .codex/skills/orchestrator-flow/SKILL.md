@@ -41,3 +41,5 @@ UTF-8 input is required. Set `$OutputEncoding = [System.Text.UTF8Encoding]::new(
 Current-body reads use `scripts/read_spec_body.py <path> --offset 0 --max-chars 8000`, continuing until eof; retry truncated chunks from the same offset with a smaller bound. Recovery uses read-only resume-action and checkpoint inspect/recent. The protocol defines validation commands, artifact/log trailers and approval/checkpoint gates.
 
 Record local push-attempt identity before each publishing push. Failed/uncertain delivery globally pauses workflow work and follows the recovery reference. Successful delivery requires no receipt. Do not force-push, merge, create a worktree without explicit instruction, or treat a commit-message request as final acceptance. Explicit feature acceptance, delivered final checkpoint and manual user merge remain separate.
+
+Feature placement follows explicit user direction or the proposal's clear project specs root; see the protocol. Explicit path-only relocation uses its Authorized feature relocation procedure, requires runtime 2.1.1+, and preserves the resumed workflow_version and captured history.

@@ -275,6 +275,10 @@ def append_entry(path, entry, workspace=None):
         candidate["history"].append(derived)
         candidate["status"] = state.status
         candidate.update(deepcopy(state.config))
+        if derived["event"] == "feature-relocated":
+            candidate["feature_dir"] = state.directory
+            for name in ("requirements", "design", "tasks", "task_log"):
+                candidate[name + "_ref"] = state.directory + "/" + name + (".json" if name == "task_log" else ".md")
         replay(candidate, previous=previous)
         if workspace:
             validate_workspace(replay(candidate), Path(workspace))

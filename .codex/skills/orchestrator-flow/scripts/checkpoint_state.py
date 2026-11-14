@@ -66,11 +66,11 @@ def event_commits(repo, log_ref):
         commit, body = raw[offset].strip(), raw[offset + 1]
         logs = re.findall(r"^Orchestrator-Log: (.+)$", body, re.M)
         ranges = re.findall(r"^Orchestrator-Events: ([1-9]\d*)-([1-9]\d*)$", body, re.M)
-        if log_ref in logs:
+        if any(value in logs for value in ([log_ref] if isinstance(log_ref, str) else log_ref)):
             require(len(logs) == len(ranges) == 1, "Checkpoint must have one log and event range")
             first, last = map(int, ranges[0])
             require(first <= last, "Reversed checkpoint event range")
-            checkpoints.append({"commit": commit, "first": first, "last": last})
+            checkpoints.append({"commit": commit, "first": first, "last": last, "log_ref": logs[0]})
     return checkpoints
 
 
@@ -85,8 +85,33 @@ def checkpoint_metadata(body):
     return fields
 
 
+def checkpoint_log(repo, log, commit):
+    """Read the single historical authoritative log at its recorded location."""
+    from workflow_protocol import log_locations, feature_directory
+    found = []
+    for directory in log_locations(log):
+        ref = directory + "/task_log.json"
+        result = git(repo, "show", commit + ":" + ref, check=False)
+        if result.returncode == 0:
+            stored = json.loads(result.stdout)
+            require(stored["task_log_ref"] == ref and stored["feature"] == log["feature"] and
+                    stored["history"] == log["history"][:len(stored["history"])] and
+                    stored["feature_dir"] == feature_directory(log, len(stored["history"])),
+                    "Historical checkpoint location/history differs from recorded workflow")
+            found.append(stored)
+    require(len(found) == 1, "Checkpoint must contain exactly one authoritative historical task log")
+    return found[0]
+
+
+def artifact_checkpoint_ref(repo, log, commit, name):
+    if not any(e["event"] == "feature-relocated" for e in log["history"]):
+        return log[name + "_ref"]
+    return checkpoint_log(repo, log, commit)["feature_dir"] + "/" + name + ".md"
+
+
 def workflow_checkpoints(repo, log):
     """Account for every commit to be published from the recorded baseline."""
+    from workflow_protocol import feature_directory, log_locations
     baseline = log["branch_context"]["baseline_commit"]
     require(git(repo, "merge-base", "--is-ancestor", baseline, "HEAD", check=False).returncode == 0,
             "Feature baseline is not an ancestor of HEAD")
@@ -102,14 +127,18 @@ def workflow_checkpoints(repo, log):
         record = {"commit": commit, "checkpoint_kind": metadata["checkpoint"], "publishing_role": metadata["role"],
                   "invocation": None, "phase_id": metadata.get("phase"), "event_ids": []}
         if metadata["checkpoint"] == "log":
-            require(metadata["role"] == "Orchestrator" and metadata.get("log") == log["task_log_ref"] and
+            require(metadata["role"] == "Orchestrator" and metadata.get("log") in {d + "/task_log.json" for d in log_locations(log)} and
                     re.fullmatch(r"[1-9]\d*-[1-9]\d*", metadata.get("events", "")), "Log checkpoint needs Orchestrator and its event range")
-            require(log["task_log_ref"] in paths, "Log checkpoint must change the authoritative task log")
+            require(metadata["log"] in paths, "Log checkpoint must change the authoritative task log")
             first, last = map(int, metadata["events"].split("-"))
+            require(metadata["log"] == feature_directory(log, last) + "/task_log.json",
+                    "Log trailer disagrees with its historical location")
+            stored = checkpoint_log(repo, log, commit)
+            require(len(stored["history"]) == last, "Log checkpoint event range differs from its contents")
             require(first <= last, "Reversed checkpoint event range")
             record.update(first=first, last=last, event_ids=[str(i) for i in range(first, last + 1)])
         else:
-            require("log" not in metadata and "events" not in metadata and log["task_log_ref"] not in paths,
+            require("log" not in metadata and "events" not in metadata and not {d + "/task_log.json" for d in log_locations(log)}.intersection(paths),
                     "Artifact checkpoints do not write the task log or carry event ranges")
             require(paths, "Artifact checkpoint must contain changes; do not create empty handoff commits")
         if metadata["role"] in {"Planner", "Coder"}:
@@ -117,7 +146,7 @@ def workflow_checkpoints(repo, log):
             require(match is not None and match[2] == metadata["role"], "Producer checkpoint needs trigger/role/attempt invocation")
             # Use only history already committed when this artifact was made.
             # Later retries/overrides cannot retroactively authorize its writer.
-            recorded = json.loads(git(repo, "show", commit + ":" + log["task_log_ref"]).stdout)["history"]
+            recorded = checkpoint_log(repo, log, commit)["history"]
             require(recorded == log["history"][:len(recorded)], "Artifact checkpoint contains a different workflow history")
             entry = next((e for e in recorded if e["id"] == match[1]), None)
             require(entry and entry["actor"] == match[2] and entry["event"] in {"spec-creation-started", "spec-revision-started", "coding-started", "coding-revision-started"}, "Checkpoint invocation is not a producer start")
@@ -164,20 +193,22 @@ def select_feature_branch(repo, feature, explicit=None):
 
 
 def committed_checkpoint(repo, log):
-    checkpoints = event_commits(repo, log["task_log_ref"])
+    from workflow_protocol import log_locations, feature_directory
+    checkpoints = event_commits(repo, [d + "/task_log.json" for d in log_locations(log)])
     covered = 0
     latest = None
     for checkpoint in checkpoints:
         require(checkpoint["first"] == covered + 1, "Checkpoint ranges must be contiguous and nonduplicated")
+        require(checkpoint["log_ref"] == feature_directory(log, checkpoint["last"]) + "/task_log.json", "Checkpoint used the wrong historical log path")
         covered = checkpoint["last"]
         latest = checkpoint
-        stored = json.loads(git(repo, "show", checkpoint["commit"] + ":" + log["task_log_ref"]).stdout)
+        stored = json.loads(git(repo, "show", checkpoint["commit"] + ":" + checkpoint["log_ref"]).stdout)
         require(stored["history"] == log["history"][:covered], "Committed history differs from authoritative append-only history")
     require(covered <= len(log["history"]), "Git contains history absent from the working log")
     if covered != len(log["history"]):
         return None
     if latest:
-        stored = json.loads(git(repo, "show", latest["commit"] + ":" + log["task_log_ref"]).stdout)
+        stored = json.loads(git(repo, "show", latest["commit"] + ":" + latest["log_ref"]).stdout)
         require(stored == log, "Committed log does not match current checkpoint contents")
     return latest
 
