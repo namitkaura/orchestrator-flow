@@ -13,10 +13,13 @@ import uuid
 from workflow_artifacts import ValidationError, require
 
 
-def git(repo, *args, check=True):
-    result = subprocess.run(["git", "-C", str(repo), *args], capture_output=True, text=True, encoding="utf-8")
+def git(repo, *args, check=True, binary=False):
+    # Checkpoints and grants name physical Git objects, including their original parents.
+    result = subprocess.run(["git", "--no-replace-objects", "-C", str(repo), *args], capture_output=True,
+                            encoding=None if binary else "utf-8", env={**os.environ, "GIT_GRAFT_FILE": os.devnull})
     if check and result.returncode:
-        raise ValidationError(result.stderr.strip() or f"git {' '.join(args)} failed")
+        error = result.stderr.decode("utf-8", "replace") if binary else result.stderr
+        raise ValidationError(error.strip() or f"git {' '.join(args)} failed")
     return result
 
 
@@ -74,10 +77,13 @@ def event_commits(repo, log_ref):
     return checkpoints
 
 
+CHECKPOINT_FIELDS = ("Feature", "Checkpoint", "Role", "Invocation", "Phase", "Log", "Events")
+
+
 def checkpoint_metadata(body):
     """Interpret correspondence only; a commit message never grants authority."""
     fields = {}
-    for key in ("Feature", "Checkpoint", "Role", "Invocation", "Phase", "Log", "Events"):
+    for key in CHECKPOINT_FIELDS:
         values = re.findall(r"^Orchestrator-" + key + r": (.+)$", body, re.M)
         require(len(values) <= 1, f"Repeated Orchestrator-{key} trailer")
         if values:
@@ -109,17 +115,122 @@ def artifact_checkpoint_ref(repo, log, commit, name):
     return checkpoint_log(repo, log, commit)["feature_dir"] + "/" + name + ".md"
 
 
-def workflow_checkpoints(repo, log):
+def validate_spec_input(repo, commit, parent, directory):
+    """Check the complete parent diff and stored blobs. Diagnostics contain metadata only."""
+    from workflow_protocol import relative_path
+    raw = git(repo, "diff-tree", "--raw", "-r", "-z", "--no-renames", "--no-abbrev",
+              "--ignore-submodules=none", "--no-commit-id", parent, commit, "--", binary=True).stdout
+    fields = raw.split(b"\0")[:-1]
+    require(fields and len(fields) % 2 == 0, f"Unaccounted-for commit {commit}: empty or incomplete file inventory")
+    for header, name in zip(fields[::2], fields[1::2]):
+        old_mode, mode, _, blob, status = header.split()
+        require(status == b"A" and old_mode == b":000000" and mode in {b"100644", b"100755"},
+                f"Unaccounted-for commit {commit}: every change must add a regular specification input")
+        try:
+            path = relative_path(name.decode("utf-8"))
+        except UnicodeDecodeError as exc:
+            raise ValidationError(f"Unaccounted-for commit {commit}: invalid UTF-8 path") from exc
+        filename = path.rsplit("/", 1)[-1]
+        require(path.startswith(directory + "/") and filename.startswith(("proposal-", "bugreport-")) and filename.endswith(".md"),
+                f"Unaccounted-for commit {commit}: {path} is outside the permitted specification inputs")
+        content = git(repo, "cat-file", "blob", blob.decode("ascii"), binary=True).stdout
+        require(b"\0" not in content, f"Unaccounted-for commit {commit}: NUL byte in {path}")
+        try:
+            content.decode("utf-8")
+        except UnicodeDecodeError as exc:
+            raise ValidationError(f"Unaccounted-for commit {commit}: invalid UTF-8 in {path}") from exc
+
+
+def spec_input_prerequisites(repo, log, inputs, checkpoints, allow_pending):
+    """Find acknowledgment commits that need remote proof for producers or withdrawals."""
+    from workflow_protocol import feature_directory
+    decisions = {}
+    for entry in log["history"]:
+        details = entry.get("details", {})
+        if entry["event"] != "user-authorization-recorded" or details["operation"] != "accept-spec-input-commit":
+            continue
+        scope = details["scope"]
+        require(entry["actor"] == entry["requestor"] == "User" and details["kind"] == "external_operation"
+                and details["user_statement"].strip() and details["limits"] == {"max_attempts": None, "additional_cycles": None, "phase": None}
+                and not details["failed_attempts"] and not details.get("uncertain_attempts"),
+                "Invalid authority for accept-spec-input-commit")
+        require(scope in inputs, f"Unaccounted-for commit: specification input scope must match an exact ordinary commit ID: {scope}")
+        decisions.setdefault(scope, []).append(entry)
+    missing = inputs.difference(decisions)
+    if missing:
+        raise ValidationError(f"Unaccounted-for commit {min(missing)}; do not include unrelated commits in checkpoint delivery")
+    if not inputs:
+        return set(), set()
+
+    branch = log["branch_context"]
+    require(git(repo, "branch", "--show-current").stdout.strip() == branch["feature_branch"], "Wrong active feature branch")
+    baseline = git(repo, "rev-parse", branch["baseline_commit"] + "^{commit}").stdout.strip()
+    chain = [row.split() for row in git(repo, "rev-list", "--first-parent", "--parents", "--reverse",
+                                        baseline + "..HEAD").stdout.splitlines()]
+    require(chain and chain[0][1:2] == [baseline], "Feature baseline must be on the first-parent history")
+    positions = {row[0]: index for index, row in enumerate(chain)}
+
+    def precedes(earlier, later):
+        if earlier in positions and later in positions:
+            return positions[earlier] < positions[later]
+        return earlier != later and git(repo, "merge-base", "--is-ancestor", earlier, later, check=False).returncode == 0
+
+    log_checkpoints = [c for c in checkpoints if c["checkpoint_kind"] == "log"]
+    covering = {}
+    last = 0
+    for checkpoint in log_checkpoints:
+        require(checkpoint["first"] == last + 1, "Checkpoint ranges must be contiguous and nonduplicated")
+        covering.update(dict.fromkeys(checkpoint["event_ids"], checkpoint["commit"]))
+        last = checkpoint["last"]
+    producers = [c["commit"] for c in checkpoints if c["publishing_role"] in {"Planner", "Coder"}]
+    for_producers, for_withdrawals = set(), set()
+    for commit, entries in decisions.items():
+        require(commit in positions and len(chain[positions[commit]]) == 2,
+                f"Unaccounted-for commit {commit}: expected a single-parent input on the feature first-parent history")
+        prior = max((c["last"] for c in log_checkpoints if precedes(c["commit"], commit)), default=0)
+        validate_spec_input(repo, commit, chain[positions[commit]][1], feature_directory(log, prior))
+
+        # Reduce each checkpoint's decisions at its closing event. None is the
+        # append-only candidate suffix and can only bootstrap workspace validation.
+        at_boundary = {}
+        for entry in entries:
+            boundary = covering.get(entry["id"])
+            require(boundary is None or boundary in positions and precedes(commit, boundary),
+                    f"Unaccounted-for commit {commit}: acknowledgment must follow its input on the feature branch")
+            at_boundary[boundary] = entry["details"]["decision"]
+        acknowledged = next((boundary for boundary, decision in at_boundary.items()
+                             if boundary is not None and decision == "granted"), None)
+        require(acknowledged or allow_pending and at_boundary.get(None) == "granted",
+                f"Unaccounted-for commit {commit}: missing effective specification input grant")
+        if acknowledged and entries[-1]["details"]["decision"] != "granted":
+            for_withdrawals.add(acknowledged)
+        for producer in producers:
+            if precedes(producer, commit):
+                continue
+            require(acknowledged and precedes(acknowledged, producer),
+                    f"Unaccounted-for commit {commit}: producer work precedes its specification input acknowledgment")
+            for_producers.add(acknowledged)
+    return for_producers, for_withdrawals
+
+
+def checkpoint_history(repo, log, allow_pending=False):
     """Account for every commit to be published from the recorded baseline."""
     from workflow_protocol import feature_directory, log_locations
     baseline = log["branch_context"]["baseline_commit"]
     require(git(repo, "merge-base", "--is-ancestor", baseline, "HEAD", check=False).returncode == 0,
             "Feature baseline is not an ancestor of HEAD")
-    raw = git(repo, "log", "--reverse", "--format=%H%x00%B%x00", baseline + "..HEAD").stdout.split("\0")
+    raw = git(repo, "log", "--topo-order", "--reverse", "--format=%H%x00%B%x00", baseline + "..HEAD").stdout.split("\0")
     checkpoints = []
+    inputs = set()
     for offset in range(0, len(raw) - 1, 2):
         commit, body = raw[offset].strip(), raw[offset + 1]
         metadata = checkpoint_metadata(body)
+        if not metadata:
+            claims = re.findall(r"^Orchestrator-(\w+):", body, re.M)
+            require(not any(key in CHECKPOINT_FIELDS for key in claims),
+                    f"Unaccounted-for commit {commit}: malformed Flow checkpoint trailer")
+            inputs.add(commit)
+            continue
         require(metadata.get("feature") == log["feature"] and metadata.get("checkpoint") in {"artifacts", "log"}
                 and metadata.get("role") in {"Planner", "Coder", "Orchestrator"},
                 f"Unaccounted-for commit {commit}; do not include unrelated commits in checkpoint delivery")
@@ -159,6 +270,30 @@ def workflow_checkpoints(repo, log):
         else:
             require("invocation" not in metadata and "phase" not in metadata, "Orchestrator does not invent delegated invocation trailers")
         checkpoints.append(record)
+    producers, withdrawals = spec_input_prerequisites(repo, log, inputs, checkpoints, allow_pending)
+    return checkpoints, producers, withdrawals
+
+
+def advertised_tip(repo, branch):
+    """An empty tip means the branch is absent. None means Git could not inspect it."""
+    result = git(repo, "ls-remote", "--exit-code", branch["remote"], "refs/heads/" + branch["feature_branch"], check=False)
+    if result.returncode == 2:
+        return ""
+    return result.stdout.split()[0] if result.returncode == 0 and result.stdout.strip() else None
+
+
+def acknowledgment_delivery_issue(repo, commits, tip):
+    for commit in sorted(commits):
+        if not tip or git(repo, "merge-base", "--is-ancestor", commit, tip, check=False).returncode != 0:
+            return f"Establish delivery of specification input acknowledgment {commit} on the remote feature branch first"
+    return None
+
+
+def workflow_checkpoints(repo, log, *, allow_pending=False):
+    checkpoints, _, withdrawals = checkpoint_history(repo, log, allow_pending)
+    if withdrawals:
+        issue = acknowledgment_delivery_issue(repo, withdrawals, advertised_tip(repo, log["branch_context"]))
+        require(issue is None, issue)
     return checkpoints
 
 
@@ -224,15 +359,16 @@ def inspect_delivery(repo, log, remote_tip=None):
     log_checkpoint = committed_checkpoint(repo, log)
     if log_checkpoint is None:
         return {"delivery": "uncommitted", "checkpoint": None}
-    checkpoints = workflow_checkpoints(repo, log)
+    checkpoints, producer_prerequisites, withdrawals = checkpoint_history(repo, log)
     checkpoint = checkpoints[-1]
     branch = log["branch_context"]
     uncertainty = None
     if remote_tip is None:
-        result = git(repo, "ls-remote", "--exit-code", branch["remote"], "refs/heads/" + branch["feature_branch"], check=False)
-        if result.returncode not in {0, 2}:
+        remote_tip = advertised_tip(repo, branch)
+        if remote_tip is None:
             uncertainty = "Cannot inspect remote delivery"
-        remote_tip = result.stdout.split()[0] if not uncertainty and result.stdout.strip() else ""
+    # Every later producer contributes its prerequisite, including producers below a log HEAD.
+    prerequisite = acknowledgment_delivery_issue(repo, producer_prerequisites | withdrawals, remote_tip)
     if remote_tip:
         present = git(repo, "cat-file", "-e", remote_tip + "^{commit}", check=False).returncode == 0
         if remote_tip == checkpoint["commit"] or present and git(repo, "merge-base", "--is-ancestor", checkpoint["commit"], remote_tip, check=False).returncode == 0:
@@ -241,19 +377,21 @@ def inspect_delivery(repo, log, remote_tip=None):
             uncertainty = "Remote ancestry is unavailable locally"
         elif git(repo, "merge-base", "--is-ancestor", remote_tip, checkpoint["commit"], check=False).returncode != 0:
             return {"delivery": "uncertain", "checkpoint": checkpoint, "reason": "Remote branch diverged; obtain direction without force-pushing"}
+    if prerequisite:
+        uncertainty = prerequisite
     journal = run_attempts(repo, log, checkpoint["commit"])
     authorizations = [e for e in log["history"] if e["event"] == "user-authorization-recorded"
                       and e["details"]["kind"] == "checkpoint_recovery"]
     latest_auth = authorizations[-1] if authorizations else None
     used = {r.get("authorization_event_id") for r in journal if r["record"] == "started"}
-    if latest_auth and latest_auth["details"]["decision"] == "granted" and latest_auth["id"] not in used:
+    if not prerequisite and latest_auth and latest_auth["details"]["decision"] == "granted" and latest_auth["id"] not in used:
         if journal and recovery_covers_attempt(latest_auth["details"], journal[-1]):
             return {"delivery": "committed", "checkpoint": checkpoint, "authorization_event_id": latest_auth["id"]}
     if journal:
         # A prior successful push has no receipt. Git ancestry is its evidence,
         # including when a later logical checkpoint now needs its first push.
         attempted = journal[-1]["attempted_commit"]
-        if remote_tip and git(repo, "merge-base", "--is-ancestor", attempted, remote_tip, check=False).returncode == 0:
+        if not prerequisite and remote_tip and git(repo, "merge-base", "--is-ancestor", attempted, remote_tip, check=False).returncode == 0:
             return {"delivery": "committed", "checkpoint": checkpoint, "authorization_event_id": None}
         observed = {"delivery": "failed" if journal[-1]["record"] == "failed" and not uncertainty else "uncertain", "checkpoint": checkpoint}
         if uncertainty:
@@ -271,11 +409,9 @@ def inspect_delivery(repo, log, remote_tip=None):
 def record_push_attempt(repo, log, authorization_event_id=None):
     from workflow_protocol import replay
     replay(log)
-    require(committed_checkpoint(repo, log) is not None, "Commit the update and recovery authorization before attempting delivery")
-    checkpoint = workflow_checkpoints(repo, log)[-1]
-    require(git(repo, "rev-parse", "HEAD").stdout.strip() == checkpoint["commit"],
-            "The attempted HEAD must be the validated checkpoint, without later unrelated commits")
     delivery = inspect_delivery(repo, log)
+    checkpoint = delivery["checkpoint"]
+    require(checkpoint is not None, "Commit the update and recovery authorization before attempting delivery")
     require(delivery["delivery"] != "delivered", "Checkpoint already delivered; do not repeat its push")
     branch = log["branch_context"]
     require(git(repo, "branch", "--show-current").stdout.strip() == branch["feature_branch"], "Wrong active feature branch")
@@ -292,13 +428,14 @@ def record_push_attempt(repo, log, authorization_event_id=None):
         # A new logical checkpoint is allowed only after earlier attempts were delivered.
         if journal:
             previous_commit = journal[-1]["attempted_commit"]
-            remote = git(repo, "ls-remote", "--exit-code", branch["remote"], "refs/heads/" + branch["feature_branch"], check=False)
-            tip = remote.stdout.split()[0] if remote.returncode == 0 and remote.stdout.strip() else ""
+            tip = advertised_tip(repo, branch)
             require(tip and git(repo, "merge-base", "--is-ancestor", previous_commit, tip, check=False).returncode == 0,
                     "Previous delivery failed/is uncertain; obtain recovery direction")
-    require(delivery["delivery"] == "committed", "Delivery is failed/uncertain; obtain and commit recovery direction before retry")
+    require(delivery["delivery"] == "committed", delivery.get("reason") or "Delivery is failed/uncertain; obtain and commit recovery direction before retry")
+    require(git(repo, "rev-parse", "HEAD").stdout.strip() == checkpoint["commit"],
+            "The attempted HEAD must be the validated checkpoint, without later unrelated commits")
     record = {"record": "started", "attempt_id": str(uuid.uuid4()), "timestamp": utc_now(),
-              "attempted_commit": git(repo, "rev-parse", "HEAD").stdout.strip(),
+              "attempted_commit": checkpoint["commit"],
               "event_ids": checkpoint["event_ids"], "checkpoint_kind": checkpoint["checkpoint_kind"],
               "publishing_role": checkpoint["publishing_role"], "invocation": checkpoint["invocation"], "phase_id": checkpoint["phase_id"],
               "remote": branch["remote"], "feature_branch": branch["feature_branch"],
