@@ -28,6 +28,20 @@ Before publication, validate the candidate with `task-log - --previous <old-auth
 
 Historical checkpoint trailers and wrappers keep their original paths. Helpers resolve each checkpoint's recorded log location and artifact paths; effective current snapshots use the destination. A no-content Planner acknowledgement uses current refs, unchanged versions, no artifact_changes and the original applicable published artifact checkpoint. Cite any pending user-change-requested feedback in causes; this acknowledgement clears feedback without inventing a new draft, version, approval, assignment or artifact checkpoint. Relocation itself does not approve documents or clear product feedback.
 
+## Authorized specification input commits
+
+Use runtime 2.1.2+ to acknowledge an ordinary user-published proposal or bug report for an active feature. Reconcile existing checkpoints and outstanding push attempts first. Inspect the full object ID, actual parent, changed paths, statuses and file modes. Every change must add a regular `proposal-*.md` or `bugreport-*.md` file inside the feature directory recorded at that commit. Nested project roots and previously authorized moves use their historical paths. The validator checks the stored blobs for strict UTF-8 text without NUL bytes. Delegate substantive reading to the Planner or a read-only role.
+
+Use `user-authorization-recorded`, actor `User`, requestor `User`, with the current status. Set `kind` to `external_operation`, `operation` to `accept-spec-input-commit`, `decision` to the actual decision, and `scope` to the full resolved commit ID. Preserve the user's exact statement covering the whole commit and relevant event references. Set `limits` to `{"max_attempts": null, "additional_cycles": null, "phase": null}`, and `failed_attempts` and `uncertain_attempts` to `[]`. An unambiguous existing instruction supplies authority. Each separate commit requires its own decision.
+
+Validate the candidate on stdin using `python <skill-dir>/scripts/validate_orchestrator_artifacts.py task-log - --previous <authoritative-log> --workspace <repository-root>`, then write and verify that exact append to the authoritative log. Workspace validation can use this pending grant to prepare its checkpoint.
+
+Keep any existing `user-change-requested` entry and active revision assignment. When the request is new, record it through the existing revision sequence, identifying the earliest affected artifact. Related entries may share the log checkpoint. A read-only assessment informs that choice. The formal Planner return and approval gates still apply.
+
+Publish the acknowledgment as a normal Orchestrator log checkpoint. Establish its delivery with `checkpoint_state.py inspect` before dependent Planner or Coder publication. The push helper checks every outgoing producer, including work beneath a later log checkpoint. An already-published input needs no separate push. Preserve the SHA and event range of any intervening local log checkpoint. Reconcile failed or uncertain delivery through the existing bounded recovery procedure.
+
+The last matching decision in a candidate or checkpoint range governs acceptance at that boundary. After delivery, a later denial or deferral governs future reliance on that input. Preserve established history and handle any resulting specification change through the usual user-directed revision. If delivery of the original acknowledgment is uncertain when authority is withdrawn, establish its actual remote ancestry first.
+
 ## Configuration and authority
 
 Consumer-root `.orchestrator-flow.json` records `assurance_level` and `capability_defaults` for configured platforms. Each platform maps planner, architect, coder, reviewer and helpers to model/effort assignments. Setup establishes missing defaults. Before Planner runs, present feature recommendations and obtain acceptance of the complete resolved configuration. Record it in the first start event and effective log fields. Feature acceptance leaves repository defaults unchanged; resume uses the feature settings.

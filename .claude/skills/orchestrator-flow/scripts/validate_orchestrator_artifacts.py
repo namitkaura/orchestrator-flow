@@ -27,7 +27,7 @@ def validate_workspace(state, workspace):
         if key not in locations:
             locations[key] = checkpoint_ref(repo, log, commit, name)
         return locations[key]
-    checkpoints = {c["commit"]: c for c in workflow_checkpoints(workspace, state.log)}
+    checkpoints = {c["commit"]: c for c in workflow_checkpoints(workspace, state.log, allow_pending=True)}
     validate_relocations(state, workspace, checkpoints)
     branch = state.log["branch_context"]
     remote = git(workspace, "ls-remote", "--exit-code", branch["remote"], "refs/heads/" + branch["feature_branch"], check=False)

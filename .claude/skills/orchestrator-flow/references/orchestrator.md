@@ -79,4 +79,6 @@ Accepted capability changes apply to subsequent affected work at coherent bounda
 
 A small missing path, unclear summary or similar reporting defect is corrected in the same assignment before the dependent gate, by SendMessage to the same agent. Reuse applicable artifact checkpoints and checks; no failure event, attempt/cycle increment, empty commit or automatic retest. Genuine execution/unusable-output failures follow workflow-recovery.md. Omitted disposition authority is a proposal, not permission. Preserve consequential evidence and actual user decisions. Recording mistakes are Orchestrator's responsibility.
 
+When a user publishes specification inputs on the feature branch, follow the protocol’s Authorized specification input commits procedure. Inspect the whole commit, record the exact user decision, and establish delivery of its log checkpoint before dependent publication. Continue the ordinary Planner revision from the earliest affected artifact.
+
 For an explicitly authorized path-only correction, use the protocol's Authorized feature relocation procedure. Mechanical moves are the narrow exception to Planner artifact ownership; never change document content or historical wrappers.
