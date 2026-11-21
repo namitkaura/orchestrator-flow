@@ -1,14 +1,137 @@
 # Handoff: Orchestrator Flow v2.2.0
 
-Start the next release here. It is v2.2.0 unless the task-log schema changes in a non-backwards-compatible way. In that case it becomes v3.0.0, and this folder and file are renamed during planning.
+Start planning the next release here, provisionally as v2.2.0. The six selected improvement areas and the v2.1.1 released baseline are described in the dated update below. If the chosen authoritative schema or workflow semantics are incompatible, consider v3.0.0 during proposal design. A major version is not justified solely by the number or size of changes.
 
-This file carries forward what a new thread needs: why v2 exists, the settled workflow behavior, v2.1.0's Claude Code decisions and the implementation boundaries. The candidate items follow. They were found or deferred while releasing v2.1.0, or carried forward from v2.0.0, and the evidence behind the v2.1.0 ones is in the [v2.1.0 native-test summary](../v2.1.0/native-test-summary.md). The last sections hold test-kit intent, lessons for running the next release, and the Claude Code platform facts verified during v2.1.0.
+This file preserves why v2 exists, the settled workflow baseline, Claude Code integration, implementation boundaries, and the v2.1.0 candidate findings. The update below brings it forward to v2.1.1 and records subsequent user decisions; the older candidate/test-kit/platform sections remain useful reference, not automatically selected scope. The [v2.1.0 native-test summary](../v2.1.0/native-test-summary.md) contains historical native-test evidence.
 
 ## Start here
 
-- **State:** v2.1.0 was completed on `v2.1.0-claude-code-integration`. Recheck whether it has since been merged into `main` and tagged; don't assume either.
+- **State:** Released baseline is **v2.1.1** on §main§, tagged §v2.1.1§, commit [§589c770§](https://github.com/namitkaura/orchestrator-flow/commit/589c77072235875593c0825687f80b2acec6557c). Current planning branch: §v2.2.0-workflow-clarity-and-flexibility§, based on that commit. Branch naming is provisional pending schema design.
 - **Reading:** this file is the only required reading. [AGENTS.md](../../AGENTS.md), which holds the maintenance rules, loads automatically in Codex and Claude Code sessions in this checkout. Everything else is for when a topic needs it: the source map at the end points to the contracts, scripts and history. The proposals, the v2.1.0 handoff and the native-test summary hold rationale, history and evidence; what they settled is summarized here.
-- **Status of the items:** they are candidates for the next proposal, not an approved backlog. Settled v2 and v2.1.0 decisions aren't reopened without a concrete reason.
+- **Status of the items:** six improvement areas are selected for proposal *development*, not yet specified or authorized for implementation. Earlier deferred candidates remain optional. Preserve unaffected v2/v2.1.0/v2.1.1 behavior unless a selected design explicitly replaces it.
+
+
+## Planning update — November 14, 2026 (released v2.1.1 baseline)
+
+This section captures decisions and new evidence developed **after the original handoff**. It supersedes older baseline/status assumptions where they conflict; the earlier sections below remain historical context. **It is not an implementation request, an approved final schema, a license to change consumer repositories, or authorization to expand scope.**
+
+### Released v2.1.1: nested placement and path-only relocation
+
+- **Release:** `v2.1.1` was committed directly to `main`, tagged and pushed. Commit `589c77072235875593c0825687f80b2acec6557c`; subject `fix(orchestrator-flow): support nested feature placement and authorized relocation`; tag annotation “Orchestrator Flow v2.1.1”. The patch changed 22 files across Codex, Claude Code, docs, VERSION and tests. Copilot/Cursor remain deferred.
+- **Origin and acceptance:** an “Initial extractor test” conversation in the consuming `music-analyzer` project needed its specification at `music-extractor/.docs/specs/initial-extractor-test/`. The user selected “Fix workflow support, then relocate”. Implementation/review happened in that consumer chat; changes to the Orchestrator Flow source checkout were left uncommitted until separate authority was granted. The user accepts the patch, subsequently authorized validation, commit, tag and push, and does not request reversal. No dedicated v2.1.1 development chat existed.
+- **Placement:** respect an explicitly chosen feature directory; infer nested `.docs/specs/` from an unambiguous input proposal; default to repository-root `.docs/specs/{feature}/` otherwise. Resolve ambiguity before initialization, keep paths repository-root-relative, and keep `.orchestrator-flow.json` at repository root.
+- **Relocation event:** `feature-relocated` records an expressly authorized *path-only* move without restarting. Preserve actual document bytes/versions, historical wrappers, approvals/producing references, effective configuration, logical assignments, state, published checkpoint identities and trailers. Separately authorized input/proposal files may move too. Orchestrator can perform the mechanical move; substantive spec contents remain Planner-owned.
+- **Validation and recovery:** derive current effective paths from the relocation history but resolve historical task logs, artifacts and checkpoint trailers at their original published paths. Verify relocated file bytes against Git; reject unauthorized changes, path traversal, overlapping/historical locations, duplicates and overwritten targets. Content-preserving moves retain approvals/review evidence. Planner may acknowledge corrected paths without an invented new draft, content version, approval or checkpoint.
+- **Reader fact:** a log with `feature-relocated` needs runtime v2.1.1 or newer even when top-level `workflow_version` remains 2.1.0. The user always runs the latest installed workflow; supporting old readers for this case is not a practical requirement. Relocation itself does *not* recognize externally authored code or authorize a new workflow stage.
+
+**Validation (report accurately):** 174 tests ran on Windows with seven failure reports across three Claude startup-fixture test methods. Their POSIX shell executable fixtures produce `WinError 193` on Windows; the same failures reproduced with the previously committed, unchanged startup-test code. There were no errors/skips, and no evidence of relocation regressions. Seven relocation tests, the Claude relocation writer test, five parity/resource tests and 38 foreign-working-directory CLI cases passed. Changed Python/JSON parsing, 33 local documentation links, whitespace and four actual symlinks (`VERSION`/`templates`, Git mode `120000`) were checked. **Not an unconditional full-suite pass.** No new consumer live run was performed as part of this release; the originating extractor run separately reported successful relocation. Portability testing is not automatically added to next-release scope.
+
+### The six selected next-release improvement areas
+
+Keep items 5 and 6 explicit even though role-contract changes may overlap. These are **problem statements and constraints for a proposal**, not already-decided implementations.
+
+| # | Improvement | Core requirement |
+| --- | --- | --- |
+| 1 | Task-log readability | Clear fields, locally meaningful content, minimal reference chasing or duplication |
+| 2 | Workflow flexibility | User-provided findings or already-applied work can enter the appropriate normal stage |
+| 3 | External commit reconciliation | Legitimate non-Flow Git commits are accepted after bounded user-directed verification |
+| 4 | Orchestrator helpers | A separate economical read-only helper capability for exceptional preparation and inspection |
+| 5 | Implementation readiness | Approved requirements, design, tasks and manual procedures are executable and sufficiently complete |
+| 6 | Planner–Coder role boundary | Consequential planning belongs to Planner; Architect independently enforces; Coder escalates gaps |
+
+#### 1. Human-first `task_log.json` readability
+
+The authoritative task log has three primary functions: **human understanding** (what happened, findings, files, results, next steps); **recovery** (state, approvals, decisions, interruptions/new sessions); and **complete meaningful native role handoffs** (original Planner/Architect/Coder/Reviewer wrapper content preserved for subsequent agents). It is not an elaborate provenance/transaction database.
+
+The user wants **clear, self-identifying field names and information locality**, not literal restoration of pre-v2 field names. `checks`, `test_results`, `cli_runs`, `implementation_details`, `notes` and a possible `verification_results` are naming candidates, *not settled mandatory names*. Choose one authoritative home for each kind of information. Avoid storing identical test results in multiple fields or repeating the same implementation explanation across `summary`, `notes` and generic `evidence`.
+
+- Reading **one event** in VS Code should explain its substantive action, outcome, implementation/findings, important changed files, meaningful verification and required next step without forcing the human to resolve normalized references in separate events/sections. Preserve `event_id` and historical source references for exact context, approvals, prior reviews and recovery; these links should supplement the explanation, not replace it. Do not duplicate full prior reviews in every subsequent wrapper either.
+- Prefer a predictable visible structure: actual `must_fix`, `should_fix` and `nit` (singular) categories, even if empty, and clear `changed_files`/`new_files`/`deleted_files` inventories. Whether they are schema-required or agent-required remains a design decision.
+- Preserve useful v2 metadata: native invocation/context, artifact versions and reference identity, actual evidence/review dispositions, task progress, cumulative Coder work, checkpoint provenance and recovery. Keep full original agent returns, not status-only placeholders or Orchestrator summaries.
+- Current v2.1.1 schema intentionally permits `issue_details: {}` and optional changed/new/deleted inventories. Its Coder wrapper requires `summary`, `task_progress` and `checks`. Current instructions/tests deliberately omit empty optional fields. A mandatory change to old optional fields or replacing an authoritative field could therefore be a real breaking contract change.
+- Do **not** create a redundant `task_log_summary.md`, duplicate archival files, helper reports or a separate machine-normalized database. Evaluate the proposed shape against actual v2.1.1 examples, not just schema validity. Pre-v2 is a *readability reference*, not a demand to return wholesale to its fields.
+
+#### 2. Legitimate user-directed handoffs and stage re-entry
+
+Current v2.1.1 `user-change-requested` routes to Planner/spec revision. `coding-revision-started` expects unresolved formal Reviewer findings and `code-review-started` expects a recognized Coder handoff, so user-originated post-review activity cannot always enter the sensible stage.
+
+- **User reports a bug after review:** a truthful user-originated findings/review-like wrapper should permit the *normal Coder* to implement a bounded correction when there is no missing/new specification decision; then the normal Reviewer assesses the actual Coder `change_wrapper`. If product requirements or architecture are changed, resume at the earliest affected Planner artifact and observe necessary approvals.
+- **User/another ChatGPT already committed code:** a truthful user-originated `change_wrapper` should enter the *normal Reviewer* path, without fabricating a Coder invocation or using a disconnected standalone Reviewer. The `fec-bot` v2.0.1 two-line test correction (`ce8747fb32b8e519d8b25dd3f2a994eeb42f89c4`) instead resulted in a standalone review and pointer-only audit workaround; that is the demonstrated failure.
+- **User-authored proposal or bug report:** these are ordinary Planner revision inputs. Already-made specification edits also need an appropriate factual handoff, not a fabricated Planner completion or skipped approval.
+- **Authority and continuity:** proposed user-originated events may use `actor: "User"` and `requestor: "User"`. The existing `user-change-requested` currently records `actor: "Orchestrator"` / `requestor: "User"`; don't retroactively rewrite it. Preserve actual past review wrappers, dispositions, approvals and previous Coder outputs. Follow-up Reviewer gets the actual earlier `review_wrapper` and newest `change_wrapper`, not a rewritten synopsis. Helpers may prepare truthful wrapper content but are not the substantive role.
+- **Runtime impact:** new event/handoff shapes (names not decided), state transitions and recovery actions must be handled by `task_log_schema.json`, `workflow_protocol.py`, native recorders and both platforms. Codex `record-handoff` and Claude `record-return` assume a lead-owned active invocation; Claude `append-entry` currently accepts Orchestrator-created `details` events, not an embedded user-supplied wrapper. Extend narrowly, preserving normal validation, actual-agent attribution and existing approval gates.
+
+#### 3. Authorized external Git commits
+
+The v2.1.1 `checkpoint_state.py` `workflow_checkpoints()` still rejects **every** commit after the feature baseline without recognized Flow `Orchestrator-Feature`/`Orchestrator-Checkpoint`/`Orchestrator-Role` trailers. `validate_workspace()` depends on it, so valid external work can prevent normal recording, validation and publication.
+
+Concrete `fec-bot` v2.0.1 examples:
+- `ce8747fb32b8e519d8b25dd3f2a994eeb42f89c4` — externally authored test correction after accepted review.
+- `10384738c998356d23a7345cc321d4cf34ffec41` — externally authored **one commit adding two input documents**, `bugreport-unicode-admin-title-matching.md` and `proposal-update-text-only-and-rejected-search-recovery.md`, which required a **Planner spec revision**, not a code-review source.
+- The user authorized a narrowly scoped **manual checkpoint reconciliation workaround** to finish and release `fec-bot` v2.0.1. This was not a permanent product fix.
+
+Proposed behavior: inspect actual SHA/ancestry, changed-file names and substantive content when needed via bounded read-only delegation; obtain the user's acceptance of specifically identified external work, record an appropriately scoped event in the **existing log**, and then regard those commits as accounted for on *all* subsequent checkpoint/workspace/push validations. Preserve their original SHA and messages; never forge trailers, silently trust unknown/unrelated work, invent a publisher identity, or add a second audit ledger. The purpose of the external work determines its workflow re-entry stage; external Git reconciliation and user-stage re-entry are related but distinct.
+
+Preserve serialized Git ownership, safe fast-forward checks, unrelated-work protections, verified delivery and failed/uncertain push recovery. Recognize historical checkpoint paths from v2.1.1 relocation; external commits and `feature-relocated` should compose, not be conflated.
+
+#### 4. Independently configured Orchestrator helpers
+
+v2.1.0 introduced Claude `flow-explorer` (optional `exploration_helpers`) and `flow-runner` (`helpers`), both lead-owned; Codex still commonly uses one `helpers` setting for lead helper work. **Do not reuse those assignments** for Orchestrator's own occasional read-only preparation.
+
+Add a separate configurable capability (working name `orchestrator_helpers`) using the same `model`/`reasoning_effort` shape, with an appropriate small Claude `flow-orchestrator-helper` and native Codex delegation. Use inexpensive user-selected models/effort (e.g. a suitable Codex Luna or Claude Haiku/Sonnet), independent of the main lead helpers. Orchestrator itself remains metadata/wrapper focused; the helper may inspect code/specs/Git and prepare a factual user handoff or reconcile external commits.
+
+No substantive Planner/Architect/Coder/Reviewer work, no agent-generated approval, no editing/publishing, no separate wrapper file, no helper-specific persistent log event, no separate configuration for each preparation task and no elaborate per-invocation provenance machinery. Dispatch only when bounded inspection adds value, not for trivial user instructions. Resolve how missing settings behave without silently appropriating an unrelated `helpers` profile.
+
+#### 5. Implementation readiness of approved work
+
+A specification can have complete requirement coverage, a large task list, named file targets and Red/Green pairs yet still be **unexecutable without Coder design choices**. Planner should assess **every task and its dependencies** and all consequential manual/empirical procedures from the point of view of the *actual assigned Coder*. Resolve missing technical/data/evidence/verification/documentation policies in their correct requirements or design artifact before implementation. A detailed task referencing an incomplete design is still incomplete.
+
+Scope-proportionate obligations include: exact externally exchanged data fields/validation/state semantics (with representative valid/invalid records when useful); deterministic fixture formulas/independent numerical expectations when scientifically consequential; stage budget accounting across commands and interruptions; CLI artifact ownership/paths and no-overwrite behavior; public/private evidence allowlists; prescriptive documentation/report structures and acceptance tests; manual annotation and human observation handoffs; and an actual final Test-Maintenance strategy, including a justified no-change outcome.
+
+Plan maintenance **before formal acceptance testing or expensive empirical/manual evidence collection when it affects the reliability of that evidence**; exploratory tests may precede it. Final Verification remains last. Do not impose F01's scientific rigor, exhaustive report templates or file-by-file matrices on trivial features merely because a large study needed them.
+
+**F01 example:** the `music-analyzer` feature's Tasks v1 had 37 numbered tasks, 12 Red/Green pairs, a complete requirement-coverage table, named source/tests and Manual Test Plan v1 against Requirements v2 and Design v2. A user-requested independent task-by-task review found strong core temporal, digital level, onset, chroma and scoring tasks but missing consequential choices elsewhere:
+
+| Tasks | Unresolved Planner decision |
+| --- | --- |
+| 1; 2–5 | Public stubs needed for meaningful Red failures; manifest/local binding/ownership/error record structures |
+| 8–9 | Discrete waveform envelopes/noise decay/normalization, deterministic sampling and independent expected references |
+| 16–19; 22–25 | Serialized scoring/annotation/run/evidence records, validity/completion states, sanitized public fields, CLI input/output paths |
+| 20–21; 24–25; 28–29; 33 | Cumulative stage budgets across separate processes and interruptions, frozen stage order, exhaustion and authority-reference handling |
+| 26; 30; 35 | Exact README operating guide and Stage A/final empirical report structure and interpretation boundaries |
+| 31–34 and manual M0–M6 | Human annotation/listening entry formats, independence, authorizations and scoring/report handoffs |
+| 36; 27; 37 | Test-preservation/refactoring policy and dependency-aware ordering before formal experiments; final verification |
+
+The corrective request was **targeted Tasks v2 and Manual Test Plan v2**, with only narrow Design v2 revisions if necessary. It was **not** a condemnation of all tasks, and Architect had not yet reviewed them; do not claim it failed to catch defects. Planner's test-maintenance strategy should name what must be preserved/revised/consolidated and why, without speculative refactoring. Coder supplies actual executed commands/results, not the plan.
+
+#### 6. Planner–Coder ownership: prevent hidden decision delegation
+
+**Rule:** *Coder chooses how to implement the approved design, not what that design means.*
+
+- **Planner** owns consequential user/product, architecture, data semantics, algorithm and verification criteria, external interfaces and evidence/publication policy, documentation scope and test-maintenance decisions. Place each in requirements, design or tasks as appropriate. Ordinary private loops, helper naming, simple refactoring and equivalent local technique remain Coder discretion.
+- **Architect** performs an independent **Coder-readiness/decision-completeness review at Basic, Standard and Maximum**. Don't accept a plan merely because all acceptance criteria have mapped tasks, named filenames or tests. Ask whether two competent Coders could comply while selecting materially different behavior, data contracts or verification outcomes; if so, report the missing consequential decision, impact, and earliest artifact needing revision. This is a specification defect, not an optional Maximum hardening item.
+- **Coder** implements approved decisions and escalates real missing consequential ones through Orchestrator for Planner resolution and necessary artifact reapproval/review. Neither high capability nor strong assumptions grant Coder authority to invent requirements, data meanings, scientific methods, publication standards or test-preservation policy.
+- **No new routine subsystem:** Planner self-audits as part of its existing task preparation; Architect enforces within its ordinary review; Coder uses normal blocker/clarification routing. Do not add a standalone readiness report, additional mandatory role, extra gate, persisted checklist or schema field.
+
+Current Codex/Claude Planner instructions already require concrete tasks and test-maintenance planning; Coder's boundary is largely clear. Architect's requirement to check “sufficient concrete tasks/tests/documentation” is too easy to satisfy superficially, and the sharpest “do not force Coder to rediscover foreseeable design” obligation appears in the **Maximum** checklist. Strengthen Planner, Architect and common assurance instructions at **all** levels; clarify Coder escalation only as needed. Item 5 asks whether work is executable; item 6 assigns responsibility for decisions and escalation, without duplicating checks.
+
+### Compatibility, release name and upgrade practice
+
+**Working choice: v2.2.0 for planning, not yet a final compatibility finding.** SemVer major changes are justified by breaking published schemas or workflow semantics, not six substantial enhancements. Additive user event types, external-commit recognition and optional helper assignments may be minor-compatible; replacing required `checks` or changing previously optional field requirements may be breaking. The user is not attached to pre-v2 literal names, so **first design the most understandable authoritative wrappers** and then classify the real delta. If it is incompatible, discuss v3.0.0 and rename this release folder/branch during planning rather than maintain bad fields just to retain 2.2.0.
+
+The user is the only current consumer and always uses the latest linked installation. Workflow upgrades are normally made **between completed features**; a mid-feature patch is unusual and usually fixes a blocker (the accidental v2.1.1 patch is an example). Completed features' logs are retained for **human audit**, and will not be read by the workflow again in normal practice. **Active** logs require accurate state/approval/return/recovery interpretation; patch upgrades must correctly resume them. Minor upgrades are normally feature-to-feature and should retain compatible meaning as appropriate to a minor release, but no elaborate hypothetical migration system is warranted. A new major version may break active old-format compatibility; finish ongoing work first and address any rare exception explicitly. Do not rewrite completed historical logs or build a dual-format execution engine only for them. The special older-reader caveat for v2.1.1 relocation is irrelevant to the user's latest-runtime practice.
+
+### Architecture, review and testing touchpoints
+
+- **Shared runtime/schema (identical Codex and Claude copies):** `references/common.schema.json`, `task_log_schema.json`, four `wrappers/*.schema.json`, `scripts/workflow_protocol.py`, `workflow_artifacts.py`, `validate_orchestrator_artifacts.py` and `checkpoint_state.py`. State/replay/next-action, references and publication must agree. Keep `tests/test_runtime_parity.py` parity; no cross-platform import adapter.
+- **Native contracts:** both platform-specific Planner, Architect, Coder, Orchestrator, assurance and helper instructions. The Codex handoff recorder and Claude `claude_log.py` (`record-return`, `append-entry`, actual transcript handling) need appropriate user-event support; Claude may add one read-only `flow-orchestrator-helper` agent. Do not modify deferred Copilot/Cursor integrations.
+- **Focused behavior tests:** user reported post-review bug → real Coder → real Reviewer; user-supplied already-applied correction → real Reviewer; external spec document commits → Planner; unknown external commit rejected; committed historical outputs and approval continuity; interrupted/new-context resume after user events; checkpoint validation and publish after reconciled commits, including **relocation across paths**; failure/uncertain push safeguards; human readability inspection of real log events; Architect catches incomplete external data/docs/Test-Maintenance decisions at lower assurance while allowing legitimate Coder implementation discretion. Add selective native Codex/Claude runs; do not treat deterministic unit tests as proof of native role behavior.
+- **Not automatic scope:** old handoff candidates about Orchestrator log-entry examples, acceptEdits prompts, Claude helper transcript edge cases, Git journal optimization, native live-kit expansion, Windows fixture portability/setup, Maximum/phase coverage and future Copilot/Cursor support remain separate choices. Adopt a small related fix only by deliberate scope decision. The 2.1.1 Windows fixture failures are not a mandate to fix them here.
+
+**Repository ownership preference:** Orchestrator Flow source maintenance should originate only from conversations in the user's **Orchestrator Flow project**, not consuming-project chats. The user explicitly opted to enforce this personally; **do not encode it in `AGENTS.md`, skills, an extra permission gate, ledger or schema** without a separate request. The v2.1.1 patch remains accepted.
+
+**Next work, when asked:** inspect actual v2.1.1 events/wrappers against human locality, recovery and full-handoff goals; choose coherent authoritative schemas, user re-entry and external commit semantics; evaluate breaking versus additive changes; then draft the proposal and select 2.2.0 or 3.0.0. Do not start implementation or automatically absorb the older handoff's unselected backlog.
+
 
 ## Why v2 exists
 
