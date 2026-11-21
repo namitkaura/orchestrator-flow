@@ -115,8 +115,8 @@ def artifact_checkpoint_ref(repo, log, commit, name):
     return checkpoint_log(repo, log, commit)["feature_dir"] + "/" + name + ".md"
 
 
-def validate_spec_input(repo, commit, parent, directory):
-    """Check the complete parent diff and stored blobs. Diagnostics contain metadata only."""
+def validate_external_commit(repo, commit, parent, log_refs, spec_input_directory=None):
+    """Inspect the whole Git inventory; only the legacy spec-input grant requires text blobs."""
     from workflow_protocol import relative_path
     raw = git(repo, "diff-tree", "--raw", "-r", "-z", "--no-renames", "--no-abbrev",
               "--ignore-submodules=none", "--no-commit-id", parent, commit, "--", binary=True).stdout
@@ -124,14 +124,21 @@ def validate_spec_input(repo, commit, parent, directory):
     require(fields and len(fields) % 2 == 0, f"Unaccounted-for commit {commit}: empty or incomplete file inventory")
     for header, name in zip(fields[::2], fields[1::2]):
         old_mode, mode, _, blob, status = header.split()
-        require(status == b"A" and old_mode == b":000000" and mode in {b"100644", b"100755"},
-                f"Unaccounted-for commit {commit}: every change must add a regular specification input")
         try:
             path = relative_path(name.decode("utf-8"))
         except UnicodeDecodeError as exc:
             raise ValidationError(f"Unaccounted-for commit {commit}: invalid UTF-8 path") from exc
+        require(path not in log_refs, f"Unaccounted-for commit {commit}: external change to authoritative log {path}")
+        if spec_input_directory is None:
+            # --no-renames exposes both sides of a move. Inspect the old mode on deletes, too.
+            regular_or_absent = {b"100644", b"100755", b"000000"}
+            require(status in {b"A", b"M", b"D"} and old_mode[1:] in regular_or_absent and mode in regular_or_absent,
+                    f"Unaccounted-for commit {commit}: unsupported external file change at {path}")
+            continue
+        require(status == b"A" and old_mode == b":000000" and mode in {b"100644", b"100755"},
+                f"Unaccounted-for commit {commit}: every change must add a regular specification input")
         filename = path.rsplit("/", 1)[-1]
-        require(path.startswith(directory + "/") and filename.startswith(("proposal-", "bugreport-")) and filename.endswith(".md"),
+        require(path.startswith(spec_input_directory + "/") and filename.startswith(("proposal-", "bugreport-")) and filename.endswith(".md"),
                 f"Unaccounted-for commit {commit}: {path} is outside the permitted specification inputs")
         content = git(repo, "cat-file", "blob", blob.decode("ascii"), binary=True).stdout
         require(b"\0" not in content, f"Unaccounted-for commit {commit}: NUL byte in {path}")
@@ -141,20 +148,20 @@ def validate_spec_input(repo, commit, parent, directory):
             raise ValidationError(f"Unaccounted-for commit {commit}: invalid UTF-8 in {path}") from exc
 
 
-def spec_input_prerequisites(repo, log, inputs, checkpoints, allow_pending):
+def external_commit_prerequisites(repo, log, inputs, checkpoints, allow_pending):
     """Find acknowledgment commits that need remote proof for producers or withdrawals."""
-    from workflow_protocol import feature_directory
+    from workflow_protocol import feature_directory, log_locations
     decisions = {}
     for entry in log["history"]:
         details = entry.get("details", {})
-        if entry["event"] != "user-authorization-recorded" or details["operation"] != "accept-spec-input-commit":
+        if entry["event"] != "user-authorization-recorded" or details["operation"] not in {"accept-spec-input-commit", "accept-external-commit"}:
             continue
         scope = details["scope"]
         require(entry["actor"] == entry["requestor"] == "User" and details["kind"] == "external_operation"
                 and details["user_statement"].strip() and details["limits"] == {"max_attempts": None, "additional_cycles": None, "phase": None}
                 and not details["failed_attempts"] and not details.get("uncertain_attempts"),
-                "Invalid authority for accept-spec-input-commit")
-        require(scope in inputs, f"Unaccounted-for commit: specification input scope must match an exact ordinary commit ID: {scope}")
+                f"Invalid authority for {details['operation']}")
+        require(scope in inputs, f"Unaccounted-for commit: scope must match an exact ordinary commit ID: {scope}")
         decisions.setdefault(scope, []).append(entry)
     missing = inputs.difference(decisions)
     if missing:
@@ -183,12 +190,11 @@ def spec_input_prerequisites(repo, log, inputs, checkpoints, allow_pending):
         covering.update(dict.fromkeys(checkpoint["event_ids"], checkpoint["commit"]))
         last = checkpoint["last"]
     producers = [c["commit"] for c in checkpoints if c["publishing_role"] in {"Planner", "Coder"}]
+    log_refs = {directory + "/task_log.json" for directory in log_locations(log)}
     for_producers, for_withdrawals = set(), set()
     for commit, entries in decisions.items():
         require(commit in positions and len(chain[positions[commit]]) == 2,
                 f"Unaccounted-for commit {commit}: expected a single-parent input on the feature first-parent history")
-        prior = max((c["last"] for c in log_checkpoints if precedes(c["commit"], commit)), default=0)
-        validate_spec_input(repo, commit, chain[positions[commit]][1], feature_directory(log, prior))
 
         # Reduce each checkpoint's decisions at its closing event. None is the
         # append-only candidate suffix and can only bootstrap workspace validation.
@@ -197,18 +203,25 @@ def spec_input_prerequisites(repo, log, inputs, checkpoints, allow_pending):
             boundary = covering.get(entry["id"])
             require(boundary is None or boundary in positions and precedes(commit, boundary),
                     f"Unaccounted-for commit {commit}: acknowledgment must follow its input on the feature branch")
-            at_boundary[boundary] = entry["details"]["decision"]
-        acknowledged = next((boundary for boundary, decision in at_boundary.items()
-                             if boundary is not None and decision == "granted"), None)
-        require(acknowledged or allow_pending and at_boundary.get(None) == "granted",
-                f"Unaccounted-for commit {commit}: missing effective specification input grant")
+            at_boundary[boundary] = entry["details"]
+        grants = {boundary: details["operation"] for boundary, details in at_boundary.items()
+                  if details["decision"] == "granted"}
+        acknowledged = next((boundary for boundary in grants if boundary is not None), None)
+        require(acknowledged or allow_pending and None in grants,
+                f"Unaccounted-for commit {commit}: missing effective external commit grant")
+        # Each effective grant must fit its operation. The narrow policy also satisfies the general one.
+        directory = None
+        if "accept-spec-input-commit" in grants.values():
+            prior = max((c["last"] for c in log_checkpoints if precedes(c["commit"], commit)), default=0)
+            directory = feature_directory(log, prior)
+        validate_external_commit(repo, commit, chain[positions[commit]][1], log_refs, directory)
         if acknowledged and entries[-1]["details"]["decision"] != "granted":
             for_withdrawals.add(acknowledged)
         for producer in producers:
             if precedes(producer, commit):
                 continue
             require(acknowledged and precedes(acknowledged, producer),
-                    f"Unaccounted-for commit {commit}: producer work precedes its specification input acknowledgment")
+                    f"Unaccounted-for commit {commit}: producer work precedes its external commit acknowledgment")
             for_producers.add(acknowledged)
     return for_producers, for_withdrawals
 
@@ -270,7 +283,7 @@ def checkpoint_history(repo, log, allow_pending=False):
         else:
             require("invocation" not in metadata and "phase" not in metadata, "Orchestrator does not invent delegated invocation trailers")
         checkpoints.append(record)
-    producers, withdrawals = spec_input_prerequisites(repo, log, inputs, checkpoints, allow_pending)
+    producers, withdrawals = external_commit_prerequisites(repo, log, inputs, checkpoints, allow_pending)
     return checkpoints, producers, withdrawals
 
 
@@ -285,7 +298,7 @@ def advertised_tip(repo, branch):
 def acknowledgment_delivery_issue(repo, commits, tip):
     for commit in sorted(commits):
         if not tip or git(repo, "merge-base", "--is-ancestor", commit, tip, check=False).returncode != 0:
-            return f"Establish delivery of specification input acknowledgment {commit} on the remote feature branch first"
+            return f"Establish delivery of external commit acknowledgment {commit} on the remote feature branch first"
     return None
 
 
