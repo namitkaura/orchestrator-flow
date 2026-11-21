@@ -1,4 +1,4 @@
-"""Specification inputs are accounted for by the exact user's decision and Git history."""
+"""External commits are accounted for by the user's exact decision and Git history."""
 from copy import deepcopy
 import json
 from pathlib import Path
@@ -45,10 +45,10 @@ class SpecInputTests(unittest.TestCase):
             self.write(self.input_path(name), "# Révision — 音楽 🎵\n".encode("utf-8"))
         return self.commit()
 
-    def decide(self, commit, decision="granted"):
-        self.flow.authorize("external_operation", decision=decision, operation="accept-spec-input-commit")
+    def decide(self, commit, decision="granted", operation="accept-spec-input-commit"):
+        self.flow.authorize("external_operation", decision=decision, operation=operation)
         entry = self.flow.log["history"][-1]
-        entry["details"].update(scope=commit, user_statement=f"My decision on all documents in {commit} is {decision}.",
+        entry["details"].update(scope=commit, user_statement=f"My decision on the entire commit {commit} is {decision}.",
                                 uncertain_attempts=[])
         return entry
 
@@ -63,14 +63,7 @@ class SpecInputTests(unittest.TestCase):
     def push(self):
         self.git("push", "origin", "HEAD:refs/heads/feature/example")
 
-    def test_existing_native_recorders_and_intervening_log_checkpoint(self):
-        self.checkpoint()
-        commit = self.add_input("proposal-café.md", "bugreport-audio.md")
-        self.push()
-        change = self.request_change()
-        intervening = self.checkpoint(first=int(change))
-        previous = deepcopy(self.flow.log)
-        entry = self.decide(commit)
+    def record_decision(self, entry):
         log_file = self.repo / self.flow.log["task_log_ref"]
         args = ["--workspace", str(self.repo)]
         scripts = "skills/orchestrator-flow/scripts"
@@ -80,6 +73,16 @@ class SpecInputTests(unittest.TestCase):
             result = subprocess.run([sys.executable, "-B", *command, *args], input=json.dumps(payload).encode(), capture_output=True)
             self.assertEqual(result.returncode, 0, result.stderr.decode())
         self.flow.log = json.loads(log_file.read_text(encoding="utf-8"))
+
+    def test_existing_native_recorders_and_intervening_log_checkpoint(self):
+        self.checkpoint()
+        commit = self.add_input("proposal-café.md", "bugreport-audio.md")
+        self.push()
+        change = self.request_change()
+        intervening = self.checkpoint(first=int(change))
+        previous = deepcopy(self.flow.log)
+        entry = self.decide(commit)
+        self.record_decision(entry)
         self.assertEqual(self.flow.log["history"][:-1], previous["history"])
         self.assertEqual(self.flow.log["history"][-1]["details"], entry["details"])
         self.assertEqual(self.flow.log["status"], previous["status"])
@@ -364,7 +367,7 @@ class SpecInputTests(unittest.TestCase):
         with self.assertRaisesRegex(ValidationError, merge + ": expected a single-parent"):
             self.candidate()
 
-    def test_blocked_211_feature_resumes_requirements_with_completed_work_preserved(self):
+    def publish_blocked_feature(self):
         relocate(self.flow, directory="research/.docs/specs/example")
         self.flow.log["history"].pop()  # Initial nested placement, before the first checkpoint.
         self.checkpoint()
@@ -387,14 +390,19 @@ class SpecInputTests(unittest.TestCase):
         stage_a = self.artifact_checkpoint(task_ref, task_text, "Coder")
         self.push()
         blocked_id = int(self.flow.next_id)
-        blocker = {"id": "stage-b", "operation": "Proceed to Stage B", "task_ids": ["2"], "reason": "Await user scope.",
+        blocker = {"id": "stage-b", "operation": "Proceed to Stage B", "task_ids": ["2"], "reason": "A2 budget exhausted.",
                    "attempts": [], "evidence": ["Stage A completed."], "depends_on": ["user direction"],
-                   "independent_task_ids": [], "required_authorization": "Confirm Stage B scope."}
+                   "independent_task_ids": [], "required_authorization": "User must select a method within the A2 budget."}
         self.flow.code_output(consolidated=False, blockers=[blocker])
         self.flow.log["history"][-1]["details"]["task_progress"].append(
             {"task_id": "2", "status": "pending", "evidence": "Await scope.", "disposition_ref": None})
         self.checkpoint(first=blocked_id)
         self.push()
+        return stage_a, task_text
+
+    def test_blocked_211_feature_resumes_requirements_with_completed_work_preserved(self):
+        stage_a, task_text = self.publish_blocked_feature()
+        task_ref = self.flow.log["tasks_ref"]
         before = deepcopy(self.flow.log)
         approvals = deepcopy(replay(before).approvals)
         commit = self.add_input("proposal-stage-a2.md")
@@ -405,7 +413,7 @@ class SpecInputTests(unittest.TestCase):
         self.assertEqual(replay(self.flow.log).status, "blocked")
         self.request_change()
         self.candidate()
-        self.checkpoint(first=blocked_id + 1)
+        self.checkpoint(first=len(before["history"]) + 1)
         record_push_attempt(self.repo, self.flow.log)
         self.push()
         state = replay(self.flow.log, previous=before)
@@ -420,3 +428,58 @@ class SpecInputTests(unittest.TestCase):
         self.flow.authorize("coding")
         with self.assertRaisesRegex(ValidationError, "Coding decision must concern an accepted specification"):
             replay(self.flow.log)
+
+    def test_continuity_acknowledgment_resumes_at_original_blocker(self):
+        self.flow.log["workflow_version"] = "2.1.2"
+        self.publish_blocked_feature()
+        before = deepcopy(self.flow.log)
+        ref = before["task_log_ref"]
+        self.write(".docs/handoffs/music-analyzer-continuity-002.md", b"# Handoff to the next planning discussion\n")
+        commit = self.commit()
+        self.push()
+        with self.assertRaisesRegex(ValidationError, commit):
+            self.candidate()
+        grant = self.decide(commit, operation="accept-external-commit")
+        self.record_decision(grant)
+        ack = self.checkpoint(first=int(grant["id"]))
+        self.assertEqual(record_push_attempt(self.repo, self.flow.log)["attempted_commit"], ack)
+        self.push()
+        delivered = json.loads(self.git("show", "refs/heads/feature/example:" + ref, cwd=self.remote).stdout)
+        self.assertEqual(delivered["history"][:-1], before["history"])
+        self.assertEqual(delivered["history"][-1]["details"], grant["details"])
+        self.assertEqual(delivered["workflow_version"], before["workflow_version"])
+        self.assertEqual(delivered["status"], "blocked")
+        validate_workspace(replay(delivered, previous=before), self.repo)
+        self.assertNotIn(commit, [c["commit"] for c in workflow_checkpoints(self.repo, delivered)])
+        observation = inspect_delivery(self.repo, delivered)
+        self.assertEqual(observation["delivery"], "delivered")
+        self.assertEqual(resume_action(delivered, observation)["action"], "resolve_scoped_blocker")
+
+    def test_mixed_external_commit_uses_effective_operation_at_each_boundary(self):
+        self.checkpoint()
+        self.git("mv", "baseline.txt", "notes.md")
+        self.write("tests/test_input.py", b"# External correction\n")
+        self.write("input.bin", b"\xff\x00\x01")
+        commit = self.commit()
+        self.decide(commit)
+        self.decide(commit, operation="accept-external-commit")
+        self.candidate()
+        ack = self.checkpoint(first=2)
+        self.decide(commit)
+        with self.assertRaisesRegex(ValidationError, commit):
+            self.candidate()
+        self.decide(commit, operation="accept-external-commit")
+        self.candidate()
+        self.checkpoint(first=4)
+        self.artifact_checkpoint()
+        with self.assertRaisesRegex(ValidationError, ack):
+            record_push_attempt(self.repo, self.flow.log)
+
+    def test_general_grant_rejects_external_log_edit(self):
+        self.checkpoint()
+        ref = self.flow.log["task_log_ref"]
+        self.write(ref, (self.repo / ref).read_bytes() + b"\n")
+        commit = self.commit()
+        self.decide(commit, operation="accept-external-commit")
+        with self.assertRaisesRegex(ValidationError, "external change to authoritative log"):
+            self.candidate()
