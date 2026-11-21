@@ -123,6 +123,13 @@ This is **not** permission to under-specify. The user's correction preserved 37 
 
 **Two separate F01 failure modes now inform improvements 5 and 6:** *(a) missing consequential decisions* and *(b) resolved decisions that are misplaced, orphaned or duplicated across tasks/design/manual procedures*. Readiness requires both **decision completeness and clear authoritative placement/ownership**.
 
+**Minor F01 follow-up — references between living specification documents:** After the task-layout cleanup, the unchanged Manual Test Plan v2 still referred to “Tasks v2” even though the current task plan was Tasks v3. The user considers that **an immaterial editorial nit**, because task IDs, procedures and cross-references remained applicable; it does not justify another revision cycle or changing the F01 files solely to update a label.
+
+For ordinary dependencies between *current* documents, Planner should use stable filenames or relative links (e.g. `requirements.md`, `design.md`, `tasks.md`, `manual-test-plan.md`) **without embedding their current content version**. This avoids unnecessary maintenance and misleading stale references after unrelated revisions. Each document still retains its own required `Content version: N` and Revision History; the task log still records exact versioned approvals and review bases. Explicit versions remain appropriate for genuinely historical comparisons, past decisions or a deliberately frozen/immutable baseline—not routine links to living specifications. Architect should distinguish a harmless stale label from a reference that actually changes meaning or points to the wrong governing artifact; do not turn incidental version-label drift into mandatory editorial repairs.
+
+Treat this as a small **Planner/Architect instruction refinement within improvements 5 and 6**. No new schema field, cross-reference validator, approval gate or seventh workstream is needed.
+
+
 
 #### 6. Planner–Coder ownership: prevent hidden decision delegation
 
