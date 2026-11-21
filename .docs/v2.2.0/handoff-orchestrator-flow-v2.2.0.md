@@ -6,10 +6,9 @@ This file preserves why v2 exists, the settled workflow baseline, Claude Code in
 
 ## Start here
 
-- **State:** Released baseline is **v2.1.1** on §main§, tagged §v2.1.1§, commit [§589c770§](https://github.com/namitkaura/orchestrator-flow/commit/589c77072235875593c0825687f80b2acec6557c). Current planning branch: §v2.2.0-workflow-clarity-and-flexibility§, based on that commit. Branch naming is provisional pending schema design.
+- **State:** Released baseline is **v2.1.1** on `main`, tagged `v2.1.1`, commit [`589c770`](https://github.com/namitkaura/orchestrator-flow/commit/589c77072235875593c0825687f80b2acec6557c). Current planning branch: `v2.2.0-workflow-clarity-and-flexibility`, based on that commit. Branch naming is provisional pending schema design.
 - **Reading:** this file is the only required reading. [AGENTS.md](../../AGENTS.md), which holds the maintenance rules, loads automatically in Codex and Claude Code sessions in this checkout. Everything else is for when a topic needs it: the source map at the end points to the contracts, scripts and history. The proposals, the v2.1.0 handoff and the native-test summary hold rationale, history and evidence; what they settled is summarized here.
 - **Status of the items:** six improvement areas are selected for proposal *development*, not yet specified or authorized for implementation. Earlier deferred candidates remain optional. Preserve unaffected v2/v2.1.0/v2.1.1 behavior unless a selected design explicitly replaces it.
-
 
 ## Planning update — November 14, 2026 (released v2.1.1 baseline)
 
