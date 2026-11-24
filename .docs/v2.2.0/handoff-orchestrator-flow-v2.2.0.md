@@ -24,7 +24,7 @@
 
 **Newest decision that overrides prior interpretations:** §2.9 defines post-coding *substantive specification* corrections. **Guided** asks the user whether to re-enter Planner, then reinstates affected gates; **Delegated** routes through Planner/Architect automatically **but asks for renewed user coding authorization**; **Proactive** routes through Planner/Architect and automatically resumes Coder **within delegated scope**. The earlier idea of Delegated automatically resuming coding was **superseded**. The ordinary initial-feature gates are in §2.7.
 
-**Next step:** Assess grouping, release scope and actual schema/compatibility implications for items **1, 2, 4–9**, then prepare focused proposals. **Do not reimplement #3's completed Git acceptance logic; do implement the still-open #2 stage re-entry where authorized external file changes or findings affect the normal workflow.** Do not automatically start implementation or turn deferred test/platform observations into new release requirements.
+**Next step:** Assess grouping, release scope and actual schema/compatibility implications for items **1, 2, 4–9**, then prepare focused proposals. **Do not reimplement #3's completed Git acceptance logic; plan the still-open #2 stage re-entry where authorized external file changes or findings affect the normal workflow.** Do not automatically start implementation or turn deferred test/platform observations into new release requirements.
 
 ## 1. Principles and motivation
 
