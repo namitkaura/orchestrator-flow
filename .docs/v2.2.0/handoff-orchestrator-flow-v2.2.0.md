@@ -316,11 +316,11 @@ The user asked whether **approval gates should be a separate setting** from prob
 
 This describes what **v2.1.3 actually does**, including its older five approval gates. Planned Autonomy/correction changes in §2 do **not** automatically rewrite active feature logs or user authorizations.
 
-## Settled v2 workflow behavior
+### v2 roles, state and approval contracts
 
 This carries forward section 3 of the v2.1.0 handoff, updated for v2.1.0. The runtime contracts and schemas remain the exact field and event definitions; do not create a second competing schema from this summary.
 
-### Roles, ownership, and user gates
+#### Roles, ownership, and user gates
 
 The pipeline remains **Planner → Architect → Coder → Reviewer**, coordinated by Orchestrator. Lower assurance does not bypass a lead role or a required document. Direct standalone role use remains supported with its own supplied context; it must not invent orchestrated approvals.
 
@@ -339,7 +339,7 @@ Requirements must be approved before dependent design, design before dependent t
 
 Questions from delegated roles pass through Orchestrator. Use real native role delegation; do not quietly simulate the roles in the Orchestrator's own context. A platform limitation needs an explicit design/user decision, not an invisible loss of separation.
 
-### Capability and assurance are different settings
+#### Capability and assurance are different settings
 
 **Capability** selects model and reasoning/effort for each of Planner, Architect, Coder, Reviewer, and helpers. Since v2.1.0, the shared schema accepts an optional `exploration_helpers` assignment for exploration and research helpers, leaving `helpers` for test and check execution; Claude Code uses it, and Codex keeps one `helpers` assignment for now. Different role assignments are intentional: a stronger reviewer than producer is valid. **Assurance** selects the feature's process/review standard and is shared across the lead roles, apart from the explicitly defined intermediate phase reviews.
 
@@ -355,7 +355,7 @@ Do not restore the rejected dispatch-provenance design: no `role-dispatch-starte
 
 The user prefers cheaper suitable helpers, such as Luna in Codex, rather than routinely using Sol for them. This is a cost preference, not a fixed cross-platform model mapping. Some live tests intentionally used different assignments to verify that accepted choices stuck. Do not copy their test settings as universal runtime defaults.
 
-### Assurance, findings, and when to stop
+#### Assurance, findings, and when to stop
 
 Initial Architect and Reviewer coverage includes the entire relevant specification/implementation at **every** assurance. Assurance changes depth, classification, evidence expectations, and follow-up scope; it does not permit conveniently omitting a file or document.
 
@@ -375,7 +375,7 @@ The built-in `review_disposition_policy` is `spec_user_code_auto`: user disposit
 
 An assurance increase may require additional review work before the affected gate, including when a lower-assurance initial review was already running. Capability changes alone do not create that gap. Reuse sufficient applicable evidence: unchanged Maximum work remains applicable after Maximum → Standard → Maximum. Do not infer insufficiency solely from the last override or add a new full review merely because the agent context changed.
 
-### Deliberate planning and Red/Green remain mandatory
+#### Deliberate planning and Red/Green remain mandatory
 
 The user explicitly rejected combining implementation and tests into loosely defined work to save planning cost. Preserve separate Red and Green stages at every assurance. Scale the depth of tests and review instead: Basic can cover intended use and obvious edge cases without exhaustively defending every remote possibility.
 
@@ -389,7 +389,7 @@ Coder delegates execution of applicable tests, lint/type checks, builds, and pla
 
 Diagrams are useful only when they clarify something. They are not mandatory even at Maximum.
 
-### Documents, versions, and handoffs
+#### Documents, versions, and handoffs
 
 Consumer feature artifacts normally live together under `.docs/specs/{feature}/`. The user's intended use places the completed proposal/bug-report input beside its task log and specifications. Repository-maintenance documents such as proposals and this handoff belong in repository-level `.docs/` folders, not artificial consumer spec folders.
 
@@ -408,7 +408,7 @@ Record actual complete native JSON, not a pointer/status object or a rewritten s
 
 Normal operation creates **no temporary wrapper files or snapshots**. A concrete tool/recovery need can justify a temporary file, removed after safe recording/recovery; it must not become committed spec-folder debris. Each platform's recorder accepts the actual return once, derives metadata, and validates and reads back internally. Codex uses the shared validator's `record-handoff` command; Claude Code uses `claude_log.py record-return`, which reads the return from the subagent's transcript. The Codex recorder fixed a demonstrated Windows Unicode corruption problem without making the agent prove every transport step. Preserve explicit UTF-8 handling when adapting this behavior.
 
-### Git ownership, checkpoints, and final acceptance
+#### Git ownership, checkpoints, and final acceptance
 
 The user supplies a feature name, which may contain a version or just a description. An explicit branch selection wins; otherwise use the feature name, usually matching the spec directory. Never add a `claude/`, `codex/` or other prefix, or an invented product version. Validate the name and obtain direction for a conflict. Record the integration branch, remote, and baseline.
 
@@ -430,7 +430,7 @@ On resume, Orchestrator examines the log, native ownership/output, branch/baseli
 
 After Reviewer acceptance, obtain the user's explicit final feature acceptance, record/deliver completion, and generate one meaningful conventional squash-commit message describing the complete change against the integration baseline. A request for a commit message is not acceptance. **The user manually merges; neither Orchestrator nor any other agent does it.** Maintenance commits/branches/pushes in this source repository require separate user authorization.
 
-### Exceptional implementation phases
+#### Exceptional implementation phases
 
 Phases were accepted only for unusually large features whose Coder context genuinely needs to be split. Task count or multiple checkpoint groups is not sufficient justification; no fixed threshold was agreed. Even the substantial FEC bot migration was thought unlikely to need them.
 
@@ -440,7 +440,7 @@ Intermediate Reviewer capability retains the full Reviewer model and uses the ag
 
 Claude Code's per-call efforts can express this mapping; native phase execution remains untested on both platforms. Do not silently substitute a guessed equivalent, and do not make phase infrastructure part of every ordinary feature.
 
-### Versions and compatibility
+#### Versions and compatibility
 
 Workflow semantic versioning is separate from integer template versions, per-document content versions, and a consumer product's version. Both reusable input templates currently have template version 2; completed proposals remove the template-version line and authoring guidance.
 
@@ -450,7 +450,7 @@ The initial v2.0.0 deliberately does not migrate pre-v2 or missing-version logs.
 
 v2.1.0 added Claude Code without breaking 2.0.0 logs (see "Settled in v2.1.0"); v2.1.1 added nested placement and authorized relocation, and v2.1.2 added narrowly authorized external specification-input commits while preserving existing log formats. The next release is v2.2.0 unless it changes the log schema incompatibly; then it becomes v3.0.0 and needs that discussion. A canonical VERSION bump reaches both integrations through their symlinks, so compatibility matters even when a change is platform-specific.
 
-## Settled in v2.1.0: the Claude Code integration
+### Claude Code integration — settled in v2.1.0
 
 The [v2.1.0 proposal](../v2.1.0/proposal-orchestrator-flow-v2.1.0.md) records the reasoning; these are its decisions as implemented. Like the v2 behavior above, they aren't reopened without a concrete reason.
 
@@ -490,7 +490,7 @@ The [v2.1.0 proposal](../v2.1.0/proposal-orchestrator-flow-v2.1.0.md) records th
   - no migration of pre-v2 Claude logs
   - Windows not yet covered (item 11)
 
-## Implementation boundaries
+### Native integration and maintenance boundaries
 
 The first v2 implementation attempted to make other platforms load shared files from the Codex integration and gutted much of their substantive native guidance. The user rejected this. Those platform folders were restored, and v2.0.0 was intentionally completed for Codex only. v2.1.0 then added Claude Code with its own native contracts and runtime copy.
 
@@ -692,7 +692,7 @@ This section is **history**, not a second set of instructions. Current planning 
 - **Branch continuity as of Nov 21:** After squash-merging v2.1.3 to `main`, Codex verified eight development patches preserved by `git range-diff`, original handoff/deferred-note bytes preserved and clean integration/local remote at `06538a7e81220272100d1d8bcb2eb89d40e8af2c` with zero ahead/behind **at that time**. Subsequent documentation commits changed the remote tip; this is **not current branch status**, and local sync does not inherently need another rebase.
 
 
-## Source map
+## 7. Source map
 
 | Read when needed | Source |
 | --- | --- |
