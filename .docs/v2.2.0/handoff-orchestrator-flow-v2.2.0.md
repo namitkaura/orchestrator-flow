@@ -4,7 +4,7 @@
 
 ## 0. Quick start — current decisions and next work
 
-- **Released baseline:** v2.1.3 on `main`, annotated tag at [`038f5eb`](https://github.com/namitkaura/orchestrator-flow/commit/038f5ebfea56cc4ce7ac3a6b13ba16b4d455a022). Canonical `VERSION` is `2.1.3`. External Git reconciliation **already shipped** in this release.
+- **Released baseline:** v2.1.3 on `main`, annotated tag at [`038f5eb`](https://github.com/namitkaura/orchestrator-flow/commit/038f5ebfea56cc4ce7ac3a6b13ba16b4d455a022). Canonical `VERSION` is `2.1.3`. **Only the Git-history acceptance/reconciliation portion of original improvement #3 shipped**; turning externally changed source, tests, specifications or findings into a truthful normal Planner/Coder/Reviewer handoff **remains open under #2**.
 - **Planning/integration branch:** `v2.2.0-workflow-clarity-and-flexibility`. Fetch the actual tip when needed; historical branch snapshots are not current status.
 - **Authority:** No implementation, releases, final merges or consumer-project edits are authorized by this handoff. The Orchestrator Flow repository is maintained by direct Codex/Claude implementation and independent ChatGPT review, **not by running Flow on its own development**. The user personally enforces maintenance originating from this Orchestrator Flow project; do not encode an additional gate for that preference.
 - **Proposals:** Develop focused proposals **directly under `.docs/v2.2.0/`**, no extra `proposals/` directory. They become authoritative when agreed. Items **5 and 6** may share a proposal while retaining separate concerns. Consider focused development branches, squash to integration, then a user-authorized squash/tag on `main`. Keep existing history; rebase integration only when actual independent `main` changes warrant it.
@@ -13,8 +13,8 @@
 | # | Candidate | Current state |
 | --- | --- | --- |
 | **1** | Task-log readability | Planning |
-| **2** | User-originated workflow-stage re-entry | Planning |
-| **3** | General exact authorized external Git commits | **Shipped v2.1.3 — do not redo** |
+| **2** | User-originated workflow-stage re-entry **after external changes or findings**, including appropriate Planner/Coder/Reviewer routing | **Still open** |
+| **3** | Exact user-authorized **Git commit acknowledgment/reconciliation only** | **Shipped v2.1.3**; workflow re-entry remains **#2** |
 | **4** | Configurable Orchestrator-owned helpers | Planning |
 | **5** | Implementation-ready specification and task completeness | Planning |
 | **6** | Planner–Coder decision ownership and Architect enforcement | Planning (may pair with 5) |
@@ -24,7 +24,7 @@
 
 **Newest decision that overrides prior interpretations:** §2.9 defines post-coding *substantive specification* corrections. **Guided** asks the user whether to re-enter Planner, then reinstates affected gates; **Delegated** routes through Planner/Architect automatically **but asks for renewed user coding authorization**; **Proactive** routes through Planner/Architect and automatically resumes Coder **within delegated scope**. The earlier idea of Delegated automatically resuming coding was **superseded**. The ordinary initial-feature gates are in §2.7.
 
-**Next step:** Assess grouping, release scope and actual schema/compatibility implications for items **1, 2, 4–9**, then prepare focused proposals. Do not re-implement #3, automatically start implementation, or turn deferred test/platform observations into new release requirements.
+**Next step:** Assess grouping, release scope and actual schema/compatibility implications for items **1, 2, 4–9**, then prepare focused proposals. **Do not reimplement #3's completed Git acceptance logic; do implement the still-open #2 stage re-entry where authorized external file changes or findings affect the normal workflow.** Do not automatically start implementation or turn deferred test/platform observations into new release requirements.
 
 ## 1. Principles and motivation
 
@@ -99,6 +99,8 @@ The user wants **clear, self-identifying field names and information locality**,
 
 ### 2. Truthful user-directed workflow re-entry
 
+**This is the unshipped second half of the former external-change use case, not a duplicate of #3.** The workflow must first durably acknowledge an exact authorized external Git commit through the *already shipped* v2.1.3 machinery, then determine what its actual authorized contents mean for the active feature: whether to restart affected Planner specification work, present externally authored or already-applied code/tests as a truthful user-originated handoff to the normal Reviewer, or route a user-reported defect to the normal Coder. Neither Git acceptance nor receipt of external files automatically constitutes Planner approval, Coder completion, Reviewer acceptance or authorization to change the active plan. Historical agent outputs and original author identities remain truthful. Acknowledging a commit and *re-entering the stage appropriate to its consequences* are separate operations.
+
 Current v2.1.3 `user-change-requested` still routes to Planner/spec revision. `coding-revision-started` expects unresolved formal Reviewer findings and `code-review-started` expects a recognized Coder handoff, so user-originated post-review activity cannot always enter the sensible stage.
 
 - **User reports a bug after review:** a truthful user-originated findings/review-like wrapper should permit the *normal Coder* to implement a bounded correction when there is no missing/new specification decision; then the normal Reviewer assesses the actual Coder `change_wrapper`. If product requirements or architecture are changed, resume at the earliest affected Planner artifact and observe necessary approvals.
@@ -107,13 +109,13 @@ Current v2.1.3 `user-change-requested` still routes to Planner/spec revision. `c
 - **Authority and continuity:** proposed user-originated events may use `actor: "User"` and `requestor: "User"`. The existing `user-change-requested` currently records `actor: "Orchestrator"` / `requestor: "User"`; don't retroactively rewrite it. Preserve actual past review wrappers, dispositions, approvals and previous Coder outputs. Follow-up Reviewer gets the actual earlier `review_wrapper` and newest `change_wrapper`, not a rewritten synopsis. Helpers may prepare truthful wrapper content but are not the substantive role.
 - **Runtime impact:** new event/handoff shapes (names not decided), state transitions and recovery actions must be handled by `task_log_schema.json`, `workflow_protocol.py`, native recorders and both platforms. Codex `record-handoff` and Claude `record-return` assume a lead-owned active invocation; Claude `append-entry` currently accepts Orchestrator-created `details` events, not an embedded user-supplied wrapper. Extend narrowly, preserving normal validation, actual-agent attribution and existing approval gates.
 
-### 3. Authorized external Git commits — shipped in v2.1.3
+### 3. Authorized external Git commits — Git-history portion shipped in v2.1.3
 
-**General external-commit reconciliation is no longer an unimplemented v2.2.0 improvement.** The exact user-authorized `accept-external-commit` operation now recognizes ordinary code, test, binary and documentation Git changes across repository paths; the legacy feature-local `accept-spec-input-commit` remains restricted. The existing workflow log/checkpoint machinery makes authorization durable, without attributing changes to a fictional agent or bypassing approval of the work. See the current release summary above and the [v2.1.3 proposal](../v2.1.3/proposal-v2.1.3-authorized-external-commit-reconciliation.md).
+**Scope of the completed work: Git history recognition, not workflow-stage re-entry.** **General external-commit reconciliation is no longer an unimplemented v2.2.0 improvement.** The exact user-authorized `accept-external-commit` operation now recognizes ordinary code, test, binary and documentation Git changes across repository paths; the legacy feature-local `accept-spec-input-commit` remains restricted. The existing workflow log/checkpoint machinery makes authorization durable, without attributing changes to a fictional agent or bypassing approval of the work. See the current release summary above and the [v2.1.3 proposal](../v2.1.3/proposal-v2.1.3-authorized-external-commit-reconciliation.md).
 
 **Original motivating examples retained for audit:** `fec-bot` v2.0.1 included an externally authored two-line test correction (`ce8747fb32b8e519d8b25dd3f2a994eeb42f89c4`) after review and a user-authored proposal+bugreport commit (`10384738c998356d23a7345cc321d4cf34ffec41`); both needed manual reconciliation. v2.1.2 fixed only proposals and bug reports. The later F01 continuity file under repository-wide `.docs/handoffs/` exposed the narrow exception's failure and was successfully acknowledged as event 95 through v2.1.3.
 
-**Remaining work belongs in item 2:** a user-authored code correction may still need genuine Reviewer handling; a user-reported finding may need genuine Coder repair; specification changes need Planner. **Recognizing the external Git SHA is already solved** and should not trigger another commit-provenance subsystem, file-type exception or blanket content-validation gate.
+**Remaining work belongs in item 2:** v2.1.3 can **acknowledge that a user-authorized commit exists at its exact SHA**, but it cannot by itself treat that change as a genuine normal role handoff or select/re-enter the appropriate stage. Externally authored code/test changes require truthful user-originated `change_wrapper` routing to the **normal Reviewer**; user-originated bug findings may require the **normal Coder** and subsequent Reviewer; specification inputs may require **Planner** and the affected approvals. The active work's prior reviews, approvals, task progress and Git checkpoints must stay intact. **Do not reimplement the completed Git acceptance operation** or build another provenance database, file-type exception or speculative content-validation gate merely to support this still-open stage transition.
 
 ### 4. Independently configured Orchestrator helpers
 
